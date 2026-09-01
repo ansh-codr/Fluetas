@@ -1,0 +1,159 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ──────────────────────────────────────────────────────────────────────
+    // Helper functions
+    // ──────────────────────────────────────────────────────────────────────
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function hasRole(role) {
+      return request.auth.token.role == role;
+    }
+
+    function isDoctor() {
+      return hasRole('doctor');
+    }
+
+    function isAdmin() {
+      return hasRole('admin');
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // /users/{userId}
+    // Phase 1: owner-only. Phase 3/4 will add doctor access gated by consents.
+    // ──────────────────────────────────────────────────────────────────────
+    match /users/{userId} {
+      allow read, write: if isAuthenticated() && isOwner(userId);
+
+      // Health Profile
+      match /healthProfile/{doc} {
+        allow read, write: if isAuthenticated() && isOwner(userId);
+        // TODO Phase 4: || doctorHasConsent(userId, 'healthHistory')
+      }
+
+      // Health Timeline — owner read; all writes must go through Cloud Functions
+      match /healthTimeline/{eventId} {
+        allow read: if isAuthenticated() && isOwner(userId);
+        allow write: if false; // Cloud Functions only
+        // TODO Phase 4: allow read if doctorHasConsent(userId, 'healthHistory')
+      }
+
+      // Consultations
+      match /consultations/{consultationId} {
+        allow read, write: if isAuthenticated() && isOwner(userId);
+        // TODO Phase 3: allow read for doctor with valid consent for this consultation
+
+        match /notes/{noteId} {
+          allow read, write: if isAuthenticated() && isOwner(userId);
+          // TODO Phase 3: allow write for treating doctor
+        }
+
+        match /report/main {
+          allow read: if isAuthenticated() && isOwner(userId);
+          allow write: if false; // Cloud Function only
+        }
+      }
+
+      // Test Requests
+      match /testRequests/{requestId} {
+        allow read, write: if isAuthenticated() && isOwner(userId);
+        // TODO Phase 3: allow write for treating doctor
+      }
+
+      // Documents (lab reports, prescriptions, scans)
+      match /documents/{docId} {
+        allow read, write: if isAuthenticated() && isOwner(userId);
+        // TODO Phase 3: allow read for doctor with consent + log via CF
+      }
+
+      // Recommendations — append-only enforced by Cloud Function
+      match /recommendations/{recId} {
+        allow read: if isAuthenticated() && isOwner(userId);
+        allow write: if false; // Cloud Function only (append-only guarantee)
+      }
+
+      // Follow-Ups
+      match /followUps/{followUpId} {
+        allow read, write: if isAuthenticated() && isOwner(userId);
+      }
+
+      // Appointments
+      match /appointments/{apptId} {
+        allow read, write: if isAuthenticated() && isOwner(userId);
+      }
+
+      // Consents — owner grants, doctor reads to verify
+      match /consents/{consentId} {
+        allow read, write: if isAuthenticated() && isOwner(userId);
+        // TODO Phase 4: allow read if request.auth.uid == resource.data.doctorId
+      }
+
+      // Access Logs — written by Cloud Functions only, owner can read
+      match /accessLogs/{logId} {
+        allow read: if isAuthenticated() && isOwner(userId);
+        allow write: if false; // Cloud Function only
+      }
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // Daily tracking collections (top-level, keyed by userId)
+    // ──────────────────────────────────────────────────────────────────────
+    match /workoutLogs/{userId}/entries/{date} {
+      allow read, write: if isAuthenticated() && isOwner(userId);
+    }
+
+    match /nutritionLogs/{userId}/entries/{date} {
+      allow read, write: if isAuthenticated() && isOwner(userId);
+    }
+
+    match /hydrationLogs/{userId}/entries/{date} {
+      allow read, write: if isAuthenticated() && isOwner(userId);
+    }
+
+    match /sleepLogs/{userId}/entries/{date} {
+      allow read, write: if isAuthenticated() && isOwner(userId);
+    }
+
+    match /cycleLogs/{userId}/entries/{date} {
+      allow read, write: if isAuthenticated() && isOwner(userId);
+    }
+
+    match /symptomLogs/{userId}/entries/{date} {
+      allow read, write: if isAuthenticated() && isOwner(userId);
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // /doctors/{doctorId}
+    // ──────────────────────────────────────────────────────────────────────
+    match /doctors/{doctorId} {
+      // Authenticated users can browse doctors (for booking); doctors manage own doc
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && (isAdmin() || request.auth.uid == doctorId);
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // /notifications/{userId}/items/{notifId}
+    // ──────────────────────────────────────────────────────────────────────
+    match /notifications/{userId}/items/{notifId} {
+      allow read, write: if isAuthenticated() && isOwner(userId);
+      // Writes from Cloud Functions are exempt via Admin SDK
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // /products/{productId}
+    // ──────────────────────────────────────────────────────────────────────
+    match /products/{productId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isAdmin();
+    }
+
+  }
+}
