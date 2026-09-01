@@ -15,7 +15,6 @@ import TodaysNutrition from '@/components/dashboard/TodaysNutrition';
 import RecentActivity from '@/components/dashboard/RecentActivity';
 import QuickActions from '@/components/dashboard/QuickActions';
 import { StaggerItem } from '@/components/motion/MotionUtils';
-import { Sparkles } from 'lucide-react';
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -33,23 +32,28 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-4 sm:gap-5 w-full">
-      {/* ── Staggered Section 1: Dynamic Greeting Header ─────────────────── */}
+      {/* ── Section 1: Dynamic Greeting Header ─────────────────── */}
       <StaggerItem index={0}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1">
           <div>
-            <h1 className="font-['Outfit'] text-xl sm:text-2xl font-black text-[#E8EAF6] m-0 tracking-tight flex items-center gap-2">
+            <h1 className="font-['Outfit'] text-xl sm:text-2xl font-black text-[#12160F] m-0 tracking-tight flex items-center gap-2">
               <span>{greeting}, {displayName}</span>
-              <span className="text-[#10B981] inline-block animate-pulse">✨</span>
+              <span className="text-[#2E7D32] inline-block animate-pulse">✨</span>
             </h1>
-            <p className="text-xs sm:text-sm text-[#8B91B0] m-0 mt-0.5">
+            <p className="text-xs sm:text-sm text-[#586151] m-0 mt-0.5">
               Here&apos;s your personalized health and wellness telemetry for today.
             </p>
           </div>
         </div>
       </StaggerItem>
 
-      {/* ── Staggered Section 2: Wellness Rings + Today's Focus ───────────── */}
+      {/* ── Section 2: Inline Quick Actions Bar ────────────────────── */}
       <StaggerItem index={1}>
+        <QuickActions />
+      </StaggerItem>
+
+      {/* ── Section 3: Wellness Rings + Today's Focus ───────────── */}
+      <StaggerItem index={2}>
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_240px] xl:grid-cols-[1fr_260px] gap-4 items-start">
           <WellnessRings />
           <div className="w-full">
@@ -58,8 +62,8 @@ export default function DashboardPage() {
         </div>
       </StaggerItem>
 
-      {/* ── Staggered Section 3: Appointments + Weekly Chart + AI Coach ───── */}
-      <StaggerItem index={2}>
+      {/* ── Section 4: Appointments + Weekly Chart + AI Coach ───── */}
+      <StaggerItem index={3}>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[280px_1fr_250px] gap-4 items-stretch">
           <div className="w-full order-2 md:order-1 lg:order-1">
             <AppointmentsCard />
@@ -73,15 +77,15 @@ export default function DashboardPage() {
         </div>
       </StaggerItem>
 
-      {/* ── Staggered Section 4: Physical Formula Carousel ─────────────────── */}
-      <StaggerItem index={3}>
+      {/* ── Section 5: Physical Formula Carousel ─────────────────── */}
+      <StaggerItem index={4}>
         <div className="w-full">
           <ProductCarousel />
         </div>
       </StaggerItem>
 
-      {/* ── Staggered Section 5: Workout + Cycle + Nutrition + Activity ────── */}
-      <StaggerItem index={4}>
+      {/* ── Section 6: Workout + Cycle + Nutrition + Activity ────── */}
+      <StaggerItem index={5}>
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 items-stretch">
           <TodaysWorkout />
           <CycleTracker />
@@ -89,9 +93,6 @@ export default function DashboardPage() {
           <RecentActivity />
         </div>
       </StaggerItem>
-
-      {/* Fixed bottom quick-actions bar */}
-      <QuickActions />
     </div>
   );
 }
