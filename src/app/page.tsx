@@ -262,7 +262,7 @@ function CycleVisualization() {
         <div className="absolute top-1/2 left-4 md:left-12 h-0.5 bg-rose -translate-y-1/2 transition-all duration-1000" style={{ width: "45%" }}></div>
         
         <div className="relative flex justify-between items-center">
-          {[1, 7, 14, 21, 28].map((day, i) => {
+          {[1, 7, 14, 21, 28].map((day) => {
             const isToday = day === 14;
             const isPast = day <= 14;
             return (
@@ -308,6 +308,37 @@ function CycleVisualization() {
    GIANT AI CHAT
 ───────────────────────────────────────── */
 function GiantAIChat() {
+  const [activeChat, setActiveChat] = useState(0);
+
+  const chats = [
+    {
+      prompt: "I've been sleeping poorly but training more. Should I push through my leg session today?",
+      replies: [
+        "Your recent activity suggests that recovery may need more attention. Over the last 3 days, your sleep has dropped by 18% while your training strain increased by 22%.",
+        "I recommend skipping the heavy leg session and substituting it with active recovery or mobility work today."
+      ],
+      disclaimer: "Not a medical diagnosis — consult a professional for health concerns."
+    },
+    {
+      prompt: "What should I train today?",
+      replies: [
+        "Based on your 82% training readiness and the fact you hit Chest + Biceps yesterday, today is optimal for a Back + Shoulders session.",
+        "Your hydration is a bit low (68%), so make sure to drink water before you start."
+      ],
+      disclaimer: "These recommendations are based on your tracked recovery metrics."
+    },
+    {
+      prompt: "How can I improve recovery?",
+      replies: [
+        "Your sleep score is excellent (91%), but your physical recovery is lagging (76%).",
+        "I suggest adding a 15-minute mobility routine post-workout and ensuring you get at least 30g of protein within an hour of finishing your session."
+      ],
+      disclaimer: "Personalized nutrition advice should be verified with your registered dietitian."
+    }
+  ];
+
+  const current = chats[activeChat];
+
   return (
     <div className="w-full max-w-[1200px] mx-auto rounded-[32px] border border-[#2a3028] bg-[#0d1210] overflow-hidden shadow-2xl flex flex-col h-[700px]">
       <div className="flex items-center gap-4 border-b border-[#2a3028] px-8 py-6 bg-[#161d19]">
@@ -323,7 +354,7 @@ function GiantAIChat() {
           <span className="eyebrow !text-[#8e998a]">You</span>
           <div className="max-w-[70%] rounded-2xl rounded-tr-sm bg-[#1e2621] px-6 py-5">
             <p className="text-[18px] text-[#FAFAF6] leading-relaxed">
-              I&apos;ve been sleeping poorly but training more. Should I push through my leg session today?
+              {current.prompt}
             </p>
           </div>
         </div>
@@ -331,26 +362,24 @@ function GiantAIChat() {
         <div className="flex flex-col items-start gap-2">
           <span className="eyebrow !text-leaf-hi">FLUETAS AI</span>
           <div className="max-w-[70%] rounded-2xl rounded-tl-sm border border-[#2a3028] bg-[#0d1210] px-6 py-5">
-            <p className="text-[18px] text-[#d3dbcf] leading-relaxed mb-4">
-              Your recent activity suggests that recovery may need more attention. Over the last 3 days, your sleep has dropped by 18% while your training strain increased by 22%.
-            </p>
-            <p className="text-[18px] text-[#d3dbcf] leading-relaxed">
-              I recommend skipping the heavy leg session and substituting it with active recovery or mobility work today.
-            </p>
-            <p className="mt-4 text-[13px] text-[#8e998a] italic border-t border-[#2a3028] pt-4">Not a medical diagnosis — consult a professional for health concerns.</p>
+            {current.replies.map((reply, i) => (
+              <p key={i} className={`text-[18px] text-[#d3dbcf] leading-relaxed ${i !== current.replies.length - 1 ? 'mb-4' : ''}`}>
+                {reply}
+              </p>
+            ))}
+            <p className="mt-4 text-[13px] text-[#8e998a] italic border-t border-[#2a3028] pt-4">{current.disclaimer}</p>
           </div>
         </div>
       </div>
 
-      <div className="p-8 md:p-12 border-t border-[#2a3028] bg-[#0d1210] relative">
-        {/* Floating prompts */}
-        <div className="absolute -top-14 left-12 flex gap-3 hidden md:flex">
-          <span className="rounded-full border border-[#2a3028] bg-[#161d19] px-4 py-2 text-[13px] text-[#8e998a] hover:text-[#FAFAF6] cursor-pointer transition-colors">
-            &ldquo;What should I train today?&rdquo;
-          </span>
-          <span className="rounded-full border border-[#2a3028] bg-[#161d19] px-4 py-2 text-[13px] text-[#8e998a] hover:text-[#FAFAF6] cursor-pointer transition-colors">
-            &ldquo;How can I improve recovery?&rdquo;
-          </span>
+      <div className="p-8 md:p-12 border-t border-[#2a3028] bg-[#0d1210] flex flex-col gap-4">
+        {/* Floating prompts embedded cleanly */}
+        <div className="flex flex-wrap gap-3 hidden md:flex">
+          {chats.map((c, i) => i !== activeChat && (
+            <button key={i} onClick={() => setActiveChat(i)} className="rounded-full border border-[#2a3028] bg-[#161d19] px-4 py-2 text-[13px] text-[#8e998a] hover:text-[#FAFAF6] hover:bg-[#1e2621] cursor-pointer transition-colors">
+              &ldquo;{c.prompt}&rdquo;
+            </button>
+          ))}
         </div>
         
         <div className="flex items-center gap-4 rounded-xl border border-[#3f4a3c] bg-[#161d19] px-6 py-5">
@@ -363,7 +392,6 @@ function GiantAIChat() {
     </div>
   );
 }
-
 
 /* ─────────────────────────────────────────
    MAIN PAGE
@@ -412,10 +440,10 @@ export default function Home() {
               </div>
 
               {/* Massive Hero Headline - Adjusted to fit screen */}
-              <h1 className="headline text-[clamp(3.5rem,6.5vw,6.5rem)] text-ink mb-6">
-                Your Body.<br />
-                Your Data.<br />
-                <span className="text-leaf">Your Formula.</span>
+              <h1 className="headline text-[clamp(3rem,5vw,5.5rem)] text-ink mb-6 leading-[0.95]">
+                YOUR BODY.<br />
+                YOUR DATA.<br />
+                <span className="text-leaf">YOUR FORMULA.</span>
               </h1>
 
               <p className="mb-10 max-w-[500px] text-[18px] leading-[1.6] text-ink-soft">
