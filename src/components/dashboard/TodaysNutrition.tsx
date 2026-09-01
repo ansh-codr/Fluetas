@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { useNutrition } from '@/hooks/useNutrition';
 import { useUserProfile } from '@/context/UserProfileContext';
-import { Utensils, Plus, ArrowRight } from 'lucide-react';
+import { UtensilsCrossed, Plus, ArrowRight } from 'lucide-react';
 import { AnimatedNumber, AnimatedRing, AnimatedProgress, Skeleton } from '@/components/motion/MotionUtils';
 
 const CALORIE_TARGETS: Record<string, number> = {
@@ -29,29 +29,32 @@ export default function TodaysNutrition() {
 
   if (loading) {
     return (
-      <div className="fluetas-card p-4 flex flex-col gap-3 min-h-[170px]">
+      <div className="fluetas-card p-4 sm:p-4.5 flex flex-col gap-3 min-h-[170px] bg-[#FFFFFF]">
         <Skeleton className="w-24 h-3" />
-        <Skeleton className="w-full h-14" />
-        <Skeleton className="w-full h-8" />
+        <Skeleton className="w-full h-14 rounded-xl" />
+        <Skeleton className="w-full h-8 rounded-xl" />
       </div>
     );
   }
 
   if (meals.length === 0) {
     return (
-      <div className="fluetas-card-interactive p-4 flex flex-col justify-between gap-3 min-h-[170px] group">
+      <div className="fluetas-card p-4 sm:p-4.5 flex flex-col justify-between gap-3 min-h-[170px] bg-[#FFFFFF]">
         <div className="flex items-center justify-between">
-          <span className="section-title">TODAY&apos;S NUTRITION</span>
-          <span className="text-base group-hover:scale-110 transition-transform">🥗</span>
+          <div className="flex items-center gap-1.5">
+            <UtensilsCrossed size={13} className="text-[#D9622B]" />
+            <span className="section-title">Today&apos;s Nutrition</span>
+          </div>
+          <span className="text-xs text-[#8A9482]">0 meals</span>
         </div>
-        <div className="flex flex-col items-center text-center py-2 flex-1 justify-center">
-          <p className="text-xs font-semibold text-[#E8EAF6] m-0">No meals logged</p>
-          <p className="text-[0.68rem] text-[#8B91B0] m-0 mt-0.5">Log breakfast or lunch</p>
+        <div className="flex flex-col items-center text-center py-2 flex-1 justify-center bg-[#FAFAF6] rounded-xl border border-[rgba(18,22,15,0.06)]">
+          <p className="text-xs font-bold text-[#12160F] m-0">No meals logged yet</p>
+          <p className="text-[0.6875rem] text-[#586151] m-0 mt-0.5">Track breakfast, lunch, or dinner</p>
         </div>
         <Link
           href="/nutrition"
           id="log-meal-btn"
-          className="flex items-center justify-center gap-1.5 py-2 rounded-xl bg-[#22C55E]/15 border border-[#22C55E]/30 text-[#22C55E] text-xs font-bold hover:bg-[#22C55E]/25 transition-all no-underline"
+          className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-[#D9622B]/10 border border-[#D9622B]/30 text-[#D9622B] text-xs font-bold hover:bg-[#D9622B]/20 transition-all no-underline"
         >
           <Plus size={13} />
           Log First Meal
@@ -61,17 +64,20 @@ export default function TodaysNutrition() {
   }
 
   const macros = [
-    { label: 'Protein', value: totals.protein, target: proteinTarget, unit: 'g', color: '#38BDF8' },
-    { label: 'Carbs', value: totals.carbs, target: Math.round((calorieTarget * 0.45) / 4), unit: 'g', color: '#22C55E' },
-    { label: 'Fat', value: totals.fat, target: Math.round((calorieTarget * 0.3) / 9), unit: 'g', color: '#F59E0B' },
+    { label: 'Protein', value: totals.protein, target: proteinTarget, unit: 'g', color: '#2E6DA4' },
+    { label: 'Carbs', value: totals.carbs, target: Math.round((calorieTarget * 0.45) / 4), unit: 'g', color: '#2E7D32' },
+    { label: 'Fat', value: totals.fat, target: Math.round((calorieTarget * 0.3) / 9), unit: 'g', color: '#D9622B' },
   ];
 
   return (
-    <div className="fluetas-card-interactive p-4 flex flex-col justify-between gap-3 min-h-[170px] group">
+    <div className="fluetas-card p-4 sm:p-4.5 flex flex-col justify-between gap-3 min-h-[170px] bg-[#FFFFFF]">
       <div>
         <div className="flex items-center justify-between mb-2">
-          <span className="section-title">TODAY&apos;S NUTRITION</span>
-          <span className="text-[0.65rem] text-[#22C55E] font-bold bg-[#22C55E]/10 px-2 py-0.5 rounded-full border border-[#22C55E]/25">
+          <div className="flex items-center gap-1.5">
+            <UtensilsCrossed size={13} className="text-[#D9622B]" />
+            <span className="section-title">Today&apos;s Nutrition</span>
+          </div>
+          <span className="text-[0.65rem] text-[#2E7D32] font-bold bg-[#2E7D32]/10 px-2 py-0.5 rounded-full border border-[#2E7D32]/20">
             {meals.length} meal{meals.length > 1 ? 's' : ''}
           </span>
         </div>
@@ -82,19 +88,19 @@ export default function TodaysNutrition() {
             size={46}
             strokeWidth={4.5}
             progress={caloriePct}
-            color="#22C55E"
-            trackColor="#22C55E20"
+            color="#D9622B"
+            trackColor="#D9622B20"
           >
-            <span className="text-[0.65rem] font-bold font-mono">
+            <span className="text-[0.65rem] font-bold font-mono text-[#12160F]">
               <AnimatedNumber value={caloriePct} suffix="%" duration={600} />
             </span>
           </AnimatedRing>
 
           <div className="flex-1 min-w-0">
-            <p className="font-['Outfit'] text-sm font-bold text-[#E8EAF6] m-0">
+            <p className="font-['Outfit'] text-sm font-bold text-[#12160F] m-0">
               <AnimatedNumber value={totals.calories} duration={700} /> kcal
             </p>
-            <p className="text-[0.65rem] text-[#8B91B0] m-0 mt-0.5">of {calorieTarget} kcal target</p>
+            <p className="text-[0.6875rem] text-[#586151] m-0 mt-0.5">of {calorieTarget} kcal target</p>
           </div>
         </div>
 
@@ -102,7 +108,7 @@ export default function TodaysNutrition() {
         <div className="flex flex-col gap-1.5 mt-2.5">
           {macros.map(m => (
             <div key={m.label} className="flex items-center gap-2 text-[0.65rem]">
-              <span className="text-[#8B91B0] w-10 shrink-0">{m.label}</span>
+              <span className="text-[#586151] w-10 shrink-0 font-medium">{m.label}</span>
               <div className="flex-1">
                 <AnimatedProgress
                   value={Math.min(100, Math.round((m.value / Math.max(1, m.target)) * 100))}
@@ -111,7 +117,7 @@ export default function TodaysNutrition() {
                   showGlow={false}
                 />
               </div>
-              <span className="font-semibold text-[#E8EAF6] w-11 text-right font-mono">
+              <span className="font-semibold text-[#12160F] w-11 text-right font-mono">
                 <AnimatedNumber value={m.value} duration={600} />
                 {m.unit}
               </span>
@@ -122,11 +128,11 @@ export default function TodaysNutrition() {
 
       <Link
         href="/nutrition"
-        className="flex items-center justify-center gap-1.5 py-1.5 rounded-xl border border-[#1E2133] text-[#8B91B0] hover:text-[#E8EAF6] hover:border-[#2A3050] text-[0.72rem] font-semibold transition-all no-underline mt-1"
+        className="flex items-center justify-center gap-1.5 py-2 rounded-xl border border-[rgba(18,22,15,0.12)] text-[#586151] hover:text-[#12160F] hover:bg-[#FAFAF6] text-xs font-semibold transition-all no-underline mt-1"
       >
-        <Utensils size={12} />
+        <UtensilsCrossed size={12} />
         <span>Log Meal</span>
-        <ArrowRight size={11} className="group-hover:translate-x-0.5 transition-transform" />
+        <ArrowRight size={11} />
       </Link>
     </div>
   );

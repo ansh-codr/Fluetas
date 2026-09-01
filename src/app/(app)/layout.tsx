@@ -9,6 +9,7 @@ import DoctorSidebar from '@/components/layout/DoctorSidebar';
 import DoctorTopBar from '@/components/layout/DoctorTopBar';
 import AdminSidebar from '@/components/layout/AdminSidebar';
 import AdminTopBar from '@/components/layout/AdminTopBar';
+import MobileBottomNav from '@/components/layout/MobileBottomNav';
 import DevRoleSwitcher from '@/components/auth/DevRoleSwitcher';
 import { useAuth } from '@/context/AuthContext';
 import { db } from '@/lib/firebase/config';
@@ -161,12 +162,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <SelectedSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 ml-0 md:ml-[68px] lg:ml-[220px] transition-all duration-300">
+      <div className="flex-1 flex flex-col min-w-0 ml-0 md:ml-[68px] lg:ml-[230px] transition-all duration-300">
         <SelectedTopBar onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
-        <main className="mt-16 flex-1 overflow-y-auto p-3.5 sm:p-5 lg:p-6 pb-28 md:pb-32 max-w-[1600px] w-full mx-auto">
+        <main className="mt-16 flex-1 overflow-y-auto p-3.5 sm:p-5 lg:p-6 pb-24 md:pb-16 max-w-[1600px] w-full mx-auto">
           {children}
         </main>
       </div>
+
+      {/* Mobile Bottom Navigation for Customer */}
+      {!isAdminRoute && !isDoctorRoute && <MobileBottomNav />}
 
       {/* Dev Role Switcher for instant persona testing */}
       <DevRoleSwitcher />

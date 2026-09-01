@@ -4,7 +4,26 @@ import React, { useState } from 'react';
 import CircleProgress from '@/components/ui/CircleProgress';
 import { useWellnessScore } from '@/hooks/useWellnessScore';
 import { AnimatedNumber, Skeleton } from '@/components/motion/MotionUtils';
-import { Info, RefreshCw, TrendingUp } from 'lucide-react';
+import {
+  Activity,
+  Dumbbell,
+  Droplets,
+  Moon,
+  Zap,
+  Info,
+  RefreshCw,
+  TrendingUp,
+  Sparkles,
+} from 'lucide-react';
+
+const componentIcons: Record<string, React.ReactNode> = {
+  'Overall Wellness': <Activity size={16} className="text-[#2E7D32]" />,
+  'Training': <Dumbbell size={16} className="text-[#2E7D32]" />,
+  'Hydration': <Droplets size={16} className="text-[#2E6DA4]" />,
+  'Sleep': <Moon size={16} className="text-[#7A4E9E]" />,
+  'Cycle & Recovery': <Zap size={16} className="text-[#D9622B]" />,
+  'Recovery': <Zap size={16} className="text-[#D9622B]" />,
+};
 
 export default function WellnessRings() {
   const { result, loading, error, reload } = useWellnessScore();
@@ -12,11 +31,12 @@ export default function WellnessRings() {
 
   return (
     <section className="w-full">
+      {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <span className="section-title">YOUR FLUETAS TODAY</span>
+          <span className="section-title">Today&apos;s Health Snapshot</span>
           {result && !result.insufficientData && (
-            <span className="flex items-center gap-1 text-[0.65rem] font-bold text-[#10B981] bg-[#10B981]/15 px-2 py-0.5 rounded-full border border-[#10B981]/30">
+            <span className="flex items-center gap-1 text-[0.65rem] font-bold text-[#2E7D32] bg-[#2E7D32]/10 px-2 py-0.5 rounded-full border border-[#2E7D32]/20">
               <TrendingUp size={11} />
               +6% vs last week
             </span>
@@ -27,33 +47,37 @@ export default function WellnessRings() {
           {result && !result.insufficientData && (
             <button
               onClick={() => setShowBreakdown(!showBreakdown)}
-              className="flex items-center gap-1 text-[0.65rem] text-[#8B91B0] hover:text-[#10B981] transition-colors cursor-pointer"
+              className="flex items-center gap-1 text-[0.7rem] text-[#586151] hover:text-[#2E7D32] transition-colors cursor-pointer"
             >
-              <Info size={12} />
+              <Info size={13} />
               Why this score?
             </button>
           )}
           <button
             onClick={reload}
-            className="text-[#3A3F58] hover:text-[#8B91B0] transition-colors cursor-pointer"
-            aria-label="Refresh wellness score"
+            className="text-[#8A9482] hover:text-[#12160F] transition-colors cursor-pointer p-1 rounded-md hover:bg-[#F2F4EE]"
+            aria-label="Refresh telemetry score"
           >
-            <RefreshCw size={12} />
+            <RefreshCw size={13} />
           </button>
         </div>
       </div>
 
       {/* Score Breakdown Tooltip */}
       {showBreakdown && result && (
-        <div className="mb-3 p-3.5 bg-[#13161F] border border-[#1E2133] rounded-2xl text-xs animate-slide-up shadow-xl">
-          <p className="text-[#8B91B0] font-semibold mb-2 text-[0.68rem] uppercase tracking-wider">Score Breakdown</p>
+        <div className="mb-3.5 p-3.5 bg-[#FFFFFF] border border-[rgba(18,22,15,0.12)] rounded-2xl text-xs animate-slide-up shadow-sm">
+          <p className="text-[#586151] font-bold mb-2 text-[0.68rem] uppercase tracking-wider font-['Outfit']">
+            Telemetry Breakdown
+          </p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             {result.components.slice(1).map(c => (
-              <div key={c.label} className="flex items-center gap-2 bg-[#0B0D14] p-2 rounded-xl border border-[#1E2133]">
-                <span className="text-base">{c.emoji}</span>
+              <div key={c.label} className="flex items-center gap-2 bg-[#FAFAF6] p-2.5 rounded-xl border border-[rgba(18,22,15,0.06)]">
+                <div className="p-1 rounded-lg bg-[#FFFFFF] shadow-2xs">
+                  {componentIcons[c.label] || <Activity size={14} className="text-[#2E7D32]" />}
+                </div>
                 <div>
-                  <p className="text-[#8B91B0] text-[0.62rem] m-0">{c.label}</p>
-                  <p className="font-bold m-0" style={{ color: c.color }}>
+                  <p className="text-[#586151] text-[0.65rem] m-0">{c.label}</p>
+                  <p className="font-bold m-0 text-xs" style={{ color: c.color }}>
                     {c.score !== null ? (
                       <>
                         <AnimatedNumber value={c.score} duration={700} />/100
@@ -66,19 +90,19 @@ export default function WellnessRings() {
               </div>
             ))}
           </div>
-          <p className="text-[#3A3F58] text-[0.6rem] mt-2">
+          <p className="text-[#8A9482] text-[0.65rem] mt-2">
             Calculated {result.calculatedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} from {result.dataPointCount} telemetry points
           </p>
         </div>
       )}
 
-      {/* Loading State with Shimmer Skeleton */}
+      {/* Loading State */}
       {loading && (
-        <div className="flex overflow-x-auto sm:grid sm:grid-cols-3 lg:grid-cols-5 gap-3 pb-2 sm:pb-0">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="fluetas-card p-4 flex flex-col items-center gap-3 shrink-0 w-[140px] sm:w-auto">
+            <div key={i} className="fluetas-card p-4 flex flex-col items-center gap-3">
               <Skeleton className="w-16 h-3" />
-              <Skeleton className="w-18 h-18 rounded-full" />
+              <Skeleton className="w-16 h-16 rounded-full" />
               <Skeleton className="w-12 h-3" />
             </div>
           ))}
@@ -87,69 +111,74 @@ export default function WellnessRings() {
 
       {/* Error State */}
       {!loading && error && (
-        <div className="fluetas-card p-4 text-center">
-          <p className="text-[#8B91B0] text-xs">Could not load wellness telemetry.</p>
-          <button onClick={reload} className="text-[#10B981] text-xs font-semibold mt-1 cursor-pointer hover:underline">
+        <div className="fluetas-card p-5 text-center bg-[#FFFFFF]">
+          <p className="text-[#586151] text-xs">Could not load wellness telemetry.</p>
+          <button onClick={reload} className="text-[#2E7D32] text-xs font-semibold mt-1 cursor-pointer hover:underline">
             Try again
           </button>
         </div>
       )}
 
-      {/* Insufficient Data State */}
+      {/* Honest Insufficient Data State */}
       {!loading && !error && result?.insufficientData && (
-        <div className="fluetas-card p-5 text-center bg-gradient-to-br from-[#13161F] to-[#0B0D14]">
-          <p className="text-3xl mb-2">📊</p>
-          <p className="font-['Outfit'] font-bold text-[#E8EAF6] text-sm">Not enough data yet</p>
-          <p className="text-[#8B91B0] text-xs mt-1">
-            Log water, sleep, or a workout to generate your personalized wellness score.
+        <div className="fluetas-card p-6 text-center bg-[#FFFFFF] border-[rgba(18,22,15,0.08)]">
+          <div className="w-12 h-12 rounded-2xl bg-[#2E7D32]/10 text-[#2E7D32] flex items-center justify-center mx-auto mb-2.5">
+            <Activity size={24} />
+          </div>
+          <p className="font-['Outfit'] font-bold text-[#12160F] text-base m-0">FLUETAS Score: &mdash;</p>
+          <p className="text-xs font-medium text-[#586151] mt-0.5 mb-1">Not enough data yet</p>
+          <p className="text-[#8A9482] text-xs max-w-md mx-auto">
+            Complete your profile and log your first workout, water, or sleep activity to calculate your personalized wellness score.
           </p>
           {result.components.filter(c => c.score !== null).length > 0 && (
-            <p className="text-[#10B981] text-[0.68rem] mt-2 font-semibold">
-              {result.components.filter(c => c.score !== null).length} of 4 data points collected
+            <p className="text-[#2E7D32] text-xs mt-3 font-semibold">
+              {result.components.filter(c => c.score !== null).length} of 4 telemetry points collected today
             </p>
           )}
         </div>
       )}
 
-      {/* Real Wellness Rings with Animated Numbers */}
+      {/* Real Wellness Snapshot Grid */}
       {!loading && !error && result && !result.insufficientData && (
-        <div className="flex overflow-x-auto sm:grid sm:grid-cols-3 lg:grid-cols-5 gap-3 pb-2 sm:pb-0 snap-x no-scrollbar">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           {result.components.map((item, i) => (
             <div
               key={item.label}
               id={`wellness-ring-${item.label.toLowerCase().replace(/\s/g, '-')}`}
-              className="fluetas-card-interactive p-3.5 sm:p-4 flex flex-col items-center gap-2.5 shrink-0 w-[140px] sm:w-auto snap-center animate-slide-up"
-              style={{ animationDelay: `${i * 60}ms`, animationFillMode: 'both' }}
+              className="fluetas-card-interactive p-3.5 sm:p-4 flex flex-col items-center gap-2 bg-[#FFFFFF] animate-slide-up"
+              style={{ animationDelay: `${i * 50}ms`, animationFillMode: 'both' }}
             >
               <div className="flex items-center justify-between w-full">
-                <span className="text-sm">{item.emoji}</span>
-                <span className="text-[#8B91B0] text-[0.7rem] font-semibold truncate max-w-[80px]">
+                <div className="p-1 rounded-md bg-[#FAFAF6]">
+                  {componentIcons[item.label] || <Activity size={14} className="text-[#2E7D32]" />}
+                </div>
+                <span className="text-[#586151] text-[0.6875rem] font-semibold truncate max-w-[85px]">
                   {item.label}
                 </span>
-                <span className="text-[0.65rem] opacity-60">📈</span>
+                <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: item.color }} />
               </div>
 
               <CircleProgress
                 score={item.score ?? 0}
                 max={100}
-                size={76}
-                strokeWidth={6.5}
+                size={72}
+                strokeWidth={6}
                 color={item.color}
-                trackColor={`${item.color}20`}
+                trackColor={`${item.color}18`}
                 label={item.score !== null ? `${item.score}` : '—'}
               />
 
-              <div className="text-center -mt-1">
-                <p className="text-[#8B91B0] text-[0.6rem] m-0 tracking-wider font-mono">
+              <div className="text-center -mt-0.5">
+                <p className="text-[#8A9482] text-[0.62rem] m-0 tracking-wider font-mono">
                   <AnimatedNumber value={item.score ?? 0} duration={800} />/100
                 </p>
               </div>
 
               <div className="text-center w-full">
-                <p className="text-[0.75rem] font-bold m-0 leading-tight font-['Outfit'] truncate" style={{ color: item.color }}>
+                <p className="text-xs font-bold m-0 leading-tight font-['Outfit'] truncate" style={{ color: item.color }}>
                   {item.status}
                 </p>
-                <p className="text-[#8B91B0] text-[0.62rem] m-0 mt-0.5 truncate">{item.subtext}</p>
+                <p className="text-[#586151] text-[0.62rem] m-0 mt-0.5 truncate">{item.subtext}</p>
               </div>
             </div>
           ))}

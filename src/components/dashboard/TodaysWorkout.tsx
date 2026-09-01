@@ -11,29 +11,32 @@ export default function TodaysWorkout() {
 
   if (loading) {
     return (
-      <div className="fluetas-card p-4 flex flex-col gap-3 min-h-[170px]">
+      <div className="fluetas-card p-4 sm:p-4.5 flex flex-col gap-3 min-h-[170px] bg-[#FFFFFF]">
         <Skeleton className="w-24 h-3" />
-        <Skeleton className="w-full h-14" />
-        <Skeleton className="w-full h-8" />
+        <Skeleton className="w-full h-14 rounded-xl" />
+        <Skeleton className="w-full h-8 rounded-xl" />
       </div>
     );
   }
 
   if (!todaySession) {
     return (
-      <div className="fluetas-card-interactive p-4 flex flex-col justify-between gap-3 min-h-[170px] group">
+      <div className="fluetas-card p-4 sm:p-4.5 flex flex-col justify-between gap-3 min-h-[170px] bg-[#FFFFFF]">
         <div className="flex items-center justify-between">
-          <span className="section-title">TODAY&apos;S WORKOUT</span>
-          <span className="text-base group-hover:scale-110 transition-transform">🏋️</span>
+          <div className="flex items-center gap-1.5">
+            <Dumbbell size={13} className="text-[#2E7D32]" />
+            <span className="section-title">Today&apos;s Workout</span>
+          </div>
+          <span className="text-xs text-[#8A9482]">Plan</span>
         </div>
-        <div className="flex flex-col items-center text-center py-2 flex-1 justify-center">
-          <p className="text-xs font-semibold text-[#E8EAF6] m-0">No active session</p>
-          <p className="text-[0.68rem] text-[#8B91B0] m-0 mt-0.5">Start daily resistance training</p>
+        <div className="flex flex-col items-center text-center py-2 flex-1 justify-center bg-[#FAFAF6] rounded-xl border border-[rgba(18,22,15,0.06)]">
+          <p className="text-xs font-bold text-[#12160F] m-0">Upper Body Power</p>
+          <p className="text-[0.6875rem] text-[#586151] m-0 mt-0.5">4 exercises · 35 min estimated</p>
         </div>
         <Link
-          href="/fluetas-train"
+          href="/workouts"
           id="start-workout-btn"
-          className="flex items-center justify-center gap-2 py-2 rounded-xl bg-gradient-to-r from-[#10B981] to-[#059669] text-white text-xs font-bold hover:opacity-90 transition-all no-underline shadow-[0_0_12px_rgba(16,185,129,0.25)]"
+          className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#2E7D32] text-[#FAFAF6] text-xs font-bold hover:bg-[#256628] transition-all no-underline shadow-xs hover:shadow-sm"
         >
           <Play size={13} fill="currentColor" />
           Start Workout
@@ -49,15 +52,18 @@ export default function TodaysWorkout() {
   const completionPct = totalSets > 0 ? Math.round((completedSets / totalSets) * 100) : 0;
 
   return (
-    <div className="fluetas-card-interactive p-4 flex flex-col justify-between gap-3 min-h-[170px] group">
+    <div className="fluetas-card p-4 sm:p-4.5 flex flex-col justify-between gap-3 min-h-[170px] bg-[#FFFFFF]">
       <div>
         <div className="flex items-center justify-between mb-2">
-          <span className="section-title">TODAY&apos;S WORKOUT</span>
+          <div className="flex items-center gap-1.5">
+            <Dumbbell size={13} className="text-[#2E7D32]" />
+            <span className="section-title">Today&apos;s Workout</span>
+          </div>
           <span
             className={`px-2 py-0.5 rounded-full text-[0.6rem] font-bold ${
               isCompleted
-                ? 'bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/30'
-                : 'bg-[#38BDF8]/15 text-[#38BDF8] border border-[#38BDF8]/30'
+                ? 'bg-[#2E7D32]/10 text-[#2E7D32] border border-[#2E7D32]/20'
+                : 'bg-[#2E6DA4]/10 text-[#2E6DA4] border border-[#2E6DA4]/20'
             }`}
           >
             {isCompleted ? '✓ Done' : 'In Progress'}
@@ -65,29 +71,28 @@ export default function TodaysWorkout() {
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Animated Ring Indicator */}
           <AnimatedRing
             size={46}
             strokeWidth={4.5}
             progress={isCompleted ? 100 : completionPct}
-            color={isCompleted ? '#10B981' : '#38BDF8'}
-            trackColor={isCompleted ? '#10B98125' : '#38BDF820'}
+            color={isCompleted ? '#2E7D32' : '#2E6DA4'}
+            trackColor={isCompleted ? '#2E7D3220' : '#2E6DA420'}
           >
-            <span className="text-[0.65rem] font-bold font-mono">
+            <span className="text-[0.65rem] font-bold font-mono text-[#12160F]">
               <AnimatedNumber value={isCompleted ? 100 : completionPct} suffix="%" duration={600} />
             </span>
           </AnimatedRing>
 
           <div className="flex-1 min-w-0">
-            <p className="font-['Outfit'] text-sm font-bold text-[#E8EAF6] m-0 truncate">
+            <p className="font-['Outfit'] text-sm font-bold text-[#12160F] m-0 truncate">
               {todaySession.workoutName}
             </p>
-            <p className="text-[0.68rem] text-[#8B91B0] m-0 mt-0.5">
+            <p className="text-[0.6875rem] text-[#586151] m-0 mt-0.5">
               <AnimatedNumber value={completedSets} /> / {totalSets} sets completed
             </p>
             {isCompleted && (
-              <p className="text-[0.62rem] text-[#10B981] font-semibold m-0 mt-0.5">
-                Great work today.
+              <p className="text-[0.62rem] text-[#2E7D32] font-semibold m-0 mt-0.5">
+                Session complete
               </p>
             )}
           </div>
@@ -95,15 +100,15 @@ export default function TodaysWorkout() {
       </div>
 
       <Link
-        href="/fluetas-train"
+        href="/workouts"
         className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold transition-all no-underline ${
           isActive
-            ? 'bg-[#38BDF8]/15 border border-[#38BDF8]/30 text-[#38BDF8] hover:bg-[#38BDF8]/25 shadow-[0_0_10px_rgba(56,189,248,0.15)]'
-            : 'border border-[#1E2133] text-[#8B91B0] hover:text-[#E8EAF6] hover:border-[#2A3050]'
+            ? 'bg-[#2E6DA4]/10 border border-[#2E6DA4]/30 text-[#2E6DA4] hover:bg-[#2E6DA4]/20'
+            : 'border border-[rgba(18,22,15,0.12)] text-[#586151] hover:text-[#12160F] hover:bg-[#FAFAF6]'
         }`}
       >
-        <span>{isActive ? 'Continue Workout' : 'View Training Plan'}</span>
-        <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
+        <span>{isActive ? 'Continue Workout' : 'View Workout'}</span>
+        <ArrowRight size={13} />
       </Link>
     </div>
   );
