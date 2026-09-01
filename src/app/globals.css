@@ -2,35 +2,43 @@
 @import "tailwindcss";
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   THEME DESIGN TOKENS (Landing Page Light Theme + Platform Core Tokens)
+   UNIFIED LIGHT THEME DESIGN SYSTEM (Whole Platform Adaptation)
    ───────────────────────────────────────────────────────────────────────────── */
 :root {
-  /* Core landing page palette */
-  --ink:                  #12160F;
-  --ink-soft:             #586151;
-  --surface:              #FAFAF6;
-  --surface-2:            #F2F4EE;
-  --card:                 #EDEEE8;
-  --rule:                 rgba(18, 22, 15, 0.12);
+  /* Core light theme palette */
+  --surface:              #FAFAF6;   /* clean warm off-white canvas */
+  --surface-2:            #F2F4EE;   /* subtle section tint / secondary */
+  --card:                 #FFFFFF;   /* crisp white card background */
+  --card-tint:            #F5F6F0;   /* tinted card background */
+  --rule:                 rgba(18, 22, 15, 0.12); /* hairline border */
+  --rule-strong:          rgba(18, 22, 15, 0.20);
 
-  /* Accent colors */
-  --leaf:                 #2E7D32;
-  --leaf-hi:              #4CA84F;
-  --ember:                #D9622B;
-  --tide:                 #2E6DA4;
-  --violet:               #7A4E9E;
-  --rose:                 #C23B6B;
+  /* Primary text hierarchy */
+  --ink:                  #12160F;   /* near-black primary body text */
+  --ink-soft:             #586151;   /* secondary / muted text */
+  --ink-subtle:           #8A9482;   /* tertiary label text */
 
-  /* Dashboard Dark Theme Colors */
-  --fluetas-bg:           #0B0D14;
-  --fluetas-surface:      #13161F;
-  --fluetas-border:       #1E2133;
-  --fluetas-text:         #E8EAF6;
-  --fluetas-muted:        #8B91B0;
-  --fluetas-green:        #10B981;
-  --fluetas-blue:         #38BDF8;
-  --fluetas-purple:       #A78BFA;
-  --fluetas-amber:        #FBBF24;
+  /* Brand Green */
+  --leaf:                 #2E7D32;   /* deep rich leaf green */
+  --leaf-hi:              #4CA84F;   /* hover leaf green */
+  --leaf-dim:             rgba(46, 125, 50, 0.10);
+
+  /* Pillar accents */
+  --ember:                #D9622B;   /* orange / expert accent */
+  --tide:                 #2E6DA4;   /* blue / training accent */
+  --violet:               #7A4E9E;   /* purple / AI accent */
+  --rose:                 #C23B6B;   /* rose / HER cycle accent */
+
+  /* Platform Tokens for Compatibility */
+  --fluetas-bg:           #FAFAF6;
+  --fluetas-surface:      #FFFFFF;
+  --fluetas-border:       rgba(18, 22, 15, 0.12);
+  --fluetas-text:         #12160F;
+  --fluetas-muted:        #586151;
+  --fluetas-green:        #2E7D32;
+  --fluetas-blue:         #2E6DA4;
+  --fluetas-purple:       #7A4E9E;
+  --fluetas-amber:        #D9622B;
 
   /* Typography */
   --font-display:         "Anton", ui-sans-serif, system-ui, sans-serif;
@@ -61,7 +69,7 @@ body {
   overflow-x: hidden;
 }
 
-/* ─── Landing Page Utility Classes & Color Styles ─────────────────────────── */
+/* ─── Light Theme Utility Classes ─────────────────────────────────────────── */
 .bg-surface    { background-color: var(--surface) !important; }
 .bg-surface-2  { background-color: var(--surface-2) !important; }
 .bg-card       { background-color: var(--card) !important; }
@@ -95,7 +103,7 @@ body {
 .font-expanded { font-family: var(--font-expanded) !important; }
 .font-sans     { font-family: var(--font-sans) !important; }
 
-/* Structural Landing Utilities */
+/* Structural Layout Utilities */
 .wrap {
   max-width: 1240px;
   margin-inline: auto;
@@ -148,91 +156,97 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1E2133;
+  background: rgba(18, 22, 15, 0.15);
   border-radius: 999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #3A3F58;
+  background: rgba(18, 22, 15, 0.3);
 }
 
-/* ─── Dashboard & Application Styles ──────────────────────────────────────── */
+/* ─── Dashboard & Application Light Cards ─────────────────────────────────── */
 .fluetas-card {
-  background: #13161F;
-  border: 1px solid #1E2133;
-  border-radius: 12px;
+  background: #FFFFFF;
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(18, 22, 15, 0.03);
   transition: transform 0.2s var(--ease-fluetas), border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .fluetas-card:hover {
-  border-color: #2A3050;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  border-color: rgba(18, 22, 15, 0.22);
+  box-shadow: 0 4px 20px rgba(18, 22, 15, 0.06);
 }
 
 .fluetas-card-interactive {
-  background: #13161F;
-  border: 1px solid #1E2133;
-  border-radius: 12px;
+  background: #FFFFFF;
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(18, 22, 15, 0.03);
   transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.22s ease, box-shadow 0.22s ease;
 }
 
 .fluetas-card-interactive:hover {
   transform: translateY(-2px);
-  border-color: rgba(56, 189, 248, 0.35);
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5), 0 0 15px rgba(56, 189, 248, 0.08);
+  border-color: rgba(46, 125, 50, 0.35);
+  box-shadow: 0 8px 24px rgba(18, 22, 15, 0.07), 0 0 12px rgba(46, 125, 50, 0.06);
 }
 
 .fluetas-glass {
-  background: rgba(19, 22, 31, 0.7);
+  background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(30, 33, 51, 0.8);
+  border: 1px solid rgba(18, 22, 15, 0.10);
 }
 
 .gradient-text-green {
-  background: linear-gradient(135deg, #10B981, #34D399);
+  background: linear-gradient(135deg, #2E7D32, #4CA84F);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
+/* ─── Buttons ────────────────────────────────────────────────────────────── */
 .btn-primary {
-  background: linear-gradient(135deg, #10B981, #059669);
-  color: white;
+  background: linear-gradient(135deg, #2E7D32, #1B5E20);
+  color: #FAFAF6;
   font-weight: 600;
   border-radius: 8px;
   padding: 8px 18px;
   font-size: 0.875rem;
   border: none;
   cursor: pointer;
-  transition: opacity 0.15s ease, transform 0.1s ease;
+  transition: opacity 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  box-shadow: 0 2px 8px rgba(46, 125, 50, 0.25);
 }
 
 .btn-primary:hover {
-  opacity: 0.92;
+  opacity: 0.94;
   transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(46, 125, 50, 0.35);
 }
 
 .btn-ghost {
   background: transparent;
-  color: #8B91B0;
+  color: var(--ink-soft);
   font-weight: 500;
   border-radius: 8px;
   padding: 8px 18px;
   font-size: 0.875rem;
-  border: 1px solid #1E2133;
+  border: 1px solid var(--rule);
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
   display: inline-flex;
   align-items: center;
   gap: 6px;
 }
 
 .btn-ghost:hover {
-  background: #181B26;
-  color: #E8EAF6;
+  background: var(--surface-2);
+  color: var(--ink);
+  border-color: rgba(18, 22, 15, 0.22);
 }
 
 .section-title {
@@ -241,7 +255,7 @@ body {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #8B91B0;
+  color: var(--ink-soft);
 }
 
 .nav-item {
@@ -252,7 +266,7 @@ body {
   border-radius: 8px;
   font-size: 0.875rem;
   font-weight: 500;
-  color: #8B91B0;
+  color: var(--ink-soft);
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease;
   text-decoration: none;
@@ -260,14 +274,15 @@ body {
 }
 
 .nav-item:hover {
-  background: #181B26;
-  color: #E8EAF6;
+  background: var(--surface-2);
+  color: var(--ink);
 }
 
 .nav-item.active {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.05));
-  color: #10B981;
-  border: 1px solid rgba(16, 185, 129, 0.2);
+  background: var(--leaf-dim);
+  color: var(--leaf);
+  border: 1px solid rgba(46, 125, 50, 0.25);
+  font-weight: 600;
 }
 
 /* ─── Keyframe Animations ─────────────────────────────────────────────────── */
