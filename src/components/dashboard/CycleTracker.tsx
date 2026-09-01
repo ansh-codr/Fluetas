@@ -1,110 +1,134 @@
 'use client';
 
-import React from 'react';
-import { mockCycleData } from '@/lib/mock/dashboardData';
+import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useAuth } from '@/context/AuthContext';
+import { useUserProfile } from '@/context/UserProfileContext';
+import { getRecentCycleEntries, CycleEntry } from '@/lib/services/cycleService';
+import { Heart, Plus, Sparkles } from 'lucide-react';
 
 const phaseColors: Record<string, string> = {
-  Period:     '#F472B6',
+  Period: '#F472B6',
   Follicular: '#38BDF8',
-  Ovulation:  '#10B981',
-  Luteal:     '#A78BFA',
+  Ovulation: '#10B981',
+  Luteal: '#A78BFA',
 };
 
 export default function CycleTracker() {
-  const { currentDay, phase, daysToOvulation, weekDays, logs } = mockCycleData;
+  const { user } = useAuth();
+  const { profile } = useUserProfile();
+  const [entries, setEntries] = useState<CycleEntry[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  return (
-    <div className="fluetas-card" style={{ padding: '16px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-        <span className="section-title">CYCLE TRACKER</span>
-      </div>
+  useEffect(() => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+    getRecentCycleEntries(user.uid, 5)
+      .then(res => {
+        setEntries(res);
+        setLoading(false);
+      })
+      .catch(() => {
+        setLoading(false);
+      });
+  }, [user]);
 
-      {/* Phase info */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+  // If user is male, render a subtle card or general recovery sync
+  if (profile?.gender === 'Male') {
+    return (
+      <div className="fluetas-card p-4 flex flex-col justify-between h-full">
         <div>
-          <p style={{ color: '#E8EAF6', fontSize: '0.82rem', fontWeight: 600, margin: '0 0 2px' }}>
-            Day {currentDay} · <span style={{ color: '#38BDF8' }}>{phase}</span>
+          <div className="flex items-center justify-between mb-2.5">
+            <span className="section-title">CIRCADIAN &amp; HORMONAL SYNC</span>
+            <span className="px-2 py-0.5 rounded-full text-[0.6rem] font-bold bg-[#10B981]/15 text-[#10B981]">
+              Active
+            </span>
+          </div>
+          <p className="text-xs text-[#E8EAF6] font-medium m-0">
+            Hormonal recovery &amp; cortisol rhythm tracking.
+          </p>
+          <p className="text-[0.68rem] text-[#8B91B0] m-0 mt-1">
+            Optimized for daily testosterone peaks and deep sleep restoration.
           </p>
         </div>
-        <div style={{ textAlign: 'right' }}>
-          <span style={{ fontSize: '0.68rem', color: '#8B91B0', fontWeight: 500 }}>
-            {daysToOvulation} days to Ovulation
-          </span>
-        </div>
+        <Link
+          href="/sleep"
+          className="mt-3 text-center py-2 rounded-xl bg-[#0B0D14] border border-[#1E2133] hover:border-[#2A3050] text-[#8B91B0] hover:text-[#E8EAF6] text-xs font-semibold no-underline transition-all"
+        >
+          View Sleep &amp; Recovery →
+        </Link>
       </div>
+    );
+  }
 
-      {/* Day pills */}
-      <div style={{ display: 'flex', gap: 4, marginBottom: 14, justifyContent: 'space-between' }}>
-        {weekDays.map(day => (
-          <div
-            key={day}
-            style={{
-              width: 30, height: 30, borderRadius: '50%',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '0.72rem', fontWeight: 600,
-              background: day === currentDay
-                ? 'linear-gradient(135deg, #10B981, #059669)'
-                : '#0B0D14',
-              color: day === currentDay ? 'white' : '#8B91B0',
-              border: `1px solid ${day === currentDay ? '#10B981' : '#1E2133'}`,
-              boxShadow: day === currentDay ? '0 0 10px rgba(16, 185, 129, 0.4)' : 'none',
-            }}
-          >
-            {day}
-          </div>
-        ))}
-      </div>
+  const latestEntry = entries[0];
 
-      {/* Phase legend */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-        {Object.entries(phaseColors).map(([label, color]) => (
-          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <div style={{ width: 6, height: 6, borderRadius: '50%', background: color }} />
-            <span style={{ color: '#8B91B0', fontSize: '0.62rem' }}>{label}</span>
-          </div>
-        ))}
-      </div>
-
-      {/* Today's logs */}
+  return (
+    <div className="fluetas-card p-4 flex flex-col justify-between h-full">
       <div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-          <span style={{ color: '#8B91B0', fontSize: '0.72rem', fontWeight: 600 }}>Today&apos;s Logs</span>
-          <button
-            id="cycle-add-log-btn"
-            style={{
-              color: '#10B981', fontSize: '0.7rem', fontWeight: 600,
-              background: 'none', border: 'none', cursor: 'pointer',
-            }}
+        <div className="flex items-center justify-between mb-2.5">
+          <span className="section-title">FLUETAS HER — CYCLE</span>
+          <Link
+            href="/cycle-tracker"
+            className="text-[#F472B6] text-xs font-semibold hover:underline no-underline"
           >
-            Add Log
-          </button>
+            Open Tracker
+          </Link>
         </div>
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'space-between' }}>
-          {logs.map(log => (
-            <div
-              key={log.label}
-              id={`cycle-log-${log.label.toLowerCase()}`}
-              style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-                cursor: 'pointer',
-              }}
-            >
-              <div
-                style={{
-                  width: 32, height: 32, borderRadius: 8,
-                  background: '#0B0D14', border: '1px solid #1E2133',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 16,
-                  transition: 'background 0.15s ease',
-                }}
-              >
-                {log.emoji}
-              </div>
-              <span style={{ color: '#8B91B0', fontSize: '0.6rem' }}>{log.label}</span>
+
+        {loading ? (
+          <div className="h-24 bg-[#1E2133]/40 rounded-xl animate-pulse" />
+        ) : !latestEntry ? (
+          <div className="flex flex-col items-center justify-center py-4 text-center">
+            <div className="w-10 h-10 rounded-xl bg-[#F472B6]/15 text-[#F472B6] flex items-center justify-center mb-2">
+              <Heart size={18} />
             </div>
-          ))}
-        </div>
+            <p className="text-xs font-semibold text-[#E8EAF6] m-0">No cycle entry logged</p>
+            <p className="text-[0.68rem] text-[#8B91B0] m-0 mt-0.5">
+              Log your period or daily symptoms for personalized phase guidance.
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between p-2.5 bg-[#0B0D14] rounded-xl border border-[#1E2133]">
+              <div>
+                <span className="text-[0.65rem] text-[#8B91B0] block">Last Logged</span>
+                <p className="text-xs font-bold text-[#E8EAF6] m-0">{latestEntry.date}</p>
+              </div>
+              {latestEntry.flow && (
+                <span className="px-2 py-0.5 rounded-full text-[0.65rem] font-bold bg-[#F472B6]/15 text-[#F472B6]">
+                  Flow: {latestEntry.flow}
+                </span>
+              )}
+              {latestEntry.mood && (
+                <span className="text-xs text-[#E8EAF6]">Mood: {latestEntry.mood}</span>
+              )}
+            </div>
+            {latestEntry.symptoms && latestEntry.symptoms.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-1">
+                {latestEntry.symptoms.map((s, i) => (
+                  <span
+                    key={i}
+                    className="px-2 py-0.5 rounded text-[0.6rem] bg-[#1E2133] text-[#8B91B0]"
+                  >
+                    {s}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
+
+      <Link
+        href="/cycle-tracker"
+        id="cycle-add-log-btn"
+        className="mt-3 flex items-center justify-center gap-1.5 p-2.5 rounded-xl border border-[#F472B6]/30 bg-[#F472B6]/10 hover:bg-[#F472B6]/15 text-[#F472B6] text-xs font-semibold text-center no-underline transition-all"
+      >
+        <Plus size={14} /> Log Today&apos;s Cycle &amp; Symptoms
+      </Link>
     </div>
   );
 }

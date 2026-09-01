@@ -13,6 +13,7 @@ const navItems = [
   { href: '/health-record',  label: 'Health Record',     emoji: '📋' },
   { href: '/timeline',       label: 'Timeline',          emoji: '📅' },
   { href: '/fluetas-train',  label: 'FLUETAS Train',     emoji: '🎯' },
+  { href: '/exercises',      label: 'Exercise Videos',   emoji: '🎬' },
   { href: '/workouts',       label: 'Workouts',          emoji: '🏋️' },
   { href: '/nutrition',      label: 'Nutrition',         emoji: '🥗' },
   { href: '/hydration',      label: 'Hydration',         emoji: '💧' },

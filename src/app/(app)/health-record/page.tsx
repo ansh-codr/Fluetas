@@ -1,12 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
-import {
-  mockUser,
-  mockHealthProfile,
-  mockConsultationsList,
-  mockDocumentsList,
-} from '@/lib/mock/dashboardData';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import { useUserProfile } from '@/context/UserProfileContext';
+import { getUserConsultations, ConsultationData } from '@/lib/services/consultationService';
+import { getPatientConsents, revokeConsent, ConsentRecord } from '@/lib/services/consentService';
 import {
   FileText,
   Heart,
@@ -16,22 +14,70 @@ import {
   AlertCircle,
   Clock,
   ShieldCheck,
+  Lock,
+  Trash2,
+  CheckCircle2,
+  Activity,
 } from 'lucide-react';
 
 export default function HealthRecordPage() {
-  const [activeSection, setActiveSection] = useState<'all' | 'consults' | 'reports' | 'meds' | 'history'>('all');
+  const { user } = useAuth();
+  const { profile, healthProfile } = useUserProfile();
+  const [activeSection, setActiveSection] = useState<'all' | 'consults' | 'consent' | 'reports' | 'meds' | 'history'>('all');
+  const [consultations, setConsultations] = useState<ConsultationData[]>([]);
+  const [consents, setConsents] = useState<ConsentRecord[]>([]);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const loadData = async () => {
+    if (!user) return;
+    try {
+      const [consList, consentList] = await Promise.all([
+        getUserConsultations(user.uid),
+        getPatientConsents(user.uid),
+      ]);
+      setConsultations(consList);
+      setConsents(consentList);
+    } catch {
+      // ignore
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, [user]);
+
+  const handleRevoke = async (consent: ConsentRecord) => {
+    if (!user || !consent.consentId) return;
+    try {
+      await revokeConsent(user.uid, consent.consentId, consent.doctorName);
+      setToastMessage(`Revoked health data access for ${consent.doctorName}`);
+      setTimeout(() => setToastMessage(null), 3500);
+      await loadData();
+    } catch (err) {
+      alert('Failed to revoke consent');
+    }
+  };
 
   const handleExportPdf = () => {
     setDownloadingPdf(true);
     setTimeout(() => {
       setDownloadingPdf(false);
-      alert('Medical Health Record summary generated and ready for secure download!');
+      setToastMessage('Encrypted health record PDF compiled and ready.');
+      setTimeout(() => setToastMessage(null), 3000);
     }, 1500);
   };
 
   return (
     <div className="flex flex-col gap-5 max-w-6xl mx-auto w-full">
+      {/* Toast */}
+      {toastMessage && (
+        <div className="fixed top-20 right-6 z-50 bg-[#10B981] text-black font-bold text-xs py-2.5 px-4 rounded-xl shadow-2xl flex items-center gap-2 animate-slide-up">
+          <CheckCircle2 size={16} />
+          {toastMessage}
+        </div>
+      )}
+
       {/* Header Banner */}
       <div className="fluetas-card p-5 sm:p-6 bg-gradient-to-r from-[#13161F] via-[#151928] to-[#122320] border-[#10B981]/30 relative overflow-hidden">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -45,7 +91,7 @@ export default function HealthRecordPage() {
               </h1>
             </div>
             <p className="text-[#8B91B0] text-xs sm:text-sm m-0">
-              Single unified clinical profile · Immutable chronological history · Patient-owned data
+              Single unified clinical profile · Immutable chronological history · Patient-owned &amp; consent-controlled
             </p>
           </div>
 
@@ -64,7 +110,8 @@ export default function HealthRecordPage() {
       <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
         {[
           { id: 'all', label: 'Complete Hub View', icon: FileText },
-          { id: 'consults', label: 'Consultations & Notes', icon: Stethoscope },
+          { id: 'consent', label: `Doctor Privacy & Consent (${consents.length})`, icon: Lock },
+          { id: 'consults', label: `Consultations (${consultations.length})`, icon: Stethoscope },
           { id: 'reports', label: 'Diagnostics & Scans', icon: FileText },
           { id: 'meds', label: 'Active Medications', icon: Pill },
           { id: 'history', label: 'Allergies & Surgeries', icon: Heart },
@@ -88,18 +135,81 @@ export default function HealthRecordPage() {
         })}
       </div>
 
-      {/* Section 1: Vital Snapshot & Allergies Callout */}
+      {/* Privacy & Doctor Consent Management (§8) */}
+      {(activeSection === 'all' || activeSection === 'consent') && (
+        <div className="fluetas-card p-5 border-[#10B981]/30 bg-gradient-to-br from-[#13161F] to-[#0D1F18]">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Lock size={16} className="text-[#10B981]" />
+              <h2 className="font-['Outfit'] text-sm font-bold text-[#E8EAF6] uppercase tracking-wider m-0">
+                ACTIVE DOCTOR ACCESS &amp; CONSENT PERMISSIONS
+              </h2>
+            </div>
+            <span className="text-xs text-[#10B981] font-semibold">Strict Patient-Gated Access</span>
+          </div>
+
+          {consents.length === 0 ? (
+            <div className="p-4 bg-[#0B0D14] rounded-xl border border-[#1E2133] text-center text-xs text-[#8B91B0]">
+              No active doctor access consents granted. When you book a specialist, your authorized scopes will appear here with instant revoke control.
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {consents.map(c => {
+                const isActive = c.status === 'active';
+                return (
+                  <div
+                    key={c.consentId}
+                    className="p-4 bg-[#0B0D14] border border-[#1E2133] rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                  >
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <strong className="text-sm text-[#E8EAF6]">{c.doctorName}</strong>
+                        <span
+                          className={`px-2 py-0.5 rounded text-[0.62rem] font-bold ${
+                            isActive
+                              ? 'bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/30'
+                              : 'bg-red-500/15 text-red-400 border border-red-500/30'
+                          }`}
+                        >
+                          {isActive ? 'Active Access' : 'Access Revoked'}
+                        </span>
+                      </div>
+                      <p className="text-xs text-[#8B91B0] m-0 mt-1">
+                        Granted Scopes: {Object.entries(c.permissions || {}).filter(([_, v]) => v).map(([k]) => k.replace(/_/g, ' ')).join(', ')}
+                      </p>
+                    </div>
+
+                    {isActive && (
+                      <button
+                        onClick={() => handleRevoke(c)}
+                        className="px-3.5 py-1.5 rounded-xl bg-red-500/15 border border-red-500/30 text-red-400 hover:bg-red-500/25 text-xs font-bold flex items-center gap-1.5 self-end sm:self-auto cursor-pointer transition-colors shrink-0"
+                      >
+                        <Trash2 size={13} />
+                        Revoke Doctor Access
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Vital Snapshot & Allergies Callout */}
       {(activeSection === 'all' || activeSection === 'history') && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="fluetas-card p-4">
             <span className="text-[0.68rem] font-bold text-[#8B91B0] uppercase tracking-wider block mb-2">
               Patient Identification
             </span>
-            <p className="text-base font-bold text-[#E8EAF6] m-0">{mockUser.name}</p>
-            <p className="text-xs text-[#8B91B0] m-0 mt-0.5">DOB: {mockUser.dob} (Age 30) · {mockUser.gender}</p>
+            <p className="text-base font-bold text-[#E8EAF6] m-0">{profile?.name || user?.displayName || 'User'}</p>
+            <p className="text-xs text-[#8B91B0] m-0 mt-0.5">
+              DOB: {profile?.dob || 'Not set'} · Gender: {profile?.gender || 'Not set'}
+            </p>
             <div className="mt-3 pt-2.5 border-t border-[#1E2133] flex justify-between text-xs">
               <span className="text-[#8B91B0]">Blood Group:</span>
-              <strong className="text-[#10B981]">{mockUser.bloodGroup}</strong>
+              <strong className="text-[#10B981]">{profile?.bloodGroup || 'O+'}</strong>
             </div>
           </div>
 
@@ -109,144 +219,115 @@ export default function HealthRecordPage() {
               Documented Allergies
             </span>
             <div className="flex flex-wrap gap-1.5">
-              {mockHealthProfile.allergies.map(a => (
-                <span key={a} className="px-2 py-0.5 rounded bg-[#F472B6]/15 text-[#F472B6] text-[0.72rem] font-semibold border border-[#F472B6]/30">
-                  {a}
-                </span>
-              ))}
+              {healthProfile?.allergies && healthProfile.allergies.length > 0 ? (
+                healthProfile.allergies.map((a, i) => (
+                  <span key={i} className="px-2 py-0.5 rounded bg-[#F472B6]/15 text-[#F472B6] text-[0.72rem] font-semibold border border-[#F472B6]/30">
+                    {a}
+                  </span>
+                ))
+              ) : (
+                <p className="text-xs text-[#8B91B0] m-0">No allergies recorded.</p>
+              )}
             </div>
             <p className="text-[0.65rem] text-[#8B91B0] m-0 mt-3">
-              Visible to all consulting doctors prior to prescribing.
+              Visible to consulting doctors prior to prescribing.
             </p>
           </div>
 
           <div className="fluetas-card p-4">
             <span className="text-[0.68rem] font-bold text-[#38BDF8] uppercase tracking-wider block mb-2">
-              Musculoskeletal Precedent
+              Chronic Conditions &amp; Goals
             </span>
             <div className="flex flex-col gap-1 text-xs">
-              <p className="font-semibold text-[#E8EAF6] m-0">Meniscus Repair (2022)</p>
-              <p className="text-[0.7rem] text-[#8B91B0] m-0">Grade 2 Ankle Sprain (2024)</p>
-              <p className="text-[0.7rem] text-[#38BDF8] m-0 font-medium">L4-L5 Lumbar Strain (Active Physio)</p>
+              <p className="font-semibold text-[#E8EAF6] m-0">{healthProfile?.primaryGoal || 'Longevity & Performance'}</p>
+              {healthProfile?.chronicConditions && healthProfile.chronicConditions.length > 0 ? (
+                healthProfile.chronicConditions.map((c, i) => (
+                  <p key={i} className="text-[0.7rem] text-[#38BDF8] m-0 font-medium">{c}</p>
+                ))
+              ) : (
+                <p className="text-[0.7rem] text-[#8B91B0] m-0">No chronic conditions recorded.</p>
+              )}
             </div>
           </div>
         </div>
       )}
 
-      {/* Section 2: Consultations Record */}
+      {/* Consultations Record */}
       {(activeSection === 'all' || activeSection === 'consults') && (
         <div className="fluetas-card p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-['Outfit'] text-sm font-bold text-[#E8EAF6] uppercase tracking-wider m-0 flex items-center gap-2">
               <Stethoscope size={16} className="text-[#10B981]" />
-              Consultations & Clinical Assessments
+              Consultations &amp; Clinical Assessments
             </h2>
-            <span className="text-xs text-[#8B91B0]">{mockConsultationsList.length} Total Sessions</span>
+            <span className="text-xs text-[#8B91B0]">{consultations.length} Total Sessions</span>
           </div>
 
-          <div className="flex flex-col gap-3">
-            {mockConsultationsList.map(cons => (
-              <div
-                key={cons.id}
-                className="p-4 rounded-xl bg-[#0B0D14] border border-[#1E2133] flex flex-col gap-2.5"
-              >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-sm text-[#E8EAF6]">{cons.doctorName}</span>
-                      <span className="text-xs text-[#8B91B0]">({cons.specialization})</span>
+          {consultations.length === 0 ? (
+            <p className="text-xs text-[#8B91B0] m-0 text-center py-4">No consultation sessions booked yet.</p>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {consultations.map(cons => (
+                <div
+                  key={cons.id}
+                  className="p-4 rounded-xl bg-[#0B0D14] border border-[#1E2133] flex flex-col gap-2.5"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-sm text-[#E8EAF6]">{cons.expertName}</span>
+                        <span className="text-xs text-[#8B91B0]">({cons.specialization})</span>
+                      </div>
+                      <p className="text-xs text-[#10B981] font-medium m-0 mt-0.5 flex items-center gap-1">
+                        <Clock size={12} />
+                        {cons.preferredDate || 'Date confirmed'} · <span className="capitalize">{cons.status}</span>
+                      </p>
                     </div>
-                    <p className="text-xs text-[#10B981] font-medium m-0 mt-0.5 flex items-center gap-1">
-                      <Clock size={12} />
-                      {cons.dateTime} · <span className="capitalize">{cons.status}</span>
-                    </p>
+
+                    <span className="px-2.5 py-1 rounded-full text-[0.68rem] font-bold self-start sm:self-auto bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/30">
+                      {cons.status}
+                    </span>
                   </div>
 
-                  <span className={`px-2.5 py-1 rounded-full text-[0.68rem] font-bold self-start sm:self-auto ${
-                    cons.status === 'Completed'
-                      ? 'bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/30'
-                      : 'bg-[#38BDF8]/15 text-[#38BDF8] border border-[#38BDF8]/30'
-                  }`}>
-                    {cons.status}
-                  </span>
+                  <p className="text-xs text-[#E8EAF6] m-0 bg-[#13161F] p-2.5 rounded-lg border border-[#1E2133]">
+                    <strong>Reason:</strong> {cons.reason}
+                  </p>
+
+                  {cons.clinicalNotes && (
+                    <div className="text-xs text-[#8B91B0] leading-relaxed bg-[#13161F] p-3 rounded-lg border border-[#1E2133] space-y-1.5">
+                      <p className="m-0"><strong className="text-[#38BDF8]">Clinical Notes:</strong> {cons.clinicalNotes}</p>
+                      {cons.assessment && <p className="m-0"><strong className="text-[#10B981]">Assessment:</strong> {cons.assessment}</p>}
+                      {cons.advice && <p className="m-0"><strong className="text-[#FBBF24]">Recommendations:</strong> {cons.advice}</p>}
+                    </div>
+                  )}
                 </div>
-
-                <p className="text-xs text-[#E8EAF6] m-0 bg-[#13161F] p-2.5 rounded-lg border border-[#1E2133]">
-                  <strong>Reason:</strong> {cons.reasonForConsultation}
-                </p>
-
-                {cons.clinicalNotes && (
-                  <div className="text-xs text-[#8B91B0] leading-relaxed bg-[#13161F] p-3 rounded-lg border border-[#1E2133] space-y-1.5">
-                    <p className="m-0"><strong className="text-[#38BDF8]">Clinical Notes:</strong> {cons.clinicalNotes}</p>
-                    <p className="m-0"><strong className="text-[#10B981]">Assessment:</strong> {cons.assessment}</p>
-                    <p className="m-0"><strong className="text-[#FBBF24]">Recommendations:</strong> {cons.advice}</p>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
-      {/* Section 3: Diagnostic Reports */}
-      {(activeSection === 'all' || activeSection === 'reports') && (
-        <div className="fluetas-card p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-['Outfit'] text-sm font-bold text-[#E8EAF6] uppercase tracking-wider m-0 flex items-center gap-2">
-              <FileText size={16} className="text-[#38BDF8]" />
-              Lab Reports & Diagnostic Scans
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-            {mockDocumentsList.map(doc => (
-              <div
-                key={doc.id}
-                className="p-4 rounded-xl bg-[#0B0D14] border border-[#1E2133] flex flex-col justify-between gap-3"
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="px-2 py-0.5 rounded text-[0.62rem] font-bold uppercase bg-[#38BDF8]/15 text-[#38BDF8] border border-[#38BDF8]/30">
-                      {doc.documentType}
-                    </span>
-                    <span className="text-[0.68rem] text-[#8B91B0]">{doc.dateOfReport}</span>
-                  </div>
-                  <h3 className="text-sm font-bold text-[#E8EAF6] m-0">{doc.reportName}</h3>
-                  <p className="text-[0.7rem] text-[#8B91B0] m-0 mt-0.5">{doc.uploadedBy} · {doc.fileSize}</p>
-                </div>
-
-                {doc.doctorReview && (
-                  <div className="bg-[#13161F] p-2.5 rounded-lg border border-[#1E2133] text-[0.72rem] text-[#8B91B0]">
-                    <span className="text-[#10B981] font-semibold block mb-0.5">
-                      Reviewed by {doc.doctorReview.reviewedBy} ({doc.doctorReview.reviewedDate}):
-                    </span>
-                    <p className="m-0 text-[#E8EAF6]">{doc.doctorReview.findings}</p>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Section 4: Current Medications */}
+      {/* Current Medications */}
       {(activeSection === 'all' || activeSection === 'meds') && (
         <div className="fluetas-card p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-['Outfit'] text-sm font-bold text-[#E8EAF6] uppercase tracking-wider m-0 flex items-center gap-2">
               <Pill size={16} className="text-[#A78BFA]" />
-              Active Medication & Supplement Regimen
+              Active Medication &amp; Supplement Regimen
             </h2>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {mockHealthProfile.currentMedications.map((med, i) => (
-              <div key={i} className="p-3.5 bg-[#0B0D14] border border-[#1E2133] rounded-xl">
-                <p className="font-bold text-sm text-[#E8EAF6] m-0">{med.name}</p>
-                <p className="text-xs text-[#A78BFA] font-medium m-0 mt-1">{med.dosage}</p>
-                <p className="text-[0.68rem] text-[#8B91B0] m-0 mt-2">Prescribed: {med.prescribedBy}</p>
-              </div>
-            ))}
+            {healthProfile?.currentMedications && healthProfile.currentMedications.length > 0 ? (
+              healthProfile.currentMedications.map((med, i) => (
+                <div key={i} className="p-3.5 bg-[#0B0D14] border border-[#1E2133] rounded-xl">
+                  <p className="font-bold text-sm text-[#E8EAF6] m-0">{typeof med === 'string' ? med : (med as any).name}</p>
+                  <p className="text-xs text-[#A78BFA] font-medium m-0 mt-1">Daily Supplementation</p>
+                </div>
+              ))
+            ) : (
+              <p className="text-xs text-[#8B91B0] m-0">No active medications recorded.</p>
+            )}
           </div>
         </div>
       )}

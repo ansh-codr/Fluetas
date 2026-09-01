@@ -1,179 +1,210 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useTimeline, TimelineEventDoc } from '@/hooks/useTimeline';
 import {
-  Calendar,
-  Stethoscope,
-  FileText,
   Activity,
-  Award,
+  Droplets,
+  Moon,
+  Utensils,
+  Dumbbell,
+  Heart,
+  FileText,
   Sparkles,
-  CheckCircle2,
-  Filter,
+  ChevronDown,
 } from 'lucide-react';
 
-const mockTimelineEvents = [
-  {
-    id: 'tl-1',
-    type: 'consultation',
-    date: 'Tomorrow, 11:00 AM',
-    title: 'Consultation Scheduled with Dr. Anjali Mehta',
-    description: 'Lumbar spine assessment and rotator cuff stabilization protocol review.',
-    category: 'Clinical',
-    color: '#7C3AED',
-    icon: Stethoscope,
-    badge: 'Upcoming',
-  },
-  {
-    id: 'tl-2',
-    type: 'doctor_review',
-    date: '19 Jul 2026',
-    title: 'Diagnostic Review: Comprehensive Metabolic Panel',
-    description: 'Dr. Priya Sharma reviewed lab results. Initiated Vitamin D3 60k IU weekly protocol.',
-    category: 'Review',
-    color: '#10B981',
-    icon: CheckCircle2,
-    badge: 'Completed',
-  },
-  {
-    id: 'tl-3',
-    type: 'report_uploaded',
-    date: '18 Jul 2026',
-    title: 'Lab Report Uploaded: Vitamin D3 & Blood Count',
-    description: 'Direct laboratory sync from Thyrocare Diagnostics (2.4 MB PDF).',
-    category: 'Diagnostics',
-    color: '#38BDF8',
-    icon: FileText,
-    badge: 'Verified',
-  },
-  {
-    id: 'tl-4',
-    type: 'consultation',
-    date: '15 Jul 2026',
-    title: 'Orthopedic Clearance with Dr. Rajesh Nair',
-    description: '2-year post meniscus repair evaluation. Full athletic lifting clearance granted.',
-    category: 'Clinical',
-    color: '#2563EB',
-    icon: Stethoscope,
-    badge: 'Completed',
-  },
-  {
-    id: 'tl-5',
-    type: 'recommendation',
-    date: '15 Jul 2026',
-    title: 'Rehabilitation Protocol Appended',
-    description: 'Prescribed terminal knee extensions (TKEs) and eccentric hamstring loading.',
-    category: 'Protocol',
-    color: '#F59E0B',
-    icon: Activity,
-    badge: 'Active',
-  },
-  {
-    id: 'tl-6',
-    type: 'profile_created',
-    date: '10 Jan 2026',
-    title: 'FLUETAS Profile Initialized',
-    description: 'Baseline health record created. Connected Apple Health & Garmin trackers.',
-    category: 'System',
-    color: '#10B981',
-    icon: Award,
-    badge: 'Milestone',
-  },
-];
+const EVENT_CONFIGS: Record<string, { icon: React.ElementType; color: string; badgeColor: string }> = {
+  hydration_logged:       { icon: Droplets,   color: '#38BDF8', badgeColor: '#0C4A6E' },
+  sleep_logged:           { icon: Moon,        color: '#A78BFA', badgeColor: '#3B0764' },
+  meal_logged:            { icon: Utensils,    color: '#22C55E', badgeColor: '#14532D' },
+  workout_completed:      { icon: Dumbbell,    color: '#10B981', badgeColor: '#064E3B' },
+  cycle_logged:           { icon: Heart,       color: '#F472B6', badgeColor: '#831843' },
+  symptom_logged:         { icon: Activity,    color: '#FB923C', badgeColor: '#7C2D12' },
+  consultation_booked:    { icon: FileText,    color: '#38BDF8', badgeColor: '#0C4A6E' },
+  consultation_completed: { icon: FileText,    color: '#10B981', badgeColor: '#064E3B' },
+  report_uploaded:        { icon: FileText,    color: '#FBBF24', badgeColor: '#78350F' },
+  profile_created:        { icon: Sparkles,    color: '#10B981', badgeColor: '#064E3B' },
+};
+
+function formatTimestamp(ts: { seconds: number }): string {
+  const d = new Date(ts.seconds * 1000);
+  return d.toLocaleString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  });
+}
+
+function groupByDate(events: TimelineEventDoc[]): Map<string, TimelineEventDoc[]> {
+  const groups = new Map<string, TimelineEventDoc[]>();
+  for (const e of events) {
+    const d = new Date(e.timestamp.seconds * 1000);
+    const key = d.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    const existing = groups.get(key) ?? [];
+    existing.push(e);
+    groups.set(key, existing);
+  }
+  return groups;
+}
 
 export default function TimelinePage() {
-  const [filter, setFilter] = useState<'all' | 'clinical' | 'diagnostics' | 'protocols'>('all');
+  const { events, loading, error } = useTimeline(100);
+  const [visibleCount, setVisibleCount] = useState(20);
 
-  const filteredEvents = filter === 'all'
-    ? mockTimelineEvents
-    : mockTimelineEvents.filter(e => {
-        if (filter === 'clinical') return e.category === 'Clinical';
-        if (filter === 'diagnostics') return e.category === 'Diagnostics' || e.category === 'Review';
-        if (filter === 'protocols') return e.category === 'Protocol';
-        return true;
-      });
+  const visibleEvents = events.slice(0, visibleCount);
+  const grouped = groupByDate(visibleEvents);
 
   return (
-    <div className="flex flex-col gap-5 max-w-4xl mx-auto w-full">
+    <div className="flex flex-col gap-5 max-w-3xl mx-auto w-full">
       {/* Header */}
-      <div className="fluetas-card p-5 sm:p-6 bg-gradient-to-r from-[#13161F] to-[#161B2B]">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <Calendar className="text-[#10B981]" size={20} />
-              <h1 className="font-['Outfit'] text-xl sm:text-2xl font-black text-[#E8EAF6] m-0">
-                CHRONOLOGICAL HEALTH TIMELINE
-              </h1>
+      <div>
+        <h1 className="font-['Outfit'] text-xl sm:text-2xl font-black text-[#E8EAF6] m-0">
+          HEALTH JOURNEY TIMELINE
+        </h1>
+        <p className="text-[#8B91B0] text-xs sm:text-sm m-0">
+          A complete, chronological record of your health and wellness activities.
+        </p>
+      </div>
+
+      {/* Loading */}
+      {loading && (
+        <div className="flex flex-col gap-3">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-xl bg-[#1E2133] animate-pulse shrink-0" />
+              <div className="flex-1 flex flex-col gap-2 pt-1">
+                <div className="h-3 bg-[#1E2133] rounded animate-pulse w-2/3" />
+                <div className="h-2.5 bg-[#1E2133] rounded animate-pulse w-1/2" />
+              </div>
             </div>
-            <p className="text-[#8B91B0] text-xs sm:text-sm m-0">
-              Immutable historical record of every medical consult, test result, and recommendation.
+          ))}
+        </div>
+      )}
+
+      {/* Error */}
+      {!loading && error && (
+        <div className="p-4 text-center fluetas-card">
+          <p className="text-[#8B91B0] text-sm">{error}</p>
+        </div>
+      )}
+
+      {/* Empty State */}
+      {!loading && !error && events.length === 0 && (
+        <div className="fluetas-card p-8 text-center flex flex-col items-center gap-4">
+          <div className="w-16 h-16 rounded-2xl bg-[#10B981]/10 flex items-center justify-center">
+            <Activity size={28} className="text-[#10B981]" />
+          </div>
+          <div>
+            <p className="font-['Outfit'] font-bold text-[#E8EAF6] text-base m-0">
+              Your health journey starts here
+            </p>
+            <p className="text-[#8B91B0] text-xs m-0 mt-2 max-w-xs mx-auto">
+              Log water intake, meals, sleep, or start a workout — every action will appear here as a permanent record of your progress.
             </p>
           </div>
-
-          {/* Filter Pills */}
-          <div className="flex items-center gap-1.5 bg-[#0B0D14] p-1 rounded-xl border border-[#1E2133] self-start sm:self-auto overflow-x-auto">
-            <Filter size={13} className="text-[#8B91B0] ml-1.5 mr-0.5 shrink-0 hidden xs:block" />
+          <div className="flex flex-wrap items-center justify-center gap-2 mt-2">
             {[
-              { id: 'all', label: 'All' },
-              { id: 'clinical', label: 'Clinical' },
-              { id: 'diagnostics', label: 'Diagnostics' },
-              { id: 'protocols', label: 'Protocols' },
-            ].map(f => (
-              <button
-                key={f.id}
-                onClick={() => setFilter(f.id as any)}
-                className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-                  filter === f.id
-                    ? 'bg-[#10B981] text-black font-bold'
-                    : 'text-[#8B91B0] hover:text-white'
-                }`}
+              { label: '💧 Log Hydration', href: '/hydration' },
+              { label: '🥗 Log Meal', href: '/nutrition' },
+              { label: '🌙 Log Sleep', href: '/sleep' },
+              { label: '🏋️ Start Workout', href: '/fluetas-train' },
+            ].map(link => (
+              <a
+                key={link.href}
+                href={link.href}
+                className="px-3 py-1.5 rounded-xl bg-[#10B981]/10 border border-[#10B981]/30 text-[#10B981] text-xs font-semibold hover:opacity-80 transition-all no-underline"
               >
-                {f.label}
-              </button>
+                {link.label}
+              </a>
             ))}
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Timeline Stream */}
-      <div className="relative pl-6 sm:pl-8 flex flex-col gap-6 before:content-[''] before:absolute before:left-3 sm:before:left-4 before:top-3 before:bottom-3 before:w-[2px] before:bg-[#1E2133]">
-        {filteredEvents.map((evt, idx) => {
-          const Icon = evt.icon;
-          return (
-            <div key={evt.id} className="relative group">
-              {/* Timeline Node Dot */}
-              <div
-                className="absolute -left-6 sm:-left-8 top-1 w-6 h-6 sm:w-8 sm:h-8 rounded-full border-2 border-[#0B0D14] flex items-center justify-center text-white shadow-lg transition-transform group-hover:scale-110"
-                style={{ backgroundColor: evt.color }}
-              >
-                <Icon size={14} />
+      {/* Timeline */}
+      {!loading && !error && events.length > 0 && (
+        <div className="flex flex-col gap-6">
+          {[...grouped.entries()].map(([dateLabel, dayEvents]) => (
+            <div key={dateLabel}>
+              {/* Date Header */}
+              <div className="flex items-center gap-3 mb-3">
+                <div className="px-3 py-1 rounded-full bg-[#13161F] border border-[#1E2133] text-[0.68rem] font-bold text-[#8B91B0]">
+                  {dateLabel}
+                </div>
+                <div className="flex-1 h-px bg-[#1E2133]" />
+                <span className="text-[0.6rem] text-[#3A3F58]">{dayEvents.length} event{dayEvents.length > 1 ? 's' : ''}</span>
               </div>
 
-              {/* Event Card */}
-              <div className="fluetas-card p-4 sm:p-5 hover:border-[#2A3050] transition-colors">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[0.68rem] font-bold uppercase tracking-wider px-2 py-0.5 rounded" style={{ backgroundColor: `${evt.color}20`, color: evt.color }}>
-                      {evt.category}
-                    </span>
-                    <span className="text-xs font-medium text-[#8B91B0]">{evt.date}</span>
-                  </div>
-                  <span className="px-2 py-0.5 rounded-full text-[0.62rem] font-bold bg-[#1E2133] text-[#E8EAF6] self-start sm:self-auto">
-                    {evt.badge}
-                  </span>
-                </div>
+              {/* Events for this day */}
+              <div className="flex flex-col gap-2.5">
+                {dayEvents.map((event, idx) => {
+                  const cfg = EVENT_CONFIGS[event.type] ?? { icon: Activity, color: '#8B91B0', badgeColor: '#1E2133' };
+                  const Icon = cfg.icon;
 
-                <h3 className="text-sm sm:text-base font-bold text-[#E8EAF6] m-0 mb-1 font-['Outfit']">
-                  {evt.title}
-                </h3>
-                <p className="text-xs text-[#8B91B0] m-0 leading-relaxed">
-                  {evt.description}
-                </p>
+                  return (
+                    <div
+                      key={event.id}
+                      id={`timeline-event-${event.id}`}
+                      className="fluetas-card p-3.5 sm:p-4 flex items-start gap-3 hover:border-[#2A3050] transition-all"
+                    >
+                      {/* Icon */}
+                      <div
+                        className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
+                        style={{ backgroundColor: `${cfg.color}15`, border: `1px solid ${cfg.color}30` }}
+                      >
+                        <Icon size={15} style={{ color: cfg.color }} />
+                      </div>
+
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                            <h3 className="font-['Outfit'] text-sm font-bold text-[#E8EAF6] m-0 truncate">
+                              {event.title}
+                            </h3>
+                            {event.badge && (
+                              <span
+                                className="px-1.5 py-0.5 rounded text-[0.55rem] font-bold"
+                                style={{ backgroundColor: `${cfg.color}20`, color: cfg.color }}
+                              >
+                                {event.badge}
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[0.6rem] text-[#3A3F58] shrink-0">
+                            {formatTimestamp(event.timestamp)}
+                          </span>
+                        </div>
+                        <p className="text-xs text-[#8B91B0] m-0 mt-1">{event.description}</p>
+                        {event.category && (
+                          <span className="inline-block mt-1.5 px-2 py-0.5 rounded text-[0.6rem] font-semibold bg-[#1E2133] text-[#3A3F58]">
+                            {event.category}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
-          );
-        })}
-      </div>
+          ))}
+
+          {/* Load More */}
+          {visibleCount < events.length && (
+            <button
+              onClick={() => setVisibleCount(c => c + 20)}
+              className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-[#1E2133] text-[#8B91B0] hover:text-[#E8EAF6] text-xs font-semibold transition-all cursor-pointer hover:border-[#2A3050]"
+            >
+              <ChevronDown size={15} />
+              Load More ({events.length - visibleCount} remaining)
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

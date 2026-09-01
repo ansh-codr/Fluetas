@@ -1,87 +1,91 @@
 'use client';
 
 import React from 'react';
-import { mockTodaysWorkout } from '@/lib/mock/dashboardData';
+import Link from 'next/link';
+import { useWorkout } from '@/hooks/useWorkout';
+import { Play, CheckCircle2, Dumbbell } from 'lucide-react';
 
 export default function TodaysWorkout() {
-  return (
-    <div className="fluetas-card" style={{ padding: '16px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-        <span className="section-title">TODAY&apos;S WORKOUT</span>
-      </div>
+  const { todaySession, loading } = useWorkout();
 
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
-        <div>
-          <h3
-            style={{
-              fontFamily: 'Outfit, sans-serif',
-              fontWeight: 700, fontSize: '1rem',
-              color: '#E8EAF6', margin: '0 0 2px',
-            }}
-          >
-            {mockTodaysWorkout.name}
-          </h3>
-          <p style={{ color: '#8B91B0', fontSize: '0.72rem', margin: 0 }}>{mockTodaysWorkout.focus}</p>
+  if (loading) {
+    return (
+      <div className="fluetas-card p-4 flex flex-col gap-3">
+        <div className="h-3 w-24 bg-[#1E2133] rounded animate-pulse" />
+        <div className="h-16 bg-[#1E2133] rounded-xl animate-pulse" />
+        <div className="h-8 bg-[#1E2133] rounded-xl animate-pulse" />
+      </div>
+    );
+  }
+
+  if (!todaySession) {
+    return (
+      <div className="fluetas-card p-4 flex flex-col justify-between gap-3 min-h-[160px]">
+        <span className="section-title">TODAY'S WORKOUT</span>
+        <div className="flex flex-col items-center text-center py-3 flex-1 justify-center">
+          <p className="text-3xl mb-2">🏋️</p>
+          <p className="text-xs font-semibold text-[#E8EAF6] m-0">No workout yet</p>
+          <p className="text-[0.68rem] text-[#8B91B0] m-0 mt-1">Start a session to track your training</p>
         </div>
-        <button
+        <Link
+          href="/fluetas-train"
           id="start-workout-btn"
-          className="btn-primary"
-          style={{ padding: '7px 14px', fontSize: '0.8rem' }}
+          className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-to-r from-[#10B981] to-[#059669] text-white text-xs font-bold hover:opacity-90 transition-all no-underline shadow-[0_0_12px_rgba(16,185,129,0.25)]"
         >
-          ▶ Start Workout
-        </button>
+          <Play size={13} fill="currentColor" />
+          Start Today's Workout
+        </Link>
+      </div>
+    );
+  }
+
+  const isCompleted = todaySession.status === 'completed';
+  const isActive = todaySession.status === 'active';
+  const completionPct = todaySession.totalSets
+    ? Math.round((todaySession.completedSets! / todaySession.totalSets) * 100)
+    : 0;
+
+  return (
+    <div className="fluetas-card p-4 flex flex-col gap-3 min-h-[160px]">
+      <div className="flex items-center justify-between">
+        <span className="section-title">TODAY'S WORKOUT</span>
+        <span className={`px-2 py-0.5 rounded-full text-[0.6rem] font-bold ${
+          isCompleted
+            ? 'bg-[#10B981]/15 text-[#10B981]'
+            : 'bg-[#38BDF8]/15 text-[#38BDF8]'
+        }`}>
+          {isCompleted ? 'Completed' : 'Active'}
+        </span>
       </div>
 
-      {/* Body diagram placeholder */}
-      <div
-        style={{
-          height: 90,
-          background: '#0B0D14',
-          borderRadius: 10,
-          border: '1px solid #1E2133',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginBottom: 12,
-          fontSize: 40,
-        }}
+      <div className="flex items-start gap-3">
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isCompleted ? 'bg-[#10B981]/15 text-[#10B981]' : 'bg-[#38BDF8]/15 text-[#38BDF8]'}`}>
+          {isCompleted ? <CheckCircle2 size={20} /> : <Dumbbell size={20} />}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-['Outfit'] text-sm font-bold text-[#E8EAF6] m-0 truncate">
+            {todaySession.workoutName}
+          </p>
+          <p className="text-[0.68rem] text-[#8B91B0] m-0 mt-0.5">
+            {todaySession.completedSets ?? 0}/{todaySession.totalSets ?? 0} sets
+          </p>
+          {isActive && (
+            <div className="mt-1.5 h-1.5 rounded-full bg-[#1E2133] overflow-hidden">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-[#38BDF8] to-[#0284C7] transition-all"
+                style={{ width: `${completionPct}%` }}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+
+      <Link
+        href="/fluetas-train"
+        className="flex items-center justify-center gap-2 py-2 rounded-xl border border-[#1E2133] text-[#8B91B0] hover:text-[#E8EAF6] hover:border-[#2A3050] text-xs font-semibold transition-all no-underline"
       >
-        🏃
-      </div>
-
-      {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 12 }}>
-        {[
-          { label: 'Exercises', value: mockTodaysWorkout.exercises, emoji: '💪' },
-          { label: 'Duration', value: mockTodaysWorkout.duration, emoji: '⏱️' },
-          { label: 'Level', value: mockTodaysWorkout.level, emoji: '📊' },
-        ].map(stat => (
-          <div
-            key={stat.label}
-            style={{
-              background: '#0B0D14',
-              borderRadius: 8,
-              padding: '8px 10px',
-              border: '1px solid #1E2133',
-              textAlign: 'center',
-            }}
-          >
-            <p style={{ fontSize: 14, margin: '0 0 2px' }}>{stat.emoji}</p>
-            <p style={{ color: '#E8EAF6', fontSize: '0.8rem', fontWeight: 600, margin: '0 0 2px' }}>{stat.value}</p>
-            <p style={{ color: '#8B91B0', fontSize: '0.62rem', margin: 0 }}>{stat.label}</p>
-          </div>
-        ))}
-      </div>
-
-      <button
-        id="view-workout-plan-btn"
-        style={{
-          background: 'none', border: 'none', color: '#10B981',
-          fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', padding: 0,
-        }}
-      >
-        View Workout Plan →
-      </button>
+        {isActive ? 'Continue Workout →' : 'View History →'}
+      </Link>
     </div>
   );
 }
