@@ -111,6 +111,13 @@ body {
 .font-expanded { font-family: var(--font-expanded) !important; }
 .font-sans     { font-family: var(--font-sans) !important; }
 
+.brand {
+  font-family: var(--font-expanded);
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+}
+
 /* Structural Layout Utilities */
 .wrap {
   max-width: 1240px;
