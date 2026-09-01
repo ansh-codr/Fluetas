@@ -6,7 +6,7 @@ import { useWellnessScore } from '@/hooks/useWellnessScore';
 import { useHydration } from '@/hooks/useHydration';
 import { useSleep } from '@/hooks/useSleep';
 import { useWorkout } from '@/hooks/useWorkout';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Bot, ArrowRight } from 'lucide-react';
 
 export default function AICoachCard() {
   const { result: wellness } = useWellnessScore();
@@ -14,54 +14,57 @@ export default function AICoachCard() {
   const { todaySleep } = useSleep();
   const { todaySession } = useWorkout();
 
-  // Generate real data-driven dynamic insight
-  let dynamicInsight = 'Welcome to FLUETAS AI Coach. Log your daily hydration, sleep, and workouts so I can provide customized recovery and nutrition guidance.';
+  // Generate data-driven wellness guidance based on real inputs
+  let dynamicInsight = 'Log your daily hydration, sleep, and workouts so I can provide contextual wellness insights and habit reminders.';
 
   if (wellness && !wellness.insufficientData) {
     if (totalMl < goalMl * 0.5) {
-      dynamicInsight = `You have reached ${Math.round((totalMl / goalMl) * 100)}% of your hydration target. Consider having 500ml of water before your next activity to maintain peak focus.`;
+      dynamicInsight = `You have reached ${Math.round((totalMl / goalMl) * 100)}% of your hydration target. Consider having a glass of water before your next activity to maintain steady energy.`;
     } else if (todaySleep && todaySleep.durationHrs < 7) {
-      dynamicInsight = `You logged ${todaySleep.durationHrs}h of sleep last night. We recommend lower training intensity today with emphasis on active mobility and hydration.`;
+      dynamicInsight = `You logged ${todaySleep.durationHrs}h of sleep last night. Consider a lighter training session if you feel fatigued today and prioritize early rest.`;
     } else if (todaySession?.status === 'completed') {
-      dynamicInsight = `Great job finishing your workout today! Prioritize 25-30g of post-workout protein within the next 45 minutes to optimize muscle recovery.`;
+      dynamicInsight = `Workout logged for today! Ensure you have an adequate protein-rich meal and hydrate well to support natural muscle recovery.`;
     } else {
-      dynamicInsight = `Your wellness score is trending well today. Keep your hydration steady and prepare for tonight's restful sleep protocol.`;
+      dynamicInsight = `Your daily telemetry is tracking nicely. Maintain consistent hydration and follow your evening wind-down routine.`;
     }
   }
 
   return (
-    <div className="fluetas-card p-4 bg-gradient-to-br from-[#13161F] to-[#1a1030] border-[#A78BFA]/20 flex flex-col justify-between h-full">
+    <div className="fluetas-card p-4 sm:p-4.5 bg-[#FFFFFF] border-[rgba(122,78,158,0.20)] flex flex-col justify-between h-full">
       <div>
-        <div className="flex items-center justify-between mb-3.5">
+        <div className="flex items-center justify-between mb-2.5">
           <div className="flex items-center gap-1.5">
-            <Sparkles size={14} className="text-[#A78BFA]" />
-            <span className="section-title">AI COACH INSIGHT</span>
+            <Sparkles size={13} className="text-[#7A4E9E]" />
+            <span className="section-title">AI Insight</span>
           </div>
-          <Link
-            href="/ai-coach"
-            className="text-[#A78BFA] text-xs font-semibold hover:underline no-underline"
-          >
-            Ask AI &gt;
-          </Link>
+          <span className="text-[0.62rem] font-bold text-[#7A4E9E] bg-[#7A4E9E]/10 px-2 py-0.5 rounded-full border border-[#7A4E9E]/20">
+            AI-generated wellness insight
+          </span>
         </div>
 
-        <div className="flex gap-3 mb-3.5">
-          {/* Bot avatar */}
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#7C3AED] to-[#4C1D95] flex items-center justify-center text-xl shrink-0 shadow-[0_0_16px_rgba(124,58,237,0.4)]">
-            🤖
+        <div className="flex gap-3 my-3 p-3 bg-[#FAFAF6] rounded-xl border border-[rgba(18,22,15,0.06)]">
+          <div className="w-9 h-9 rounded-xl bg-[#7A4E9E] flex items-center justify-center text-white shrink-0 shadow-xs">
+            <Bot size={18} />
           </div>
-          <p className="text-[#E8EAF6] text-xs leading-relaxed m-0">
-            {dynamicInsight}
-          </p>
+          <div className="min-w-0 flex-1">
+            <p className="text-[#12160F] text-xs leading-relaxed m-0">
+              {dynamicInsight}
+            </p>
+            <p className="text-[0.62rem] text-[#8A9482] mt-1.5 m-0 italic">
+              Non-clinical wellness guidance. Not a substitute for professional medical care.
+            </p>
+          </div>
         </div>
       </div>
 
       <Link
         href="/ai-coach"
         id="ai-coach-chat-btn"
-        className="btn-primary w-full justify-center text-center no-underline text-xs font-bold py-2.5 bg-gradient-to-r from-[#7C3AED] to-[#6D28D9] shadow-[0_4px_12px_rgba(124,58,237,0.3)] hover:opacity-90 transition-all"
+        className="w-full flex items-center justify-center gap-2 p-2.5 rounded-xl bg-[#7A4E9E] hover:bg-[#6A3E8E] text-[#FAFAF6] text-xs font-semibold text-center no-underline shadow-xs hover:shadow-sm transition-all"
       >
-        🤖 Talk to FLUETAS AI Coach
+        <Sparkles size={13} />
+        <span>Ask AI Coach</span>
+        <ArrowRight size={13} />
       </Link>
     </div>
   );
