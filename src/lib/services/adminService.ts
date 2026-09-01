@@ -11,9 +11,7 @@ import {
   getDoc,
   updateDoc,
   query,
-  orderBy,
   limit,
-  where,
   Timestamp,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
@@ -74,9 +72,9 @@ export async function getAdminPlatformMetrics(): Promise<AdminPlatformMetrics> {
 
   try {
     const [usersSnap, docsSnap, consentsSnap, auditsSnap] = await Promise.all([
-      getDocs(collection(db, 'users')),
-      getDocs(collection(db, 'doctors')),
-      getDocs(collection(db, 'consents')),
+      getDocs(query(collection(db, 'users'), limit(100))),
+      getDocs(query(collection(db, 'doctors'), limit(50))),
+      getDocs(query(collection(db, 'consents'), limit(100))),
       getDocs(query(collection(db, 'auditLogs'), limit(100))),
     ]);
 
@@ -100,7 +98,7 @@ export async function getAdminPlatformMetrics(): Promise<AdminPlatformMetrics> {
       auditLogsCount: auditsSnap.size,
     };
   } catch (err) {
-    console.warn('[AdminService] getMetrics error:', err);
+    console.warn('[AdminService] getAdminPlatformMetrics warning:', err);
     return {
       totalCustomers: 45,
       activeCustomers: 42,
@@ -118,7 +116,7 @@ export async function getAdminDoctorsList(): Promise<DoctorApplication[]> {
   if (!db) return mockDoctorsList.map(d => ({ ...d, verificationStatus: 'verified' as const }));
 
   try {
-    const snap = await getDocs(collection(db, 'doctors'));
+    const snap = await getDocs(query(collection(db, 'doctors'), limit(50)));
     if (snap.empty) {
       return mockDoctorsList.map(d => ({ ...d, verificationStatus: 'verified' as const }));
     }
@@ -140,7 +138,8 @@ export async function getAdminDoctorsList(): Promise<DoctorApplication[]> {
         appliedAt: data.createdAt,
       } as DoctorApplication;
     });
-  } catch {
+  } catch (err) {
+    console.warn('[AdminService] getAdminDoctorsList warning:', err);
     return mockDoctorsList.map(d => ({ ...d, verificationStatus: 'verified' as const }));
   }
 }
@@ -190,7 +189,8 @@ export async function getAdminUsersList(): Promise<AdminUserRecord[]> {
         onboardingComplete: data.onboardingComplete,
       } as AdminUserRecord;
     });
-  } catch {
+  } catch (err) {
+    console.warn('[AdminService] getAdminUsersList warning:', err);
     return [];
   }
 }
