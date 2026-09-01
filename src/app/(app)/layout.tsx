@@ -55,20 +55,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   // Loading Screen
   if (loading || !user) {
     return (
-      <div className="min-h-screen bg-[#0B0D14] flex items-center justify-center">
+      <div className="min-h-screen bg-[#FAFAF6] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div
             style={{
               width: 40, height: 40, borderRadius: 10,
-              background: 'linear-gradient(135deg, #10B981, #059669)',
+              background: 'linear-gradient(135deg, #2E7D32, #1B5E20)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 20, fontWeight: 800, color: 'white',
+              fontSize: 20, fontWeight: 800, color: '#FAFAF6',
               fontFamily: 'Outfit, sans-serif',
             }}
           >
             F
           </div>
-          <div className="w-6 h-6 border-2 border-[#10B981] border-t-transparent rounded-full animate-spin" />
+          <div className="w-6 h-6 border-2 border-[#2E7D32] border-t-transparent rounded-full animate-spin" />
         </div>
       </div>
     );
@@ -77,13 +77,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   // Account Suspended Screen
   if (status === 'suspended') {
     return (
-      <div className="min-h-screen bg-[#0B0D14] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[#FAFAF6] flex items-center justify-center p-4">
         <div className="fluetas-card p-8 max-w-md w-full text-center flex flex-col items-center gap-3 border-red-500/30">
-          <div className="w-14 h-14 rounded-2xl bg-red-500/15 text-red-400 flex items-center justify-center text-2xl">
+          <div className="w-14 h-14 rounded-2xl bg-red-500/10 text-red-500 flex items-center justify-center text-2xl">
             <ShieldAlert size={28} />
           </div>
-          <h2 className="font-['Outfit'] text-xl font-bold text-[#E8EAF6] m-0">Account Suspended</h2>
-          <p className="text-xs text-[#8B91B0] m-0 leading-relaxed">
+          <h2 className="font-['Outfit'] text-xl font-bold text-[#12160F] m-0">Account Suspended</h2>
+          <p className="text-xs text-[#586151] m-0 leading-relaxed">
             Your account has been temporarily suspended by system administrators. Please reach out to support@fluetas.com to resolve any verification issues.
           </p>
           <DevRoleSwitcher />
@@ -96,19 +96,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   // 1. Doctor route accessed by non-doctor (and non-admin)
   if (isDoctorRoute && role !== 'doctor' && role !== 'admin') {
     return (
-      <div className="min-h-screen bg-[#0B0D14] flex items-center justify-center p-4">
-        <div className="fluetas-card p-8 max-w-md w-full text-center flex flex-col items-center gap-3 border-[#38BDF8]/30">
-          <div className="w-14 h-14 rounded-2xl bg-[#38BDF8]/15 text-[#38BDF8] flex items-center justify-center text-2xl">
+      <div className="min-h-screen bg-[#FAFAF6] flex items-center justify-center p-4">
+        <div className="fluetas-card p-8 max-w-md w-full text-center flex flex-col items-center gap-3 border-[#2E6DA4]/30">
+          <div className="w-14 h-14 rounded-2xl bg-[#2E6DA4]/10 text-[#2E6DA4] flex items-center justify-center text-2xl">
             <Lock size={28} />
           </div>
-          <span className="px-2.5 py-0.5 rounded text-[0.65rem] font-bold bg-[#38BDF8]/15 text-[#38BDF8]">
+          <span className="px-2.5 py-0.5 rounded text-[0.65rem] font-bold bg-[#2E6DA4]/10 text-[#2E6DA4]">
             403 · Access Denied
           </span>
-          <h2 className="font-['Outfit'] text-xl font-bold text-[#E8EAF6] m-0">
+          <h2 className="font-['Outfit'] text-xl font-bold text-[#12160F] m-0">
             Doctor Panel Restricted
           </h2>
-          <p className="text-xs text-[#8B91B0] m-0 leading-relaxed">
-            The clinical portal is strictly restricted to verified doctors and practitioners. Use the role switcher below to switch to the Doctor persona.
+          <p className="text-xs text-[#586151] m-0 leading-relaxed">
+            The clinical portal is strictly restricted to verified doctors and practitioners. If you are a doctor awaiting credential approval, your status will update upon admin verification.
           </p>
           <Link
             href="/dashboard"
@@ -125,19 +125,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   // 2. Admin route accessed by non-admin
   if (isAdminRoute && role !== 'admin') {
     return (
-      <div className="min-h-screen bg-[#0B0D14] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[#FAFAF6] flex items-center justify-center p-4">
         <div className="fluetas-card p-8 max-w-md w-full text-center flex flex-col items-center gap-3 border-amber-500/30">
-          <div className="w-14 h-14 rounded-2xl bg-amber-500/15 text-amber-400 flex items-center justify-center text-2xl">
+          <div className="w-14 h-14 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center text-2xl">
             <Lock size={28} />
           </div>
-          <span className="px-2.5 py-0.5 rounded text-[0.65rem] font-bold bg-amber-500/15 text-amber-400">
+          <span className="px-2.5 py-0.5 rounded text-[0.65rem] font-bold bg-amber-500/10 text-amber-600">
             403 · Access Denied
           </span>
-          <h2 className="font-['Outfit'] text-xl font-bold text-[#E8EAF6] m-0">
+          <h2 className="font-['Outfit'] text-xl font-bold text-[#12160F] m-0">
             Administrator Access Required
           </h2>
-          <p className="text-xs text-[#8B91B0] m-0 leading-relaxed">
-            This console is restricted to platform superadministrators. All unauthorized attempts are logged to the immutable audit trail.
+          <p className="text-xs text-[#586151] m-0 leading-relaxed">
+            This console is restricted to verified platform administrators. All unauthorized access attempts are logged to the immutable audit trail.
           </p>
           <Link
             href="/dashboard"
@@ -156,7 +156,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const SelectedTopBar = isAdminRoute ? AdminTopBar : isDoctorRoute ? DoctorTopBar : TopBar;
 
   return (
-    <div className="flex min-h-screen bg-[#0B0D14] text-[#E8EAF6] antialiased">
+    <div className="flex min-h-screen bg-[#FAFAF6] text-[#12160F] antialiased">
       {/* Dynamic Role Sidebar */}
       <SelectedSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/context/ToastContext';
 import { reviewMedicalReport } from '@/lib/services/doctorService';
 import {
   FileText,
@@ -12,6 +13,7 @@ import {
   Loader2,
   Calendar,
   User,
+  Check,
 } from 'lucide-react';
 
 const mockUploadedReports = [
@@ -41,19 +43,19 @@ const mockUploadedReports = [
 
 export default function DoctorReportsPage() {
   const { user } = useAuth();
+  const { success } = useToast();
   const [selectedReport, setSelectedReport] = useState<any | null>(mockUploadedReports[0]);
   const [findings, setFindings] = useState('Patient exhibits sub-optimal Vitamin D (18.2 ng/mL) with normal electrolyte and kidney function parameters.');
   const [recommendations, setRecommendations] = useState('Initiate Cholecalciferol (Vitamin D3) 60,000 IU weekly for 8 weeks with healthy dietary fats. Re-test serum level in 2 months.');
   const [followUpRequired, setFollowUpRequired] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [reviewState, setReviewState] = useState<'idle' | 'submitting' | 'completed'>('idle');
 
   const doctorId = user?.uid || 'dr_rajesh_sharma';
   const doctorName = user?.displayName || 'Dr. Rajesh Sharma, MD';
 
   const handleSaveReview = async () => {
     if (!selectedReport) return;
-    setSubmitting(true);
+    setReviewState('submitting');
     try {
       await reviewMedicalReport({
         doctorId,
@@ -66,25 +68,21 @@ export default function DoctorReportsPage() {
         followUpRequired,
       });
 
-      setToastMessage(`Clinical review saved for ${selectedReport.name}`);
-      setTimeout(() => setToastMessage(null), 3000);
+      selectedReport.status = 'reviewed';
+      setReviewState('completed');
+      success('Report Marked as Reviewed', `Clinical findings recorded and appended to ${selectedReport.customerName}'s timeline.`);
+
+      setTimeout(() => {
+        setReviewState('idle');
+      }, 3000);
     } catch (err) {
       alert('Failed to save review');
-    } finally {
-      setSubmitting(false);
+      setReviewState('idle');
     }
   };
 
   return (
     <div className="flex flex-col gap-5 max-w-6xl mx-auto w-full">
-      {/* Toast */}
-      {toastMessage && (
-        <div className="fixed top-20 right-6 z-50 bg-[#10B981] text-black font-bold text-xs py-2.5 px-4 rounded-xl shadow-2xl flex items-center gap-2 animate-slide-up">
-          <CheckCircle2 size={16} />
-          {toastMessage}
-        </div>
-      )}
-
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
@@ -112,8 +110,8 @@ export default function DoctorReportsPage() {
               <div
                 key={rep.id}
                 onClick={() => setSelectedReport(rep)}
-                className={`fluetas-card p-4 flex flex-col gap-2 cursor-pointer transition-all ${
-                  isSelected ? 'border-[#FBBF24] bg-[#13161F]' : 'hover:border-[#2A3050]'
+                className={`fluetas-card-interactive p-4 flex flex-col gap-2 cursor-pointer transition-all ${
+                  isSelected ? 'border-[#FBBF24] bg-[#13161F] shadow-[0_0_15px_rgba(251,191,36,0.15)]' : 'hover:border-[#2A3050]'
                 }`}
               >
                 <div className="flex items-center justify-between">
@@ -127,7 +125,7 @@ export default function DoctorReportsPage() {
                         : 'bg-[#FBBF24]/15 text-[#FBBF24]'
                     }`}
                   >
-                    {rep.status === 'reviewed' ? 'Reviewed' : 'Review Pending'}
+                    {rep.status === 'reviewed' ? '✓ Reviewed' : 'Review Pending'}
                   </span>
                 </div>
 
@@ -146,12 +144,12 @@ export default function DoctorReportsPage() {
 
         {/* Right 2 Columns: Document Viewer & Reviewer Panel */}
         {selectedReport && (
-          <div className="lg:col-span-2 flex flex-col gap-4">
+          <div className="lg:col-span-2 flex flex-col gap-4 animate-slide-up">
             {/* Document Viewer Frame */}
             <div className="fluetas-card p-5 bg-[#0B0D14] border-[#1E2133]">
               <div className="flex items-center justify-between pb-3 border-b border-[#1E2133] mb-3">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-xl bg-[#FBBF24]/15 text-[#FBBF24] flex items-center justify-center">
+                  <div className="w-9 h-9 rounded-xl bg-[#FBBF24]/15 text-[#FBBF24] flex items-center justify-center shadow-md">
                     <FileText size={18} />
                   </div>
                   <div>
@@ -164,19 +162,30 @@ export default function DoctorReportsPage() {
                   </div>
                 </div>
 
-                <span className="text-xs text-[#38BDF8] font-bold">PDF · 2.4 MB (Encrypted)</span>
+                <span className="text-xs text-[#38BDF8] font-bold font-mono">PDF · 2.4 MB (Encrypted)</span>
               </div>
 
               {/* Lab Values Preview */}
               <div className="p-4 bg-[#13161F] rounded-xl border border-[#1E2133] text-xs leading-relaxed text-[#E8EAF6]">
-                <strong className="text-[#FBBF24] block mb-1">Extracted Diagnostic Values:</strong>
+                <strong className="text-[#FBBF24] block mb-1 font-['Outfit']">Extracted Diagnostic Values:</strong>
                 {selectedReport.summaryText}
               </div>
             </div>
 
-            {/* Doctor Review Form (§19) */}
+            {/* Doctor Review Form (§18 & §19) */}
             <div className="fluetas-card p-5 flex flex-col gap-4">
-              <span className="section-title">DOCTOR CLINICAL REVIEW &amp; FINDINGS</span>
+              <div className="flex items-center justify-between">
+                <span className="section-title">DOCTOR CLINICAL REVIEW &amp; FINDINGS</span>
+                <span
+                  className={`px-2.5 py-0.5 rounded-full text-[0.62rem] font-bold transition-all ${
+                    reviewState === 'completed' || selectedReport.status === 'reviewed'
+                      ? 'bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/30'
+                      : 'bg-[#FBBF24]/15 text-[#FBBF24] border border-[#FBBF24]/30'
+                  }`}
+                >
+                  {reviewState === 'completed' || selectedReport.status === 'reviewed' ? '✓ Reviewed' : 'Pending Review'}
+                </span>
+              </div>
 
               <div className="text-xs flex flex-col gap-3">
                 <div>
@@ -188,7 +197,7 @@ export default function DoctorReportsPage() {
                     value={findings}
                     onChange={e => setFindings(e.target.value)}
                     placeholder="Enter diagnostic interpretation, reference range notes..."
-                    className="w-full bg-[#0B0D14] border border-[#1E2133] rounded-xl p-3 text-[#E8EAF6] focus:border-[#FBBF24] focus:outline-none"
+                    className="w-full bg-[#0B0D14] border border-[#1E2133] rounded-xl p-3 text-[#E8EAF6] focus:border-[#FBBF24] focus:outline-none transition-colors"
                   />
                 </div>
 
@@ -201,7 +210,7 @@ export default function DoctorReportsPage() {
                     value={recommendations}
                     onChange={e => setRecommendations(e.target.value)}
                     placeholder="Prescribe dosage modifications or therapies..."
-                    className="w-full bg-[#0B0D14] border border-[#1E2133] rounded-xl p-3 text-[#E8EAF6] focus:border-[#FBBF24] focus:outline-none"
+                    className="w-full bg-[#0B0D14] border border-[#1E2133] rounded-xl p-3 text-[#E8EAF6] focus:border-[#FBBF24] focus:outline-none transition-colors"
                   />
                 </div>
 
@@ -222,11 +231,29 @@ export default function DoctorReportsPage() {
               <div className="flex justify-end pt-2">
                 <button
                   onClick={handleSaveReview}
-                  disabled={submitting || !findings.trim()}
-                  className="btn-primary bg-gradient-to-r from-[#FBBF24] to-[#F59E0B] text-black font-bold text-xs px-5 py-2.5 flex items-center gap-2 cursor-pointer shadow-[0_0_12px_rgba(251,191,36,0.3)] disabled:opacity-50"
+                  disabled={reviewState === 'submitting' || !findings.trim()}
+                  className={`btn-primary font-bold text-xs px-5 py-2.5 flex items-center gap-2 cursor-pointer transition-all shadow-lg ${
+                    reviewState === 'completed'
+                      ? 'bg-[#10B981] text-black shadow-[0_0_16px_rgba(16,185,129,0.35)]'
+                      : 'bg-gradient-to-r from-[#FBBF24] to-[#F59E0B] text-black shadow-[0_0_12px_rgba(251,191,36,0.3)]'
+                  }`}
                 >
-                  {submitting ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
-                  {submitting ? 'Saving Review...' : 'Submit & Update Patient Timeline'}
+                  {reviewState === 'submitting' ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" />
+                      <span>Reviewing...</span>
+                    </>
+                  ) : reviewState === 'completed' ? (
+                    <>
+                      <Check size={14} />
+                      <span>Reviewed ✓</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send size={14} />
+                      <span>Submit &amp; Update Patient Timeline</span>
+                    </>
+                  )}
                 </button>
               </div>
             </div>

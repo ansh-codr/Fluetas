@@ -47,13 +47,13 @@ export default function SignupPage() {
   return (
     <div
       className="min-h-screen flex items-center justify-center p-4"
-      style={{ background: 'radial-gradient(ellipse at 80% 50%, #0a1628 0%, #0B0D14 50%, #07080E 100%)' }}
+      style={{ background: 'radial-gradient(ellipse at 50% 30%, #E8EFE5 0%, #FAFAF6 60%, #F2F4EE 100%)' }}
     >
       <div
         style={{
           position: 'fixed', top: '-10%', right: '-5%', width: 500, height: 500,
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(167,139,250,0.08) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(46,125,50,0.08) 0%, transparent 70%)',
           pointerEvents: 'none',
         }}
       />
@@ -65,31 +65,35 @@ export default function SignupPage() {
             <div
               style={{
                 width: 40, height: 40, borderRadius: 10,
-                background: 'linear-gradient(135deg, #10B981, #059669)',
+                background: 'linear-gradient(135deg, #2E7D32, #1B5E20)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 20, fontWeight: 800, color: 'white',
+                fontSize: 20, fontWeight: 800, color: '#FAFAF6',
                 fontFamily: 'Outfit, sans-serif',
+                boxShadow: '0 2px 8px rgba(46,125,50,0.25)',
               }}
             >
               F
             </div>
-            <span style={{ fontFamily: 'Outfit, sans-serif', fontSize: 28, fontWeight: 800, color: '#E8EAF6' }}>
+            <span style={{ fontFamily: 'Outfit, sans-serif', fontSize: 28, fontWeight: 800, color: '#12160F' }}>
               FLUETAS
             </span>
           </div>
-          <p style={{ color: '#8B91B0', fontSize: '0.875rem' }}>Your Body. Your Data. Your Formula.</p>
+          <p style={{ color: '#586151', fontSize: '0.875rem' }}>Your Body. Your Data. Your Formula.</p>
         </div>
 
         <div
           style={{
-            background: '#13161F', border: '1px solid #1E2133',
-            borderRadius: 16, padding: '32px',
+            background: '#FFFFFF',
+            border: '1px solid rgba(18, 22, 15, 0.12)',
+            borderRadius: 16,
+            padding: '32px',
+            boxShadow: '0 4px 20px rgba(18, 22, 15, 0.05)',
           }}
         >
-          <h1 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 24, fontWeight: 700, color: '#E8EAF6', marginBottom: 8 }}>
+          <h1 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 24, fontWeight: 700, color: '#12160F', marginBottom: 8 }}>
             Create your account
           </h1>
-          <p style={{ color: '#8B91B0', fontSize: '0.875rem', marginBottom: 24 }}>
+          <p style={{ color: '#586151', fontSize: '0.875rem', marginBottom: 24 }}>
             Start your wellness journey with FLUETAS
           </p>
 
@@ -99,10 +103,11 @@ export default function SignupPage() {
             disabled={loading}
             style={{
               width: '100%', padding: '10px 16px', borderRadius: 8,
-              background: '#1E2133', border: '1px solid #2A3050',
-              color: '#E8EAF6', fontSize: '0.875rem', fontWeight: 500,
+              background: '#FFFFFF', border: '1px solid rgba(18, 22, 15, 0.15)',
+              color: '#12160F', fontSize: '0.875rem', fontWeight: 600,
               cursor: 'pointer', display: 'flex', alignItems: 'center',
               justifyContent: 'center', gap: 10, marginBottom: 20,
+              boxShadow: '0 1px 3px rgba(18,22,15,0.05)',
               transition: 'background 0.15s ease',
             }}
           >
@@ -116,9 +121,9 @@ export default function SignupPage() {
           </button>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-            <div style={{ flex: 1, height: 1, background: '#1E2133' }} />
-            <span style={{ color: '#3A3F58', fontSize: '0.8rem' }}>or</span>
-            <div style={{ flex: 1, height: 1, background: '#1E2133' }} />
+            <div style={{ flex: 1, height: 1, background: 'rgba(18, 22, 15, 0.10)' }} />
+            <span style={{ color: '#8A9482', fontSize: '0.8rem' }}>or</span>
+            <div style={{ flex: 1, height: 1, background: 'rgba(18, 22, 15, 0.10)' }} />
           </div>
 
           <form onSubmit={handleSignup}>
@@ -128,7 +133,7 @@ export default function SignupPage() {
               { id: 'signup-password', label: 'Password', type: 'password', value: password, onChange: setPassword, placeholder: '••••••••' },
             ].map(field => (
               <div key={field.id} style={{ marginBottom: 16 }}>
-                <label style={{ display: 'block', color: '#8B91B0', fontSize: '0.8rem', fontWeight: 500, marginBottom: 6 }}>
+                <label style={{ display: 'block', color: '#586151', fontSize: '0.8rem', fontWeight: 600, marginBottom: 6 }}>
                   {field.label}
                 </label>
                 <input
@@ -140,8 +145,8 @@ export default function SignupPage() {
                   placeholder={field.placeholder}
                   style={{
                     width: '100%', padding: '10px 14px', borderRadius: 8,
-                    background: '#0B0D14', border: '1px solid #1E2133',
-                    color: '#E8EAF6', fontSize: '0.875rem', outline: 'none',
+                    background: '#F2F4EE', border: '1px solid rgba(18, 22, 15, 0.15)',
+                    color: '#12160F', fontSize: '0.875rem', outline: 'none',
                     boxSizing: 'border-box',
                   }}
                 />
@@ -150,9 +155,9 @@ export default function SignupPage() {
 
             {error && (
               <div style={{
-                background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)',
+                background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.25)',
                 borderRadius: 8, padding: '10px 14px', marginBottom: 16,
-                color: '#F87171', fontSize: '0.8rem',
+                color: '#DC2626', fontSize: '0.8rem',
               }}>
                 {error}
               </div>
@@ -169,9 +174,9 @@ export default function SignupPage() {
             </button>
           </form>
 
-          <p style={{ textAlign: 'center', marginTop: 20, color: '#8B91B0', fontSize: '0.8rem' }}>
+          <p style={{ textAlign: 'center', marginTop: 20, color: '#586151', fontSize: '0.8rem' }}>
             Already have an account?{' '}
-            <Link href="/login" style={{ color: '#10B981', fontWeight: 600, textDecoration: 'none' }}>
+            <Link href="/login" style={{ color: '#2E7D32', fontWeight: 700, textDecoration: 'none' }}>
               Sign in
             </Link>
           </p>
