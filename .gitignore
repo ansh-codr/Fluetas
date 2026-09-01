@@ -10,6 +10,8 @@
 # Ignore all .env files and local overrides
 .env
 .env.*
+*.env
+vercel.env
 .env.local
 .env.development.local
 .env.test.local

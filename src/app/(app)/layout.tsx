@@ -108,7 +108,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             Doctor Panel Restricted
           </h2>
           <p className="text-xs text-[#8B91B0] m-0 leading-relaxed">
-            The clinical portal is strictly restricted to verified doctors and practitioners. Use the role switcher below to switch to the Doctor persona.
+            The clinical portal is strictly restricted to verified doctors and practitioners. If you are a doctor awaiting credential approval, your status will update upon admin verification.
           </p>
           <Link
             href="/dashboard"
@@ -137,7 +137,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             Administrator Access Required
           </h2>
           <p className="text-xs text-[#8B91B0] m-0 leading-relaxed">
-            This console is restricted to platform superadministrators. All unauthorized attempts are logged to the immutable audit trail.
+            This console is restricted to verified platform administrators. All unauthorized access attempts are logged to the immutable audit trail.
           </p>
           <Link
             href="/dashboard"

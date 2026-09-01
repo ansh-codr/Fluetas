@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { useAuth } from '@/context/AuthContext';
+import { addTimelineEvent } from '@/lib/services/timelineService';
 import { CheckCircle2, ChevronRight, ChevronLeft, User, Target, Heart, Loader2 } from 'lucide-react';
 
 const STEPS = [
@@ -90,7 +91,7 @@ export default function OnboardingPage() {
     setError('');
 
     try {
-      // Update user document
+      // Update user document (critical)
       await setDoc(doc(db, 'users', user.uid), {
         name: name.trim(),
         email: user.email,
@@ -104,39 +105,48 @@ export default function OnboardingPage() {
       }, { merge: true });
 
       // Create health profile document
-      await setDoc(doc(db, 'users', user.uid, 'healthProfile', 'main'), {
-        primaryGoal,
-        fitnessLevel,
-        activityLevel,
-        dietaryPreference: dietaryPref,
-        sleepTargetHrs: Number(sleepTargetHrs) || 8,
-        hydrationTargetL: Number(hydrationTargetL) || 2.5,
-        allergies: allergies ? allergies.split(',').map(s => s.trim()).filter(Boolean) : [],
-        chronicConditions: conditions ? conditions.split(',').map(s => s.trim()).filter(Boolean) : [],
-        currentMedications: medications ? medications.split(',').map(s => s.trim()).filter(Boolean) : [],
-        emergencyContact: emergencyName.trim() ? {
-          name: emergencyName.trim(),
-          phone: emergencyPhone.trim(),
-          relationship: emergencyRel.trim(),
-        } : null,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      }, { merge: true });
+      try {
+        await setDoc(doc(db, 'users', user.uid, 'healthProfile', 'main'), {
+          primaryGoal,
+          fitnessLevel,
+          activityLevel,
+          dietaryPreference: dietaryPref,
+          sleepTargetHrs: Number(sleepTargetHrs) || 8,
+          hydrationTargetL: Number(hydrationTargetL) || 2.5,
+          allergies: allergies ? allergies.split(',').map(s => s.trim()).filter(Boolean) : [],
+          chronicConditions: conditions ? conditions.split(',').map(s => s.trim()).filter(Boolean) : [],
+          currentMedications: medications ? medications.split(',').map(s => s.trim()).filter(Boolean) : [],
+          emergencyContact: emergencyName.trim() ? {
+            name: emergencyName.trim(),
+            phone: emergencyPhone.trim(),
+            relationship: emergencyRel.trim(),
+          } : null,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        }, { merge: true });
+      } catch (profileErr) {
+        console.warn('[Onboarding] Health profile save warning:', profileErr);
+      }
 
-      // Create profile-created timeline event
-      await setDoc(doc(db, 'users', user.uid, 'healthTimeline', `profile_created_${Date.now()}`), {
-        type: 'profile_created',
-        title: 'FLUETAS Profile Created',
-        description: `Welcome to FLUETAS! Your health journey begins here.`,
-        category: 'System',
-        timestamp: serverTimestamp(),
-        badge: 'Milestone',
-      });
+      // Create milestone timeline event
+      try {
+        await addTimelineEvent(user.uid, {
+          type: 'profile_created',
+          title: 'FLUETAS Profile Created',
+          description: 'Welcome to FLUETAS! Your health journey begins here.',
+          category: 'System',
+          badge: 'Milestone',
+        });
+      } catch {
+        // Non-critical
+      }
 
       router.replace('/dashboard');
-    } catch (err) {
-      console.error(err);
-      setError('Something went wrong. Please try again.');
+    } catch (err: any) {
+      console.error('[Onboarding Error]:', err);
+      setError(err?.message?.includes('permission')
+        ? 'Firestore permission error. Please deploy the updated firestore.rules to Firebase Console.'
+        : 'Something went wrong. Please try again.');
     } finally {
       setSaving(false);
     }

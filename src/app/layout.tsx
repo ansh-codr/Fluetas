@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Inter, Outfit } from 'next/font/google';
 import { AuthProvider } from '@/context/AuthContext';
 import { UserProfileProvider } from '@/context/UserProfileContext';
+import { ToastProvider } from '@/context/ToastContext';
 import './globals.css';
 
 const inter = Inter({
@@ -32,7 +33,9 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} ${outfit.variable} h-full`}>
       <body className="min-h-full antialiased" style={{ fontFamily: 'var(--font-inter, Inter, sans-serif)' }}>
         <AuthProvider>
-          <UserProfileProvider>{children}</UserProfileProvider>
+          <UserProfileProvider>
+            <ToastProvider>{children}</ToastProvider>
+          </UserProfileProvider>
         </AuthProvider>
       </body>
     </html>

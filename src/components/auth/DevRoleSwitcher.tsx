@@ -2,14 +2,18 @@
 
 import React, { useState } from 'react';
 import { useAuth, UserRole } from '@/context/AuthContext';
-import { useRouter, usePathname } from 'next/navigation';
-import { Shield, User, Stethoscope, ChevronRight, Check } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Shield, User, Stethoscope, Check, AlertTriangle } from 'lucide-react';
 
 export default function DevRoleSwitcher() {
   const { user, role, setDevRole } = useAuth();
   const router = useRouter();
-  const pathname = usePathname();
   const [open, setOpen] = useState(false);
+
+  // 1. STRICT SECURITY GATE: Completely disabled in production builds
+  if (process.env.NODE_ENV !== 'development') {
+    return null;
+  }
 
   if (!user) return null;
 
@@ -31,17 +35,24 @@ export default function DevRoleSwitcher() {
   return (
     <div className="fixed bottom-4 right-4 z-50">
       {open && (
-        <div className="mb-2 p-3 bg-[#13161F] border border-[#1E2133] rounded-2xl shadow-2xl flex flex-col gap-2 min-w-[240px] animate-slide-up">
+        <div className="mb-2 p-3 bg-[#13161F] border border-amber-500/40 rounded-2xl shadow-2xl flex flex-col gap-2 min-w-[260px] animate-slide-up">
           <div className="flex items-center justify-between pb-2 border-b border-[#1E2133]">
-            <span className="text-[0.65rem] font-bold text-[#8B91B0] uppercase tracking-wider">
-              Dev Persona Switcher
-            </span>
-            <span className="text-[0.6rem] px-1.5 py-0.5 rounded bg-[#1E2133] text-[#10B981] font-mono font-bold">
-              Shared DB
+            <div className="flex items-center gap-1.5 text-amber-400">
+              <AlertTriangle size={13} />
+              <span className="text-[0.65rem] font-bold uppercase tracking-wider">
+                Dev UI Mock Persona
+              </span>
+            </div>
+            <span className="text-[0.58rem] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 font-mono font-bold">
+              DEV ONLY
             </span>
           </div>
 
-          <div className="flex flex-col gap-1.5">
+          <p className="text-[0.62rem] text-[#8B91B0] m-0 leading-tight">
+            Switches local UI views for testing. Backend APIs still verify authentic Firebase Custom Claims.
+          </p>
+
+          <div className="flex flex-col gap-1.5 mt-1">
             {roles.map(r => {
               const Icon = r.icon;
               const isCurrent = role === r.role;
@@ -75,8 +86,8 @@ export default function DevRoleSwitcher() {
 
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 px-3 py-2 rounded-full bg-[#13161F]/90 backdrop-blur-md border border-[#1E2133] hover:border-[#2A3050] text-xs font-bold text-[#E8EAF6] shadow-xl hover:scale-105 transition-all cursor-pointer"
-        title="Switch Panel Persona"
+        className="flex items-center gap-2 px-3 py-2 rounded-full bg-[#13161F]/95 backdrop-blur-md border border-amber-500/40 hover:border-amber-400 text-xs font-bold text-[#E8EAF6] shadow-xl hover:scale-105 transition-all cursor-pointer"
+        title="Development UI Persona Switcher (Not in Production)"
       >
         <div
           className="w-5 h-5 rounded-full flex items-center justify-center"
@@ -85,7 +96,7 @@ export default function DevRoleSwitcher() {
           <CurrentIcon size={12} />
         </div>
         <span className="text-[0.72rem] hidden sm:inline">{currentRoleObj.label}</span>
-        <span className="text-[0.6rem] text-[#8B91B0]">Role</span>
+        <span className="text-[0.58rem] px-1 rounded bg-amber-500/20 text-amber-400 font-mono">DEV</span>
       </button>
     </div>
   );

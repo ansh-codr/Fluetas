@@ -1,9 +1,39 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    // Only authenticated users can access their own document uploads
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return request.auth.token.role == 'admin';
+    }
+
+    function isDoctor() {
+      return request.auth.token.role == 'doctor';
+    }
+
+    // Encrypted medical documents & lab uploads
+    match /users/{userId}/documents/{documentId} {
+      allow read: if isAuthenticated() && (isOwner(userId) || isDoctor() || isAdmin());
+      allow write: if isAuthenticated() && (isOwner(userId) || isAdmin());
+    }
+
+    // User profile pictures & personal asset uploads
     match /users/{userId}/{allPaths=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read: if isAuthenticated() && (isOwner(userId) || isDoctor() || isAdmin());
+      allow write: if isAuthenticated() && (isOwner(userId) || isAdmin());
+    }
+
+    // Public doctor credentials & verification certificates (readable by admin)
+    match /doctorVerification/{doctorId}/{docName} {
+      allow read: if isAuthenticated() && (request.auth.uid == doctorId || isAdmin());
+      allow write: if isAuthenticated() && (request.auth.uid == doctorId || isAdmin());
     }
   }
 }

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Anton&family=Archivo:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Archivo+Expanded:wght@600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Archivo:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Archivo+Expanded:wght@600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap');
 @import "tailwindcss" source(none);
 @source "../src";
 @import "../../node_modules/tw-animate-css/dist/tw-animate.css";
@@ -81,6 +81,8 @@
   --primary:           var(--leaf);
   --primary-hover:     var(--leaf-hi);
   --primary-foreground: #FAFAF6;
+
+  --ease-fluetas: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* ─── Base layer ─── */
@@ -153,10 +155,248 @@
   border-top: 2px solid var(--leaf);
 }
 
-/* Reduced-motion safety */
+/* ─── Keyframe Animations ─────────────────────────────────────────────────── */
+@keyframes ring-fill {
+  from { stroke-dashoffset: 300; }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-in-left {
+  from { opacity: 0; transform: translateX(-16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%       { transform: scale(1.4); opacity: 0.7; }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.6; transform: scale(1.15); }
+}
+
+/* ─── Utility classes ────────────────────────────────────────────────────── */
+.animate-ring-fill {
+  animation: ring-fill 1.2s var(--ease-fluetas) forwards;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.4s var(--ease-fluetas) forwards;
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s var(--ease-fluetas) forwards;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.25s var(--ease-fluetas) forwards;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease forwards;
+}
+
+.animate-pulse-dot {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 2.5s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  animation: shimmer 2s linear infinite;
+}
+
+/* Staggered animation delays for dashboard cards */
+.delay-50  { animation-delay: 0.05s; opacity: 0; }
+.delay-100 { animation-delay: 0.10s; opacity: 0; }
+.delay-150 { animation-delay: 0.15s; opacity: 0; }
+.delay-200 { animation-delay: 0.20s; opacity: 0; }
+.delay-250 { animation-delay: 0.25s; opacity: 0; }
+.delay-300 { animation-delay: 0.30s; opacity: 0; }
+.delay-400 { animation-delay: 0.40s; opacity: 0; }
+
+/* ─── Card base & Micro-interactions ─────────────────────────────────────── */
+.fluetas-card {
+  background: #13161F;
+  border: 1px solid #1E2133;
+  border-radius: 12px;
+  transition: transform 0.2s var(--ease-fluetas), border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.fluetas-card:hover {
+  border-color: #2A3050;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.fluetas-card-interactive {
+  background: #13161F;
+  border: 1px solid #1E2133;
+  border-radius: 12px;
+  transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.22s ease, box-shadow 0.22s ease;
+}
+
+.fluetas-card-interactive:hover {
+  transform: translateY(-2px);
+  border-color: rgba(56, 189, 248, 0.35);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5), 0 0 15px rgba(56, 189, 248, 0.08);
+}
+
+/* ─── Accessibility: Reduced Motion ──────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
   }
+}
+
+/* ─── Glass effect ───────────────────────────────────────────────────────── */
+.fluetas-glass {
+  background: rgba(19, 22, 31, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(30, 33, 51, 0.8);
+}
+
+/* ─── Gradient text ──────────────────────────────────────────────────────── */
+.gradient-text-green {
+  background: linear-gradient(135deg, #10B981, #34D399);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Progress bar base ──────────────────────────────────────────────────── */
+.fluetas-progress-track {
+  height: 6px;
+  background: #1E2133;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.fluetas-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 1s var(--ease-fluetas);
+}
+
+/* ─── Sidebar nav item ───────────────────────────────────────────────────── */
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #8B91B0;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.nav-item:hover {
+  background: #181B26;
+  color: #E8EAF6;
+}
+
+.nav-item.active {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.05));
+  color: #10B981;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+/* ─── Badge ──────────────────────────────────────────────────────────────── */
+.fluetas-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+/* ─── Button variants ────────────────────────────────────────────────────── */
+.btn-primary {
+  background: linear-gradient(135deg, #10B981, #059669);
+  color: white;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 8px 18px;
+  font-size: 0.875rem;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s ease, transform 0.1s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-primary:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: #8B91B0;
+  font-weight: 500;
+  border-radius: 8px;
+  padding: 8px 18px;
+  font-size: 0.875rem;
+  border: 1px solid #1E2133;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-ghost:hover {
+  background: #181B26;
+  color: #E8EAF6;
+}
+
+/* ─── Section header ─────────────────────────────────────────────────────── */
+.section-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
 }
