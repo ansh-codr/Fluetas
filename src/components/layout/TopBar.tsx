@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Bell, Calendar, Search, Menu, X } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Bell, Calendar, Search, Menu, X, CheckCheck } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { mockUser } from '@/lib/mock/dashboardData';
+import { useUserProfile } from '@/context/UserProfileContext';
+import { useNotifications } from '@/hooks/useNotifications';
+import Link from 'next/link';
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -18,13 +20,44 @@ interface TopBarProps {
 
 export default function TopBar({ onMenuToggle }: TopBarProps) {
   const { user } = useAuth();
-  const displayName = user?.displayName ?? mockUser.name;
-  const firstName = displayName.split(' ')[0];
+  const { profile } = useUserProfile();
+  const { notifications, unreadCount, markRead, markAllRead } = useNotifications();
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const notifRef = useRef<HTMLDivElement>(null);
+
+  const displayName = profile?.name ?? user?.displayName ?? 'there';
+  const firstName = displayName.split(' ')[0];
+  const isPremium = profile?.premiumMember ?? false;
+
+  // Close notification panel when clicking outside
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setNotifOpen(false);
+      }
+    }
+    if (notifOpen) document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [notifOpen]);
+
+  const handleNotifOpen = () => {
+    setNotifOpen(!notifOpen);
+  };
+
+  function formatNotifTime(ts: { seconds: number }): string {
+    const d = new Date(ts.seconds * 1000);
+    const diffMins = Math.floor((Date.now() - d.getTime()) / 60000);
+    if (diffMins < 2) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    const diffHrs = Math.floor(diffMins / 60);
+    if (diffHrs < 24) return `${diffHrs}h ago`;
+    return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+  }
 
   return (
     <header className="h-16 fixed top-0 left-0 md:left-[68px] lg:left-[220px] right-0 bg-[#0B0D14]/90 backdrop-blur-md border-b border-[#1E2133] flex items-center px-3 sm:px-6 gap-3 sm:gap-4 z-40 transition-all duration-300">
-      {/* Mobile Hamburger Button */}
+      {/* Mobile Hamburger */}
       <button
         onClick={onMenuToggle}
         className="p-2 rounded-lg bg-[#13161F] border border-[#1E2133] text-[#8B91B0] hover:text-[#E8EAF6] md:hidden shrink-0 cursor-pointer"
@@ -33,17 +66,17 @@ export default function TopBar({ onMenuToggle }: TopBarProps) {
         <Menu size={18} />
       </button>
 
-      {/* Greeting Title */}
+      {/* Greeting */}
       <div className="flex-1 min-w-0">
         <h2 className="font-['Outfit'] text-sm sm:text-base lg:text-lg font-bold text-[#E8EAF6] m-0 truncate">
           {getGreeting()}, {firstName}! 👋
         </h2>
         <p className="text-[#8B91B0] text-[0.65rem] sm:text-xs m-0 truncate hidden sm:block">
-          Here&apos;s your FLUETAS health & wellness overview for today.
+          Here&apos;s your FLUETAS health &amp; wellness overview for today.
         </p>
       </div>
 
-      {/* Desktop & Tablet Search Bar */}
+      {/* Desktop Search */}
       <div className="hidden sm:flex items-center gap-2 bg-[#13161F] border border-[#1E2133] rounded-lg px-3 py-1.5 min-w-[180px] lg:min-w-[260px]">
         <Search size={14} className="text-[#3A3F58] shrink-0" />
         <input
@@ -62,17 +95,70 @@ export default function TopBar({ onMenuToggle }: TopBarProps) {
         <Search size={16} />
       </button>
 
-      {/* Right Side Actions */}
+      {/* Right Actions */}
       <div className="flex items-center gap-2 sm:gap-2.5">
         {/* Notifications */}
-        <button
-          id="topbar-notifications-btn"
-          className="relative w-9 h-9 rounded-lg bg-[#13161F] border border-[#1E2133] flex items-center justify-center text-[#8B91B0] hover:text-[#E8EAF6] hover:border-[#2A3050] transition-colors cursor-pointer shrink-0"
-          aria-label="Notifications"
-        >
-          <Bell size={16} />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#10B981] border-2 border-[#0B0D14]" />
-        </button>
+        <div className="relative" ref={notifRef}>
+          <button
+            id="topbar-notifications-btn"
+            onClick={handleNotifOpen}
+            className="relative w-9 h-9 rounded-lg bg-[#13161F] border border-[#1E2133] flex items-center justify-center text-[#8B91B0] hover:text-[#E8EAF6] hover:border-[#2A3050] transition-colors cursor-pointer shrink-0"
+            aria-label="Notifications"
+          >
+            <Bell size={16} />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[16px] h-4 rounded-full bg-[#10B981] text-black text-[0.55rem] font-black flex items-center justify-center px-0.5 border border-[#0B0D14]">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </button>
+
+          {/* Notification Panel */}
+          {notifOpen && (
+            <div className="absolute right-0 top-11 w-80 bg-[#13161F] border border-[#1E2133] rounded-2xl shadow-2xl z-50 overflow-hidden animate-slide-up">
+              <div className="flex items-center justify-between p-3.5 border-b border-[#1E2133]">
+                <span className="font-['Outfit'] text-sm font-bold text-[#E8EAF6]">Notifications</span>
+                {unreadCount > 0 && (
+                  <button
+                    onClick={() => markAllRead()}
+                    className="flex items-center gap-1 text-[0.65rem] text-[#10B981] font-semibold hover:underline cursor-pointer"
+                  >
+                    <CheckCheck size={12} /> Mark all read
+                  </button>
+                )}
+              </div>
+
+              <div className="max-h-72 overflow-y-auto">
+                {notifications.length === 0 ? (
+                  <div className="p-6 text-center">
+                    <p className="text-2xl mb-1.5">🔔</p>
+                    <p className="text-xs font-semibold text-[#E8EAF6] m-0">No notifications</p>
+                    <p className="text-[0.65rem] text-[#8B91B0] m-0 mt-1">You're all caught up!</p>
+                  </div>
+                ) : (
+                  notifications.map(n => (
+                    <button
+                      key={n.id}
+                      onClick={() => markRead(n.id)}
+                      className={`w-full text-left p-3.5 border-b border-[#1E2133] last:border-0 hover:bg-[#1A1F30] transition-colors cursor-pointer ${!n.read ? 'bg-[#10B981]/5' : ''}`}
+                    >
+                      <div className="flex items-start gap-2.5">
+                        {!n.read && <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] mt-1.5 shrink-0" />}
+                        <div className="flex-1 min-w-0" style={{ paddingLeft: n.read ? '10px' : '' }}>
+                          <p className="text-xs font-semibold text-[#E8EAF6] m-0 leading-tight">{n.title}</p>
+                          <p className="text-[0.65rem] text-[#8B91B0] m-0 mt-0.5 leading-snug">{n.message}</p>
+                          <p className="text-[0.6rem] text-[#3A3F58] m-0 mt-1">
+                            {formatNotifTime(n.createdAt)}
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Calendar */}
         <button
@@ -84,22 +170,25 @@ export default function TopBar({ onMenuToggle }: TopBarProps) {
         </button>
 
         {/* Profile Card */}
-        <div className="flex items-center gap-2 sm:gap-2.5 bg-[#13161F] border border-[#1E2133] rounded-xl px-2.5 py-1.5 cursor-pointer shrink-0 hover:border-[#2A3050] transition-colors">
+        <Link
+          href="/profile"
+          className="flex items-center gap-2 sm:gap-2.5 bg-[#13161F] border border-[#1E2133] rounded-xl px-2.5 py-1.5 shrink-0 hover:border-[#2A3050] transition-colors no-underline"
+        >
           <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#10B981] to-[#059669] flex items-center justify-center text-xs font-bold text-white shrink-0 shadow-[0_0_8px_rgba(16,185,129,0.3)]">
-            {firstName[0]}
+            {firstName[0]?.toUpperCase() ?? 'U'}
           </div>
           <div className="hidden md:block text-left">
             <p className="text-[#E8EAF6] text-xs font-semibold m-0 leading-tight truncate max-w-[100px] lg:max-w-[130px]">
               {displayName}
             </p>
-            <p className="text-[#FBBF24] text-[0.62rem] font-medium m-0 flex items-center gap-1">
-              <span>Premium</span> ⭐
+            <p className={`text-[0.62rem] font-medium m-0 flex items-center gap-1 ${isPremium ? 'text-[#FBBF24]' : 'text-[#8B91B0]'}`}>
+              {isPremium ? <>Premium ⭐</> : 'Free Plan'}
             </p>
           </div>
-        </div>
+        </Link>
       </div>
 
-      {/* Mobile Expandable Search Drawer / Overlay */}
+      {/* Mobile Search Drawer */}
       {mobileSearchOpen && (
         <div className="absolute top-16 left-0 right-0 p-3 bg-[#0D0F18] border-b border-[#1E2133] shadow-2xl flex items-center gap-2 sm:hidden animate-slide-up">
           <div className="flex-1 flex items-center gap-2 bg-[#13161F] border border-[#1E2133] rounded-lg px-3 py-2">

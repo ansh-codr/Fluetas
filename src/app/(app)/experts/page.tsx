@@ -1,6 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
+import { bookConsultation } from '@/lib/services/consultationService';
 import { mockDoctorsList } from '@/lib/mock/dashboardData';
 import {
   Stethoscope,
@@ -12,12 +15,18 @@ import {
   CheckCircle2,
   X,
   Lock,
+  Loader2,
 } from 'lucide-react';
 
 export default function ExpertsPage() {
+  const { user } = useAuth();
+  const router = useRouter();
   const [filter, setFilter] = useState('All');
   const [selectedDoctor, setSelectedDoctor] = useState<any | null>(null);
-  const [bookingStep, setBookingStep] = useState<'consent' | 'confirmed'>('consent');
+  const [bookingStep, setBookingStep] = useState<'details' | 'consent' | 'confirmed'>('details');
+  const [submitting, setSubmitting] = useState(false);
+  const [reason, setReason] = useState('');
+  const [symptomsInput, setSymptomsInput] = useState('');
 
   // Consent Scopes State
   const [consentScopes, setConsentScopes] = useState({
@@ -37,14 +46,40 @@ export default function ExpertsPage() {
 
   const handleOpenBooking = (doc: any) => {
     setSelectedDoctor(doc);
-    setBookingStep('consent');
+    setReason('');
+    setSymptomsInput('');
+    setBookingStep('details');
   };
 
-  const handleConfirmBooking = () => {
-    setBookingStep('confirmed');
-    setTimeout(() => {
-      setSelectedDoctor(null);
-    }, 2500);
+  const handleConfirmBooking = async () => {
+    if (!user || !selectedDoctor) return;
+    setSubmitting(true);
+    try {
+      const symptomsList = symptomsInput
+        ? symptomsInput.split(',').map(s => s.trim()).filter(Boolean)
+        : [];
+
+      await bookConsultation(user.uid, {
+        expertId: selectedDoctor.id,
+        expertName: selectedDoctor.name,
+        specialization: selectedDoctor.specialization,
+        reason: reason || `Consultation regarding ${selectedDoctor.specialization}`,
+        symptomsReported: symptomsList,
+        preferredDate: selectedDoctor.nextSlot,
+        consentScopes,
+      });
+
+      setBookingStep('confirmed');
+      setTimeout(() => {
+        setSelectedDoctor(null);
+        router.push('/consultations');
+      }, 2000);
+    } catch (err) {
+      console.error(err);
+      alert('Failed to book consultation. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -55,7 +90,7 @@ export default function ExpertsPage() {
           <div className="flex items-center gap-2 mb-1">
             <Stethoscope size={20} className="text-[#10B981]" />
             <h1 className="font-['Outfit'] text-xl sm:text-2xl font-black text-[#E8EAF6] m-0">
-              VERIFIED DOCTORS & SPECIALISTS
+              VERIFIED DOCTORS &amp; SPECIALISTS
             </h1>
           </div>
           <p className="text-[#8B91B0] text-xs sm:text-sm m-0">
@@ -143,7 +178,7 @@ export default function ExpertsPage() {
                   onClick={() => handleOpenBooking(doc)}
                   className="btn-primary py-1.5 px-4 text-xs font-bold shrink-0 cursor-pointer shadow-[0_0_12px_rgba(16,185,129,0.3)]"
                 >
-                  Book & Grant Consent
+                  Book &amp; Grant Consent
                 </button>
               </div>
             </div>
@@ -151,10 +186,10 @@ export default function ExpertsPage() {
         ))}
       </div>
 
-      {/* Consent & Booking Flow Modal (§4 Requirement) */}
+      {/* Consent & Booking Flow Modal */}
       {selectedDoctor && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
-          <div className="bg-[#13161F] border border-[#1E2133] rounded-2xl p-6 max-w-lg w-full shadow-2xl relative animate-slide-up">
+          <div className="bg-[#13161F] border border-[#1E2133] rounded-2xl p-6 max-w-lg w-full shadow-2xl relative animate-slide-up max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setSelectedDoctor(null)}
               className="absolute top-4 right-4 text-[#8B91B0] hover:text-white"
@@ -162,16 +197,72 @@ export default function ExpertsPage() {
               <X size={18} />
             </button>
 
-            {bookingStep === 'consent' ? (
+            {bookingStep === 'details' ? (
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Stethoscope size={18} className="text-[#10B981]" />
+                  <h3 className="font-['Outfit'] text-lg font-bold text-[#E8EAF6] m-0">
+                    Schedule Consultation
+                  </h3>
+                </div>
+                <p className="text-xs text-[#8B91B0] m-0 mb-4">
+                  Consultation with <strong className="text-[#E8EAF6]">{selectedDoctor.name}</strong> ({selectedDoctor.specialization}).
+                </p>
+
+                <div className="flex flex-col gap-3 text-xs mb-4">
+                  <div>
+                    <label className="block text-[#8B91B0] font-semibold mb-1">
+                      Reason for Consultation *
+                    </label>
+                    <textarea
+                      required
+                      rows={3}
+                      value={reason}
+                      onChange={e => setReason(e.target.value)}
+                      placeholder="Describe what you want to address (e.g. rotator cuff discomfort during bench press, knee pain, post-workout fatigue)..."
+                      className="w-full bg-[#0B0D14] border border-[#1E2133] rounded-xl p-2.5 text-[#E8EAF6] focus:border-[#10B981] focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[#8B91B0] font-semibold mb-1">
+                      Related Symptoms (comma separated)
+                    </label>
+                    <input
+                      value={symptomsInput}
+                      onChange={e => setSymptomsInput(e.target.value)}
+                      placeholder="e.g. Shoulder impingement, Mild clicking, Morning stiffness"
+                      className="w-full bg-[#0B0D14] border border-[#1E2133] rounded-xl p-2.5 text-[#E8EAF6] focus:border-[#10B981] focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2">
+                  <button
+                    onClick={() => setSelectedDoctor(null)}
+                    className="px-4 py-2 rounded-xl border border-[#1E2133] text-[#8B91B0] text-xs font-semibold hover:text-white"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => setBookingStep('consent')}
+                    disabled={!reason.trim()}
+                    className="btn-primary px-5 py-2 text-xs font-bold disabled:opacity-50"
+                  >
+                    Proceed to Consent Scope →
+                  </button>
+                </div>
+              </div>
+            ) : bookingStep === 'consent' ? (
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <Lock size={18} className="text-[#10B981]" />
                   <h3 className="font-['Outfit'] text-lg font-bold text-[#E8EAF6] m-0">
-                    Consent & Granular Data Access Scopes
+                    Consent &amp; Granular Data Access Scopes
                   </h3>
                 </div>
                 <p className="text-xs text-[#8B91B0] m-0 mb-4 leading-relaxed">
-                  You are scheduling with <strong className="text-[#E8EAF6]">{selectedDoctor.name}</strong>. Select the specific data domains you authorize this doctor to access during consultation:
+                  Select the specific data domains you authorize <strong className="text-[#E8EAF6]">{selectedDoctor.name}</strong> to access during consultation:
                 </p>
 
                 {/* Scope Checkboxes */}
@@ -179,7 +270,7 @@ export default function ExpertsPage() {
                   {[
                     { key: 'healthHistory', label: 'Complete Medical & Surgical History', desc: 'Allergies, past surgeries, chronic conditions' },
                     { key: 'previousConsultations', label: 'Past Consultation Notes & Reports', desc: 'Clinical notes from other specialists' },
-                    { key: 'relevantReports', label: 'Diagnostic Lab Reports & 3T MRI Scans', desc: 'Blood panels, metabolic reports' },
+                    { key: 'relevantReports', label: 'Diagnostic Lab Reports & Scans', desc: 'Blood panels, metabolic reports' },
                     { key: 'currentMedications', label: 'Current Medication Regimen', desc: 'Prescription doses & supplements' },
                     { key: 'workoutHistory', label: 'Training Volume & Exercise Logs', desc: 'Biomechanical loading history' },
                     { key: 'nutritionLogs', label: 'Daily Nutrition & Macro Intake', desc: 'Calorie pacing and meal logs' },
@@ -220,12 +311,22 @@ export default function ExpertsPage() {
                   </div>
                 </div>
 
-                <button
-                  onClick={handleConfirmBooking}
-                  className="btn-primary w-full py-3 justify-center font-bold text-xs shadow-[0_0_16px_rgba(16,185,129,0.3)] cursor-pointer"
-                >
-                  Confirm Booking & Grant Consent
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setBookingStep('details')}
+                    className="px-4 py-2.5 rounded-xl border border-[#1E2133] text-[#8B91B0] text-xs font-semibold hover:text-white"
+                  >
+                    ← Back
+                  </button>
+                  <button
+                    onClick={handleConfirmBooking}
+                    disabled={submitting}
+                    className="btn-primary flex-1 py-3 justify-center font-bold text-xs shadow-[0_0_16px_rgba(16,185,129,0.3)] cursor-pointer flex items-center gap-2"
+                  >
+                    {submitting ? <Loader2 size={14} className="animate-spin" /> : null}
+                    {submitting ? 'Confirming & Saving...' : 'Confirm Booking & Grant Consent'}
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="text-center py-6 animate-fade-in">
@@ -236,7 +337,7 @@ export default function ExpertsPage() {
                   Consultation Confirmed!
                 </h3>
                 <p className="text-xs text-[#8B91B0] m-0 mt-1 max-w-sm mx-auto">
-                  Your appointment with {selectedDoctor.name} is scheduled for {selectedDoctor.nextSlot}. An encrypted access token has been generated.
+                  Your appointment with {selectedDoctor.name} has been persisted to your consultations record and timeline. Redirecting to your consultations...
                 </p>
               </div>
             )}

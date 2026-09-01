@@ -2,29 +2,46 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { auth } from '@/lib/firebase/config';
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase/config';
 
 export type UserRole = 'customer' | 'doctor' | 'admin' | null;
+export type AccountStatus = 'active' | 'pending' | 'suspended' | 'deactivated';
+
+export interface UserAccountData {
+  userId: string;
+  email: string;
+  role: UserRole;
+  status: AccountStatus;
+  doctorId?: string; // Links doctor account to doctor document
+  createdAt?: any;
+  updatedAt?: any;
+}
 
 interface AuthContextValue {
   user: User | null;
   role: UserRole;
+  status: AccountStatus;
   loading: boolean;
+  setDevRole: (role: UserRole) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue>({
   user: null,
   role: null,
+  status: 'active',
   loading: true,
+  setDevRole: async () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<UserRole>(null);
+  const [status, setStatus] = useState<AccountStatus>('active');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // When Firebase is not configured (no real API key), skip auth listener
+    // When Firebase is not configured, skip auth listener
     if (!auth) {
       setLoading(false);
       return;
@@ -34,13 +51,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(firebaseUser);
 
       if (firebaseUser) {
-        // Read role from custom claims (set server-side via Cloud Function)
-        const idTokenResult = await firebaseUser.getIdTokenResult(true);
-        const claimRole = idTokenResult.claims.role as UserRole;
-        // Fall back to 'customer' if custom claim not yet set (new accounts)
-        setRole(claimRole ?? 'customer');
+        try {
+          // Check local dev role override in sessionStorage if present
+          const devRoleOverride = typeof window !== 'undefined' ? sessionStorage.getItem(`dev_role_${firebaseUser.uid}`) as UserRole : null;
+
+          if (db) {
+            const userDocRef = doc(db, 'users', firebaseUser.uid);
+            const snap = await getDoc(userDocRef);
+            if (snap.exists()) {
+              const data = snap.data();
+              setRole(devRoleOverride || (data.role as UserRole) || 'customer');
+              setStatus((data.status as AccountStatus) || 'active');
+            } else {
+              setRole(devRoleOverride || 'customer');
+              setStatus('active');
+            }
+          } else {
+            setRole(devRoleOverride || 'customer');
+            setStatus('active');
+          }
+        } catch (err) {
+          console.warn('[AuthContext] Role resolution error:', err);
+          setRole('customer');
+          setStatus('active');
+        }
       } else {
         setRole(null);
+        setStatus('active');
       }
 
       setLoading(false);
@@ -49,8 +86,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => unsubscribe();
   }, []);
 
+  const setDevRole = async (newRole: UserRole) => {
+    if (!user) return;
+    setRole(newRole);
+    if (typeof window !== 'undefined') {
+      if (newRole) {
+        sessionStorage.setItem(`dev_role_${user.uid}`, newRole);
+      } else {
+        sessionStorage.removeItem(`dev_role_${user.uid}`);
+      }
+    }
+    if (db) {
+      try {
+        await updateDoc(doc(db, 'users', user.uid), {
+          role: newRole || 'customer',
+        });
+      } catch {
+        // ignore
+      }
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, role, loading }}>
+    <AuthContext.Provider value={{ user, role, status, loading, setDevRole }}>
       {children}
     </AuthContext.Provider>
   );

@@ -2,15 +2,14 @@
 
 import React, { useState } from 'react';
 import CircleProgress from '@/components/ui/CircleProgress';
-import { mockHydrationLogs, mockHydrationWeek } from '@/lib/mock/dashboardData';
+import { useHydration } from '@/hooks/useHydration';
 import {
   Droplets,
   Plus,
-  Sparkles,
-  TrendingUp,
-  Clock,
-  CupSoda,
+  Minus,
   CheckCircle2,
+  TrendingUp,
+  Loader2,
 } from 'lucide-react';
 import {
   BarChart,
@@ -22,151 +21,238 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 
-export default function HydrationPage() {
-  const [currentIntake, setCurrentIntake] = useState(1800); // 1.8L
-  const [goal, setGoal] = useState(2500); // 2.5L
-  const [logs, setLogs] = useState(mockHydrationLogs);
+const DRINK_OPTIONS = [
+  { label: 'Water', emoji: '💧', amount: 250, type: 'Pure Filtered Water' },
+  { label: 'Large', emoji: '🥤', amount: 500, type: 'Pure Filtered Water' },
+  { label: 'Green Tea', emoji: '🍵', amount: 200, type: 'Green Tea' },
+  { label: 'Coffee', emoji: '☕', amount: 150, type: 'Coffee (Black)' },
+  { label: 'Coconut', emoji: '🥥', amount: 300, type: 'Coconut Water' },
+  { label: 'Custom', emoji: '✏️', amount: 0, type: 'Pure Filtered Water' },
+];
 
-  const addWater = (amount: number, type = 'Pure Filtered Water') => {
-    const newIntake = currentIntake + amount;
-    setCurrentIntake(newIntake);
-    setLogs([
-      {
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        amount: amount,
-        type: type,
-      },
-      ...logs,
-    ]);
+function formatTime(ts: { seconds: number }): string {
+  return new Date(ts.seconds * 1000).toLocaleTimeString('en-IN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  });
+}
+
+function dayLabel(dateStr: string): string {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('en-IN', { weekday: 'short' });
+}
+
+export default function HydrationPage() {
+  const { logs, totalMl, goalMl, pct, weeklyData, loading, error, addWater, submitting } = useHydration();
+
+  const [customAmount, setCustomAmount] = useState(300);
+  const [customType, setCustomType] = useState('Pure Filtered Water');
+  const [showCustom, setShowCustom] = useState(false);
+
+  const handleQuickAdd = async (amount: number, type: string) => {
+    if (amount === 0) { setShowCustom(true); return; }
+    await addWater(amount, type);
   };
 
-  const pct = Math.round((currentIntake / goal) * 100);
+  const handleCustomAdd = async () => {
+    if (customAmount < 1 || customAmount > 5000) return;
+    await addWater(customAmount, customType);
+    setShowCustom(false);
+  };
+
+  const weeklyChartData = weeklyData.map(d => ({
+    day: dayLabel(d.date),
+    ml: Math.round(d.totalMl),
+    L: Math.round(d.totalMl / 100) / 10,
+    date: d.date,
+  }));
+
+  const weeklyAvg = weeklyData.length
+    ? Math.round(weeklyData.reduce((a, d) => a + d.totalMl, 0) / weeklyData.filter(d => d.totalMl > 0).length || 0)
+    : 0;
 
   return (
     <div className="flex flex-col gap-5 max-w-5xl mx-auto w-full">
       {/* Header */}
       <div>
         <h1 className="font-['Outfit'] text-xl sm:text-2xl font-black text-[#E8EAF6] m-0">
-          HYDRATION TRACKER & ELECTROLYTE SYNC
+          DAILY HYDRATION TRACKER
         </h1>
         <p className="text-[#8B91B0] text-xs sm:text-sm m-0">
-          Optimal cellular hydration, blood volume regulation, and workout recovery pacing.
+          Real-time fluid intake, electrolyte balance, and cellular hydration insights.
         </p>
       </div>
 
-      {/* Main Hydration Status Card */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-        {/* Big Ring Card */}
-        <div className="fluetas-card p-6 flex flex-col items-center justify-center text-center bg-gradient-to-br from-[#13161F] to-[#0A202E] border-[#38BDF8]/30">
-          <CircleProgress
-            score={currentIntake}
-            max={goal}
-            size={160}
-            strokeWidth={12}
-            color="#38BDF8"
-            trackColor="#0C4A6E"
-            label={`${(currentIntake / 1000).toFixed(2)}L`}
-          />
-          <div className="mt-3">
-            <p className="font-['Outfit'] text-lg font-bold text-[#E8EAF6] m-0">
-              {pct}% of Daily Goal
-            </p>
-            <p className="text-xs text-[#8B91B0] m-0 mt-0.5">
-              Goal: {(goal / 1000).toFixed(1)}L · {Math.max(0, goal - currentIntake)} ml remaining
-            </p>
-          </div>
+      {/* Error Banner */}
+      {error && (
+        <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-xs">
+          {error}
+        </div>
+      )}
+
+      {/* Main Score + Quick Add */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Progress Ring */}
+        <div className="fluetas-card p-6 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-[#13161F] to-[#0B1A2E] border-[#38BDF8]/30 text-center">
+          {loading ? (
+            <div className="w-36 h-36 rounded-full bg-[#1E2133] animate-pulse" />
+          ) : (
+            <>
+              <CircleProgress
+                score={pct}
+                max={100}
+                size={140}
+                strokeWidth={10}
+                color="#38BDF8"
+                trackColor="#0C2740"
+                label={`${pct}%`}
+              />
+              <div>
+                <p className="font-['Outfit'] text-2xl font-black text-[#38BDF8] m-0">
+                  {(totalMl / 1000).toFixed(1)}L
+                </p>
+                <p className="text-[#8B91B0] text-xs m-0">
+                  of {(goalMl / 1000).toFixed(1)}L daily goal
+                </p>
+                {pct >= 100 && (
+                  <div className="flex items-center justify-center gap-1 mt-1.5 text-[#10B981] text-xs font-bold">
+                    <CheckCircle2 size={14} /> Goal reached! 🎉
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </div>
 
         {/* Quick Add Buttons */}
-        <div className="fluetas-card p-5 md:col-span-2 flex flex-col justify-between gap-4">
-          <div>
-            <span className="section-title">QUICK LOG INTAKE</span>
-            <p className="text-xs text-[#8B91B0] m-0 mt-1 mb-4">
-              Tap any button below to instantly append your water log.
-            </p>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-              {[
-                { label: '+250 ml', ml: 250, desc: 'Small Glass' },
-                { label: '+500 ml', ml: 500, desc: 'Standard Bottle' },
-                { label: '+750 ml', ml: 750, desc: 'Sports Shaker' },
-                { label: '+1,000 ml', ml: 1000, desc: 'Full Pitcher' },
-              ].map(btn => (
-                <button
-                  key={btn.ml}
-                  onClick={() => addWater(btn.ml)}
-                  className="p-3 rounded-xl bg-[#0B0D14] border border-[#1E2133] hover:border-[#38BDF8] hover:bg-[#38BDF8]/10 text-left transition-all cursor-pointer group"
-                >
-                  <Droplets size={16} className="text-[#38BDF8] mb-1 group-hover:scale-110 transition-transform" />
-                  <p className="font-['Outfit'] text-sm font-bold text-[#E8EAF6] m-0">{btn.label}</p>
-                  <p className="text-[0.65rem] text-[#8B91B0] m-0">{btn.desc}</p>
-                </button>
-              ))}
-            </div>
+        <div className="fluetas-card p-5 md:col-span-2 flex flex-col gap-4">
+          <span className="section-title">QUICK ADD</span>
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+            {DRINK_OPTIONS.map(opt => (
+              <button
+                key={opt.label}
+                onClick={() => handleQuickAdd(opt.amount, opt.type)}
+                disabled={submitting}
+                id={`hydration-add-${opt.label.toLowerCase()}`}
+                className="flex flex-col items-center gap-1.5 p-2.5 rounded-xl border border-[#1E2133] bg-[#0B0D14] hover:border-[#38BDF8]/50 hover:bg-[#38BDF8]/5 transition-all disabled:opacity-50 cursor-pointer"
+              >
+                <span className="text-xl">{opt.emoji}</span>
+                <span className="text-[0.65rem] font-semibold text-[#E8EAF6]">{opt.label}</span>
+                {opt.amount > 0 && (
+                  <span className="text-[0.6rem] text-[#38BDF8] font-bold">+{opt.amount}ml</span>
+                )}
+              </button>
+            ))}
           </div>
 
-          <div className="p-3 bg-[#10B981]/10 border border-[#10B981]/30 rounded-xl flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 text-xs text-[#10B981] font-semibold">
-              <Sparkles size={16} />
-              <span>RECOVER+ Electrolyte recommended after training sessions.</span>
+          {/* Custom Input */}
+          {showCustom && (
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 p-3 bg-[#0B0D14] border border-[#1E2133] rounded-xl animate-slide-up">
+              <input
+                type="number"
+                min={1} max={5000}
+                value={customAmount}
+                onChange={e => setCustomAmount(Number(e.target.value))}
+                className="bg-[#13161F] border border-[#1E2133] rounded-lg px-3 py-2 text-[#E8EAF6] text-sm w-28 focus:border-[#38BDF8] focus:outline-none"
+                placeholder="ml"
+              />
+              <input
+                value={customType}
+                onChange={e => setCustomType(e.target.value)}
+                placeholder="Drink type"
+                className="flex-1 bg-[#13161F] border border-[#1E2133] rounded-lg px-3 py-2 text-[#E8EAF6] text-sm focus:border-[#38BDF8] focus:outline-none"
+              />
+              <button
+                onClick={handleCustomAdd}
+                disabled={submitting || customAmount < 1 || customAmount > 5000}
+                className="px-4 py-2 rounded-lg bg-[#38BDF8] text-black font-bold text-sm disabled:opacity-50 cursor-pointer hover:opacity-90 transition-all flex items-center gap-1.5 justify-center"
+              >
+                {submitting ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+                Add
+              </button>
+              <button onClick={() => setShowCustom(false)} className="px-3 py-2 rounded-lg border border-[#1E2133] text-[#8B91B0] text-sm hover:text-white cursor-pointer">
+                Cancel
+              </button>
             </div>
-            <button
-              onClick={() => addWater(350, 'FLUETAS RECOVER+ Hydration Mix')}
-              className="px-3 py-1.5 rounded-lg bg-[#10B981] text-black text-xs font-bold shrink-0 hover:opacity-90 cursor-pointer"
-            >
-              + Log RECOVER+
-            </button>
+          )}
+
+          {/* Adjust goal hint */}
+          <div className="flex items-center justify-between text-xs text-[#8B91B0]">
+            <span>Remaining: <span className="text-[#38BDF8] font-bold">{Math.max(0, goalMl - totalMl)} ml</span></span>
+            <span>Goal set in <a href="/profile" className="text-[#10B981] hover:underline">Profile</a></span>
           </div>
         </div>
       </div>
 
-      {/* 7-Day Hydration Trend */}
+      {/* Today's Log Timeline */}
+      <div className="fluetas-card p-4 sm:p-5">
+        <div className="flex items-center justify-between mb-3">
+          <span className="section-title">TODAY'S LOG ({logs.length} entries)</span>
+          <span className="text-xs text-[#38BDF8] font-semibold">{totalMl} ml total</span>
+        </div>
+
+        {loading ? (
+          <div className="flex flex-col gap-2">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-11 bg-[#1E2133] rounded-xl animate-pulse" />
+            ))}
+          </div>
+        ) : logs.length === 0 ? (
+          <div className="py-8 text-center">
+            <p className="text-3xl mb-2">💧</p>
+            <p className="font-semibold text-[#E8EAF6] text-sm m-0">No water logged yet today</p>
+            <p className="text-[#8B91B0] text-xs m-0 mt-1">Use the quick-add buttons above to start tracking.</p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {logs.map(log => (
+              <div
+                key={log.id}
+                className="flex items-center justify-between p-3 rounded-xl bg-[#0B0D14] border border-[#1E2133]"
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-[#38BDF8]/15 flex items-center justify-center">
+                    <Droplets size={14} className="text-[#38BDF8]" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-[#E8EAF6] m-0">{log.type}</p>
+                    <p className="text-[0.65rem] text-[#8B91B0] m-0">{formatTime(log.timestamp as { seconds: number })}</p>
+                  </div>
+                </div>
+                <span className="text-sm font-bold text-[#38BDF8]">+{log.amount} ml</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* 7-Day Chart */}
       <div className="fluetas-card p-4 sm:p-5">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <TrendingUp size={16} className="text-[#38BDF8]" />
-            <span className="section-title">WEEKLY HYDRATION CONSISTENCY</span>
+            <span className="section-title">7-DAY HYDRATION TREND</span>
           </div>
-          <span className="text-xs text-[#38BDF8] font-bold">Average: 2.4L / day</span>
+          {weeklyAvg > 0 && (
+            <span className="text-xs text-[#38BDF8] font-bold">
+              Avg: {(weeklyAvg / 1000).toFixed(1)}L / day
+            </span>
+          )}
         </div>
-
         <div className="h-44 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={mockHydrationWeek}>
+            <BarChart data={weeklyChartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#1E2133" vertical={false} />
               <XAxis dataKey="day" stroke="#8B91B0" fontSize={11} tickLine={false} axisLine={false} />
               <YAxis stroke="#8B91B0" fontSize={11} tickLine={false} axisLine={false} unit="L" />
               <Tooltip
                 contentStyle={{ backgroundColor: '#13161F', borderColor: '#1E2133', borderRadius: '8px', color: '#fff', fontSize: '12px' }}
+                formatter={(val: any) => [`${(Number(val || 0) / 1000).toFixed(1)}L`, 'Intake']}
               />
-              <Bar dataKey="intake" name="Water Intake (L)" fill="#38BDF8" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="ml" name="Hydration (ml)" fill="#38BDF8" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Today's Log Timeline */}
-      <div className="fluetas-card p-5">
-        <span className="section-title">TODAY&apos;S INTAKE ENTRIES ({logs.length})</span>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mt-3">
-          {logs.map((log, idx) => (
-            <div
-              key={idx}
-              className="p-3 bg-[#0B0D14] border border-[#1E2133] rounded-xl flex items-center justify-between text-xs"
-            >
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-[#38BDF8]/15 text-[#38BDF8] flex items-center justify-center">
-                  <Droplets size={15} />
-                </div>
-                <div>
-                  <p className="font-bold text-[#E8EAF6] m-0">+{log.amount} ml</p>
-                  <p className="text-[0.68rem] text-[#8B91B0] m-0">{log.type}</p>
-                </div>
-              </div>
-              <span className="text-[0.7rem] text-[#8B91B0] font-medium">{log.time}</span>
-            </div>
-          ))}
         </div>
       </div>
     </div>
