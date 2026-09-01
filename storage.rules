@@ -14,23 +14,22 @@ service firebase.storage {
       return request.auth.token.role == 'admin';
     }
 
-    function isDoctor() {
-      return request.auth.token.role == 'doctor';
-    }
-
-    // Encrypted medical documents & lab uploads
+    // ─────────────────────────────────────────────────────────────────────────
+    // Encrypted medical documents & lab uploads (Private to Customer & Admin)
+    // Doctors access documents via authorized server APIs that verify consent.
+    // ─────────────────────────────────────────────────────────────────────────
     match /users/{userId}/documents/{documentId} {
-      allow read: if isAuthenticated() && (isOwner(userId) || isDoctor() || isAdmin());
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
       allow write: if isAuthenticated() && (isOwner(userId) || isAdmin());
     }
 
     // User profile pictures & personal asset uploads
     match /users/{userId}/{allPaths=**} {
-      allow read: if isAuthenticated() && (isOwner(userId) || isDoctor() || isAdmin());
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
       allow write: if isAuthenticated() && (isOwner(userId) || isAdmin());
     }
 
-    // Public doctor credentials & verification certificates (readable by admin)
+    // Doctor credentials & verification certificates (Doctor owner & Admin only)
     match /doctorVerification/{doctorId}/{docName} {
       allow read: if isAuthenticated() && (request.auth.uid == doctorId || isAdmin());
       allow write: if isAuthenticated() && (request.auth.uid == doctorId || isAdmin());

@@ -39,10 +39,24 @@ service cloud.firestore {
     }
 
     // ──────────────────────────────────────────────────────────────────────
+    // Strict Consent & Clinical Relationship Verification (P0-1 Fix)
+    // A doctor can only access customer data if an active relationship exists.
+    // ──────────────────────────────────────────────────────────────────────
+    function hasActiveDoctorConsent(patientId) {
+      return isDoctor() && (
+        (
+          exists(/databases/$(database)/documents/doctorPatientRelationships/$( 'rel_' + request.auth.uid + '_' + patientId )) &&
+          get(/databases/$(database)/documents/doctorPatientRelationships/$( 'rel_' + request.auth.uid + '_' + patientId )).data.status == 'active'
+        )
+      );
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
     // /users/{userId}
     // ──────────────────────────────────────────────────────────────────────
     match /users/{userId} {
-      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin() || isDoctor());
+      // User profile document: readable by authentic owner, admin, or assigned doctor with active consent
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin() || hasActiveDoctorConsent(userId));
       
       // Creation: customer can create own document with safe default role
       allow create: if isAuthenticated() && isOwner(userId) && isSafeNewUser();
@@ -57,54 +71,58 @@ service cloud.firestore {
 
       // Health Profile (personal wellness data)
       match /healthProfile/{doc} {
-        allow read: if isAuthenticated() && (isOwner(userId) || isAdmin() || isDoctor());
+        allow read: if isAuthenticated() && (isOwner(userId) || isAdmin() || hasActiveDoctorConsent(userId));
         allow write: if isAuthenticated() && (isOwner(userId) || isAdmin());
       }
 
       // Health Timeline
       match /healthTimeline/{eventId} {
-        allow read: if isAuthenticated() && (isOwner(userId) || isAdmin() || isDoctor());
+        allow read: if isAuthenticated() && (isOwner(userId) || isAdmin() || hasActiveDoctorConsent(userId));
         allow write: if isAuthenticated() && (isOwner(userId) || isAdmin());
       }
 
       // Consultations
       match /consultations/{consultationId} {
-        allow read, write: if isAuthenticated() && (isOwner(userId) || isAdmin() || isDoctor());
+        allow read: if isAuthenticated() && (isOwner(userId) || isAdmin() || hasActiveDoctorConsent(userId));
+        allow write: if isAuthenticated() && (isOwner(userId) || isAdmin() || hasActiveDoctorConsent(userId));
 
         match /notes/{noteId} {
-          allow read, write: if isAuthenticated() && (isOwner(userId) || isAdmin() || isDoctor());
+          allow read, write: if isAuthenticated() && (isOwner(userId) || isAdmin() || hasActiveDoctorConsent(userId));
         }
 
         match /report/main {
-          allow read, write: if isAuthenticated() && (isOwner(userId) || isAdmin() || isDoctor());
+          allow read, write: if isAuthenticated() && (isOwner(userId) || isAdmin() || hasActiveDoctorConsent(userId));
         }
       }
 
       // Test Requests
       match /testRequests/{requestId} {
-        allow read, write: if isAuthenticated() && (isOwner(userId) || isAdmin() || isDoctor());
+        allow read: if isAuthenticated() && (isOwner(userId) || isAdmin() || hasActiveDoctorConsent(userId));
+        allow write: if isAuthenticated() && (isAdmin() || hasActiveDoctorConsent(userId));
       }
 
       // Documents (lab reports, prescriptions, scans)
       match /documents/{docId} {
-        allow read: if isAuthenticated() && (isOwner(userId) || isAdmin() || isDoctor());
+        allow read: if isAuthenticated() && (isOwner(userId) || isAdmin() || hasActiveDoctorConsent(userId));
         allow write: if isAuthenticated() && (isOwner(userId) || isAdmin());
       }
 
       // Recommendations
       match /recommendations/{recId} {
-        allow read: if isAuthenticated() && (isOwner(userId) || isAdmin() || isDoctor());
-        allow write: if isAuthenticated() && (isDoctor() || isAdmin());
+        allow read: if isAuthenticated() && (isOwner(userId) || isAdmin() || hasActiveDoctorConsent(userId));
+        allow write: if isAuthenticated() && (isAdmin() || hasActiveDoctorConsent(userId));
       }
 
       // Follow-Ups
       match /followUps/{followUpId} {
-        allow read, write: if isAuthenticated() && (isOwner(userId) || isAdmin() || isDoctor());
+        allow read: if isAuthenticated() && (isOwner(userId) || isAdmin() || hasActiveDoctorConsent(userId));
+        allow write: if isAuthenticated() && (isAdmin() || hasActiveDoctorConsent(userId));
       }
 
       // Appointments
       match /appointments/{apptId} {
-        allow read, write: if isAuthenticated() && (isOwner(userId) || isAdmin() || isDoctor());
+        allow read: if isAuthenticated() && (isOwner(userId) || isAdmin() || hasActiveDoctorConsent(userId));
+        allow write: if isAuthenticated() && (isOwner(userId) || isAdmin() || hasActiveDoctorConsent(userId));
       }
 
       // Consents
@@ -124,27 +142,33 @@ service cloud.firestore {
     // Daily tracking collections (top-level, keyed by userId)
     // ──────────────────────────────────────────────────────────────────────
     match /workoutLogs/{userId}/entries/{date} {
-      allow read, write: if isAuthenticated() && (isOwner(userId) || isDoctor() || isAdmin());
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin() || hasActiveDoctorConsent(userId));
+      allow write: if isAuthenticated() && (isOwner(userId) || isAdmin());
     }
 
     match /nutritionLogs/{userId}/entries/{date} {
-      allow read, write: if isAuthenticated() && (isOwner(userId) || isDoctor() || isAdmin());
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin() || hasActiveDoctorConsent(userId));
+      allow write: if isAuthenticated() && (isOwner(userId) || isAdmin());
     }
 
     match /hydrationLogs/{userId}/entries/{date} {
-      allow read, write: if isAuthenticated() && (isOwner(userId) || isDoctor() || isAdmin());
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin() || hasActiveDoctorConsent(userId));
+      allow write: if isAuthenticated() && (isOwner(userId) || isAdmin());
     }
 
     match /sleepLogs/{userId}/entries/{date} {
-      allow read, write: if isAuthenticated() && (isOwner(userId) || isDoctor() || isAdmin());
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin() || hasActiveDoctorConsent(userId));
+      allow write: if isAuthenticated() && (isOwner(userId) || isAdmin());
     }
 
     match /cycleLogs/{userId}/entries/{date} {
-      allow read, write: if isAuthenticated() && (isOwner(userId) || isDoctor() || isAdmin());
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin() || hasActiveDoctorConsent(userId));
+      allow write: if isAuthenticated() && (isOwner(userId) || isAdmin());
     }
 
     match /symptomLogs/{userId}/entries/{date} {
-      allow read, write: if isAuthenticated() && (isOwner(userId) || isDoctor() || isAdmin());
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin() || hasActiveDoctorConsent(userId));
+      allow write: if isAuthenticated() && (isOwner(userId) || isAdmin());
     }
 
     // ──────────────────────────────────────────────────────────────────────
@@ -166,7 +190,7 @@ service cloud.firestore {
     }
 
     match /medicalReports/{reportId} {
-      allow read: if isAuthenticated() && (isOwner(resource.data.customerId) || request.auth.uid == resource.data.doctorId || isAdmin());
+      allow read: if isAuthenticated() && (isOwner(resource.data.customerId) || (isDoctor() && request.auth.uid == resource.data.doctorId) || isAdmin());
       allow write: if isAuthenticated() && (isOwner(request.resource.data.customerId) || isDoctor() || isAdmin());
     }
 
@@ -188,17 +212,23 @@ service cloud.firestore {
     }
 
     // ──────────────────────────────────────────────────────────────────────
-    // /doctors/{doctorId}
+    // /doctors/{doctorId} (Restricted Discovery & Private Separation)
     // ──────────────────────────────────────────────────────────────────────
     match /doctors/{doctorId} {
+      // Public profile is readable by authenticated users for doctor discovery
       allow read: if isAuthenticated();
       // Only Admin can verify/suspend doctor; Doctor can update their own public profile (bio, fee)
       allow create: if isAuthenticated() && (isAdmin() || request.auth.uid == doctorId);
       allow update: if isAuthenticated() && (
         isAdmin() ||
-        (request.auth.uid == doctorId && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['verificationStatus', 'verifiedAt', 'verifiedBy']))
+        (request.auth.uid == doctorId && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['verificationStatus', 'verifiedAt', 'verifiedBy', 'adminNotes', 'internalRating']))
       );
       allow delete: if isAuthenticated() && isAdmin();
+
+      // Private administrative & verification metadata (Restricted to authentic doctor owner or Admin)
+      match /private/{docId} {
+        allow read, write: if isAuthenticated() && (request.auth.uid == doctorId || isAdmin());
+      }
     }
 
     // ──────────────────────────────────────────────────────────────────────

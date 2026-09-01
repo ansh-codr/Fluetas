@@ -1,6 +1,7 @@
 /**
  * Server-Side Authentication & Role Guard for Vercel API Routes
  * Verifies Firebase ID Tokens and enforces role-based access server-side.
+ * Authoritative source for roles is strictly Firebase ID Token Custom Claims.
  */
 
 import { NextRequest } from 'next/server';
@@ -38,8 +39,8 @@ export async function verifyServerSession(request: NextRequest): Promise<
     };
   }
 
+  // Development-only token bypass for local mock testing
   if (!adminAuth) {
-    // In dev without full service account key, allow mock dev bearer tokens for testing
     if (process.env.NODE_ENV === 'development' && token.startsWith('dev_token_')) {
       const role = (token.split('dev_token_')[1] || 'customer') as AllowedRole;
       return {
@@ -55,7 +56,15 @@ export async function verifyServerSession(request: NextRequest): Promise<
 
     return {
       authenticated: false,
-      response: apiError('SERVER_CONFIG_ERROR', 'Firebase Admin Auth is not configured on server', 500),
+      response: apiError('SERVER_CONFIG_ERROR', 'Firebase Admin Auth is not configured on server. Failing closed.', 500),
+    };
+  }
+
+  // Strictly reject development bearer tokens in production
+  if (process.env.NODE_ENV !== 'development' && token.startsWith('dev_token_')) {
+    return {
+      authenticated: false,
+      response: apiError('INVALID_TOKEN', 'Development tokens are strictly forbidden in production', 401),
     };
   }
 
@@ -64,16 +73,20 @@ export async function verifyServerSession(request: NextRequest): Promise<
     const uid = decodedToken.uid;
     const email = decodedToken.email;
 
-    // Check custom claim role or resolve from Firestore user record
-    let role = (decodedToken.role as AllowedRole) || 'customer';
+    // Authoritative Role: Strictly derive from verified custom claims. Default to 'customer'.
+    const role: AllowedRole = (decodedToken.role as AllowedRole) || 'customer';
     let status = 'active';
 
+    // Query Firestore solely for non-privilege metadata (e.g. suspension status)
     if (adminDb) {
-      const userDoc = await adminDb.collection('users').doc(uid).get();
-      if (userDoc.exists) {
-        const data = userDoc.data();
-        if (data?.role) role = data.role as AllowedRole;
-        if (data?.status) status = data.status;
+      try {
+        const userDoc = await adminDb.collection('users').doc(uid).get();
+        if (userDoc.exists) {
+          const data = userDoc.data();
+          if (data?.status) status = data.status;
+        }
+      } catch (dbErr) {
+        console.warn('[auth-guard] Could not check user status in Firestore:', dbErr);
       }
     }
 
