@@ -188,11 +188,11 @@ function HeroAppCard() {
 ───────────────────────────────────────── */
 function OneRecordSection() {
   const cards = [
-    { icon: "🏋️", label: "TRAINING", val: "4 workouts", sub: "This week", x: "-45%", y: "-60%", rot: "-8deg", delay: "0s" },
-    { icon: "😴", label: "SLEEP",    val: "7h 42m",    sub: "Last night", x: "40%", y: "-55%", rot: "5deg", delay: "0.1s" },
-    { icon: "♀", label: "CYCLE",    val: "Day 14",    sub: "Ovulatory",   x: "-50%", y: "15%",  rot: "-5deg", delay: "0.2s" },
-    { icon: "🤖", label: "AI CHAT", val: "3 insights", sub: "Today",     x: "42%", y: "20%", rot: "7deg", delay: "0.3s" },
-    { icon: "👨‍⚕️", label: "EXPERT", val: "Consult",  sub: "Aug 28",     x: "-20%", y: "55%", rot: "-3deg", delay: "0.4s" },
+    { icon: "🏋️", label: "TRAINING", val: "4 workouts", sub: "This week",  x: "-38%", y: "-38%", rot: "-8deg",  delay: "0s" },
+    { icon: "😴", label: "SLEEP",    val: "7h 42m",     sub: "Last night", x: "32%",  y: "-35%", rot: "5deg",   delay: "0.1s" },
+    { icon: "♀", label: "CYCLE",    val: "Day 14",     sub: "Ovulatory",  x: "-40%", y: "12%",  rot: "-5deg",  delay: "0.2s" },
+    { icon: "🤖", label: "AI CHAT", val: "3 insights", sub: "Today",      x: "34%",  y: "15%",  rot: "7deg",   delay: "0.3s" },
+    { icon: "👨‍⚕️", label: "EXPERT", val: "Consult",   sub: "Aug 28",     x: "20%",  y: "48%",  rot: "4deg",   delay: "0.4s" },
   ];
 
   return (
@@ -206,7 +206,7 @@ function OneRecordSection() {
         </div>
 
         {/* Visual: scattered → unified */}
-        <div className="relative max-w-[900px] mx-auto h-[520px] flex items-center justify-center">
+        <div className="relative max-w-[900px] mx-auto h-[380px] flex items-center justify-center">
           {/* scattered data cards */}
           {cards.map((c) => (
             <div
