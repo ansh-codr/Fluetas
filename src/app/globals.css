@@ -162,6 +162,22 @@ body {
   letter-spacing: 0.01em;
 }
 
+.section-heading {
+  font-family: var(--font-expanded);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 1.05;
+}
+
+.step-num {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  color: var(--leaf);
+  opacity: 0.5;
+  font-size: 1.2rem;
+}
+
 /* ─── Scrollbars ─────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar {
   width: 6px;
