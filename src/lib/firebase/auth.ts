@@ -5,8 +5,9 @@ import {
   GoogleAuthProvider,
   signOut as firebaseSignOut,
   UserCredential,
+  User,
 } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from './config';
 
 function getAuth() {
@@ -55,29 +56,28 @@ export async function signInWithEmail(
 
 /**
  * Sign in with Google popup.
- * Creates user doc on first sign-in.
+ * Authenticates identity only; role resolution and profile provisioning are handled authoritatively by the caller.
  */
 export async function signInWithGoogle(): Promise<UserCredential> {
-  const credential = await signInWithPopup(getAuth(), googleProvider);
-  const uid = credential.user.uid;
+  return signInWithPopup(getAuth(), googleProvider);
+}
 
-  // Only create doc if this is a new user
-  const isNew = credential.user.metadata.creationTime === credential.user.metadata.lastSignInTime;
-  if (isNew) {
-    await setDoc(
-      doc(getDb(), 'users', uid),
-      {
-        name: credential.user.displayName ?? '',
-        email: credential.user.email ?? '',
-        role: 'customer',
-        premiumMember: false,
-        createdAt: serverTimestamp(),
-      },
-      { merge: true }
-    );
+/**
+ * Creates default customer user document if first-time customer registration.
+ */
+export async function createCustomerProfileIfNew(user: User): Promise<void> {
+  const userRef = doc(getDb(), 'users', user.uid);
+  const snap = await getDoc(userRef);
+  if (!snap.exists()) {
+    await setDoc(userRef, {
+      name: user.displayName ?? '',
+      email: user.email ?? '',
+      role: 'customer',
+      status: 'active',
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
   }
-
-  return credential;
 }
 
 /**

@@ -64,11 +64,11 @@ export default function PatientChartPage() {
   const [submitting, setSubmitting] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const doctorId = user?.uid || 'dr_rajesh_sharma';
-  const doctorName = user?.displayName || 'Dr. Rajesh Sharma, MD';
+  const doctorId = user?.uid || '';
+  const doctorName = user?.displayName || 'Clinical Practitioner';
 
   useEffect(() => {
-    if (!patientId) return;
+    if (!patientId || !doctorId) return;
 
     getPatientAuthorizedHealthData(doctorId, patientId)
       .then(res => {
@@ -157,7 +157,7 @@ export default function PatientChartPage() {
   };
 
   const handleOrderTest = async () => {
-    if (!patientId || !testName.trim()) return;
+    if (!patientId || !doctorId || !testName.trim()) return;
     try {
       await createTestRequest({
         doctorId,
@@ -176,7 +176,7 @@ export default function PatientChartPage() {
   };
 
   const handleSubmitConsultation = async () => {
-    if (!patientId) return;
+    if (!patientId || !doctorId) return;
     setSubmitting(true);
     try {
       // 1. Create recommendations

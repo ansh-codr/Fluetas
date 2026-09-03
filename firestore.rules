@@ -19,11 +19,15 @@ service cloud.firestore {
     }
 
     function isDoctor() {
-      return hasRole('doctor');
+      return hasRole('doctor') || hasRole('expert') ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['doctor', 'expert']);
     }
 
     function isAdmin() {
-      return hasRole('admin');
+      return hasRole('admin') ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
     }
 
     // Prevents client from self-escalating role, status, or administrative fields

@@ -5,33 +5,38 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { motion, useReducedMotion } from 'framer-motion';
+import { signInWithEmail, signInWithGoogle, signOut, createCustomerProfileIfNew } from '@/lib/firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
-import { signInWithEmail, signInWithGoogle } from '@/lib/firebase/auth';
 import {
-  Dumbbell,
-  Activity,
-  UserCheck,
-  ShieldCheck,
   Eye,
   EyeOff,
-  Loader2,
+  Dumbbell,
+  HeartPulse,
+  Stethoscope,
+  Activity,
   AlertCircle,
-  ArrowRight,
+  Loader2,
   Sparkles,
+  ArrowRight,
+  User,
+  Shield,
 } from 'lucide-react';
 
+type LoginIntent = 'customer' | 'practitioner';
+
 const capabilities = [
-  { label: 'TRAIN', icon: Dumbbell, desc: 'Progressive training splits' },
-  { label: 'TRACK', icon: Activity, desc: 'Biometric & hydration telemetry' },
-  { label: 'EXPERTS', icon: UserCheck, desc: 'Direct doctor consultations' },
-  { label: 'HEALTH RECORD', icon: ShieldCheck, desc: 'Private clinical data vault' },
+  { label: 'TRAIN', desc: 'Deterministic plans & biomechanics', icon: Dumbbell },
+  { label: 'TRACK', desc: 'Hydration, sleep & nutrition logs', icon: Activity },
+  { label: 'EXPERTS', desc: 'Verified clinical consultations', icon: Stethoscope },
+  { label: 'HEALTH RECORD', desc: 'Sovereign encrypted timeline', icon: HeartPulse },
 ];
 
 export default function LoginPage() {
   const router = useRouter();
   const shouldReduceMotion = useReducedMotion();
 
+  const [loginIntent, setLoginIntent] = useState<LoginIntent>('customer');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -40,28 +45,85 @@ export default function LoginPage() {
   const [googleLoading, setGoogleLoading] = useState(false);
 
   /**
-   * Authoritatively redirects the authenticated user based on their Firestore role.
+   * Authoritatively validates the authenticated user's role against their selected login intent.
+   * If credentials do not match the intent, immediately signs out and surfaces an explicit error.
    */
-  async function handleRoleRedirect(uid: string) {
-    if (db) {
-      try {
-        const snap = await getDoc(doc(db, 'users', uid));
-        if (snap.exists()) {
-          const userRole = snap.data()?.role;
-          if (userRole === 'admin') {
-            router.replace('/admin/dashboard');
-            return;
-          }
-          if (userRole === 'expert' || userRole === 'doctor') {
-            router.replace('/doctor/dashboard');
-            return;
-          }
-        }
-      } catch (err) {
-        console.warn('[Login] Role check error, falling back to dashboard:', err);
-      }
+  async function validateAndRedirectRole(firebaseUser: { uid: string }, intent: LoginIntent) {
+    if (!db) {
+      router.replace(intent === 'practitioner' ? '/doctor/dashboard' : '/dashboard');
+      return;
     }
-    router.replace('/dashboard');
+
+    try {
+      const snap = await getDoc(doc(db, 'users', firebaseUser.uid));
+
+      // 1. New Google user or missing profile
+      if (!snap.exists()) {
+        if (intent === 'customer') {
+          // Provision customer document
+          await createCustomerProfileIfNew(firebaseUser as any);
+          router.replace('/dashboard');
+          return;
+        } else {
+          // Reject practitioner login without registered credentials
+          await signOut();
+          setError('No practitioner profile found for this account. Please submit your clinical credentials via Practitioner Registration.');
+          return;
+        }
+      }
+
+      const userData = snap.data();
+      const rawRole = userData?.role ? String(userData.role).toLowerCase() : 'customer';
+      const rawStatus = userData?.status ? String(userData.status).toLowerCase() : 'active';
+
+      // 2. Suspended account gate
+      if (rawStatus === 'suspended') {
+        await signOut();
+        setError('Your account is currently suspended. Please reach out to support@fluetas.com.');
+        return;
+      }
+
+      // 3. Strict Role Matching against Login Intent
+      if (intent === 'customer') {
+        if (rawRole === 'customer') {
+          router.replace('/dashboard');
+          return;
+        }
+        if (rawRole === 'expert' || rawRole === 'doctor') {
+          await signOut();
+          setError('This account is registered as a practitioner. Please select Practitioner login.');
+          return;
+        }
+        if (rawRole === 'admin') {
+          await signOut();
+          setError('This account has administrator privileges. Please use the Admin Portal at /admin/login.');
+          return;
+        }
+      } else if (intent === 'practitioner') {
+        if (rawRole === 'expert' || rawRole === 'doctor') {
+          router.replace('/doctor/dashboard');
+          return;
+        }
+        if (rawRole === 'customer') {
+          await signOut();
+          setError('These credentials are registered as a customer account. Practitioner access is not available.');
+          return;
+        }
+        if (rawRole === 'admin') {
+          await signOut();
+          setError('This account has administrator privileges. Please use the Admin Portal at /admin/login.');
+          return;
+        }
+      }
+
+      // Fallback
+      await signOut();
+      setError('Unrecognized account authorization. Please contact support.');
+    } catch (err: any) {
+      console.error('[Login] Authorization validation error:', err);
+      await signOut();
+      setError('Unable to verify account authorization. Please try again.');
+    }
   }
 
   async function handleEmailLogin(e: React.FormEvent) {
@@ -76,11 +138,11 @@ export default function LoginPage() {
 
     try {
       const cred = await signInWithEmail(email.trim(), password);
-      await handleRoleRedirect(cred.user.uid);
+      await validateAndRedirectRole(cred.user, loginIntent);
     } catch (err: any) {
       const code = err?.code || '';
       if (code === 'auth/user-not-found' || code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
-        setError('Invalid email or password. Please check your credentials and try again.');
+        setError('Invalid email or password. Please check your credentials.');
       } else if (code === 'auth/too-many-requests') {
         setError('Too many failed attempts. For your security, please try again in a few minutes.');
       } else if (code === 'auth/invalid-email') {
@@ -99,11 +161,10 @@ export default function LoginPage() {
 
     try {
       const cred = await signInWithGoogle();
-      await handleRoleRedirect(cred.user.uid);
+      await validateAndRedirectRole(cred.user, loginIntent);
     } catch (err: any) {
       const code = err?.code || '';
       if (code === 'auth/popup-closed-by-user') {
-        // User closed popup; do not show scary red error
         setError('Sign-in cancelled. Click Continue with Google when ready.');
       } else if (code === 'auth/popup-blocked') {
         setError('Sign-in popup was blocked by your browser. Please allow popups for this site.');
@@ -209,7 +270,7 @@ export default function LoginPage() {
 
           {/* Capability Badges */}
           <motion.div {...anim(0.28)} className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-2xl">
-            {capabilities.map((cap, i) => {
+            {capabilities.map((cap) => {
               const Icon = cap.icon;
               return (
                 <div
@@ -238,7 +299,7 @@ export default function LoginPage() {
         >
           <div className="bg-white border border-[rgba(18,22,15,0.10)] rounded-2xl sm:rounded-3xl p-6 sm:p-8 lg:p-9 shadow-sm relative">
             {/* Header */}
-            <div className="mb-6">
+            <div className="mb-5">
               <h2 className="font-['Outfit'] text-2xl sm:text-[1.85rem] font-bold text-[#12160F] tracking-tight m-0">
                 Welcome back
               </h2>
@@ -247,13 +308,48 @@ export default function LoginPage() {
               </p>
             </div>
 
+            {/* Account Type Selector (Intent) */}
+            <div className="mb-5">
+              <label className="block text-[0.6875rem] font-bold text-[#586151] uppercase tracking-wider mb-1.5">
+                Who are you?
+              </label>
+              <div className="grid grid-cols-2 p-1 bg-[#F2F4EE] rounded-xl border border-[rgba(18,22,15,0.08)]">
+                <button
+                  type="button"
+                  id="intent-customer-btn"
+                  onClick={() => { setLoginIntent('customer'); setError(''); }}
+                  className={`py-2 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                    loginIntent === 'customer'
+                      ? 'bg-white text-[#12160F] shadow-xs'
+                      : 'text-[#586151] hover:text-[#12160F]'
+                  }`}
+                >
+                  <User size={13} />
+                  <span>Customer</span>
+                </button>
+                <button
+                  type="button"
+                  id="intent-practitioner-btn"
+                  onClick={() => { setLoginIntent('practitioner'); setError(''); }}
+                  className={`py-2 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                    loginIntent === 'practitioner'
+                      ? 'bg-white text-[#12160F] shadow-xs'
+                      : 'text-[#586151] hover:text-[#12160F]'
+                  }`}
+                >
+                  <Stethoscope size={13} />
+                  <span>Practitioner</span>
+                </button>
+              </div>
+            </div>
+
             {/* Error Banner */}
             {error && (
               <div
                 role="alert"
                 className="p-3.5 mb-5 rounded-xl bg-[#DC2626]/10 border border-[#DC2626]/20 text-[#DC2626] text-xs font-semibold flex items-start gap-2.5 animate-slide-up"
               >
-                <AlertCircle size={15} className="shrink-0 mt-0.5" />
+                <AlertCircle size={16} className="shrink-0 mt-0.5" />
                 <span className="leading-relaxed">{error}</span>
               </div>
             )}
@@ -264,12 +360,12 @@ export default function LoginPage() {
               type="button"
               onClick={handleGoogleLogin}
               disabled={googleLoading || loading}
-              className="w-full min-h-[44px] py-2.5 px-4 rounded-xl bg-white border border-[rgba(18,22,15,0.15)] hover:border-[rgba(18,22,15,0.30)] hover:bg-[#FAFAF6] text-[#12160F] text-xs sm:text-sm font-semibold flex items-center justify-center gap-3 transition-all shadow-2xs cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-[#2E7D32]"
+              className="w-full min-h-[46px] py-2.5 px-4 rounded-xl bg-white border border-[rgba(18,22,15,0.15)] hover:border-[rgba(18,22,15,0.30)] hover:bg-[#FAFAF6] text-[#12160F] text-xs sm:text-sm font-semibold flex items-center justify-center gap-3 transition-all shadow-2xs cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-[#2E7D32]"
             >
               {googleLoading ? (
                 <>
                   <Loader2 size={16} className="animate-spin text-[#2E7D32]" />
-                  <span>Connecting to Google...</span>
+                  <span>Verifying authorization...</span>
                 </>
               ) : (
                 <>
@@ -312,7 +408,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   disabled={loading || googleLoading}
-                  className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[rgba(18,22,15,0.15)] focus:border-[#2E7D32] focus:ring-1 focus:ring-[#2E7D32] text-xs sm:text-sm text-[#12160F] bg-white transition-all outline-none disabled:opacity-60"
+                  className="w-full min-h-[46px] px-3.5 py-2.5 rounded-xl border border-[rgba(18,22,15,0.15)] focus:border-[#2E7D32] focus:ring-1 focus:ring-[#2E7D32] text-xs sm:text-sm text-[#12160F] bg-white transition-all outline-none disabled:opacity-60"
                 />
               </div>
 
@@ -336,7 +432,7 @@ export default function LoginPage() {
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                     disabled={loading || googleLoading}
-                    className="w-full min-h-[44px] pl-3.5 pr-11 py-2.5 rounded-xl border border-[rgba(18,22,15,0.15)] focus:border-[#2E7D32] focus:ring-1 focus:ring-[#2E7D32] text-xs sm:text-sm text-[#12160F] bg-white transition-all outline-none disabled:opacity-60"
+                    className="w-full min-h-[46px] pl-3.5 pr-11 py-2.5 rounded-xl border border-[rgba(18,22,15,0.15)] focus:border-[#2E7D32] focus:ring-1 focus:ring-[#2E7D32] text-xs sm:text-sm text-[#12160F] bg-white transition-all outline-none disabled:opacity-60"
                   />
                   <button
                     type="button"
@@ -350,32 +446,32 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              {/* Primary CTA */}
               <button
+                id="login-submit-btn"
                 type="submit"
                 disabled={loading || googleLoading}
-                className="btn-primary w-full min-h-[44px] py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold bg-[#2E7D32] hover:bg-[#256628] text-white transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-[#2E7D32]"
+                className="w-full min-h-[46px] py-3 px-4 rounded-xl bg-[#2E7D32] hover:bg-[#256628] text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-colors shadow-xs cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-[#2E7D32]"
               >
                 {loading ? (
                   <>
                     <Loader2 size={16} className="animate-spin" />
-                    <span>Signing In...</span>
+                    <span>Signing in...</span>
                   </>
                 ) : (
-                  <span>Sign In</span>
+                  <span>Sign In as {loginIntent === 'practitioner' ? 'Practitioner' : 'Customer'}</span>
                 )}
               </button>
             </form>
 
-            {/* Secondary Account Actions */}
-            <div className="mt-6 pt-5 border-t border-[rgba(18,22,15,0.08)] flex flex-col gap-3 text-center">
-              <p className="text-xs text-[#586151] m-0">
+            {/* Footer Navigation */}
+            <div className="mt-6 pt-5 border-t border-[rgba(18,22,15,0.08)] flex flex-col gap-3">
+              <p className="text-xs text-[#586151] m-0 text-center">
                 Don&apos;t have an account?{' '}
                 <Link
                   href="/signup"
-                  className="font-bold text-[#2E7D32] hover:underline no-underline focus-visible:outline-2 focus-visible:outline-[#2E7D32] rounded"
+                  className="font-bold text-[#2E7D32] hover:text-[#256628] transition-colors no-underline hover:underline"
                 >
-                  Create your account
+                  Sign Up
                 </Link>
               </p>
 
@@ -395,6 +491,16 @@ export default function LoginPage() {
                 >
                   <span>Join as Expert</span>
                   <ArrowRight size={12} />
+                </Link>
+              </div>
+
+              {/* Admin Portal Discretionary Link */}
+              <div className="text-center pt-1">
+                <Link
+                  href="/admin/login"
+                  className="text-[0.6875rem] font-semibold text-[#8A9482] hover:text-[#12160F] transition-colors inline-flex items-center gap-1 no-underline"
+                >
+                  <Shield size={12} /> Platform Administrator? Access Admin Portal →
                 </Link>
               </div>
             </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
 import { doc, getDoc } from 'firebase/firestore';
 import Sidebar from '@/components/layout/Sidebar';
@@ -13,8 +14,30 @@ import MobileBottomNav from '@/components/layout/MobileBottomNav';
 import DevRoleSwitcher from '@/components/auth/DevRoleSwitcher';
 import { useAuth } from '@/context/AuthContext';
 import { db } from '@/lib/firebase/config';
-import { ShieldAlert, Lock, ArrowLeft } from 'lucide-react';
-import Link from 'next/link';
+import { ShieldAlert } from 'lucide-react';
+
+function ZeroFlashLoadingScreen() {
+  return (
+    <div className="min-h-screen bg-[#FAFAF6] flex items-center justify-center p-4">
+      <div className="flex flex-col items-center gap-4 text-center">
+        <div className="w-12 h-12 relative">
+          <Image
+            src="/assets/image.png"
+            alt="FLUETAS"
+            width={48}
+            height={48}
+            priority
+            className="w-full h-full object-contain animate-pulse"
+          />
+        </div>
+        <p className="font-['Outfit'] text-xs font-bold tracking-widest text-[#586151] uppercase m-0">
+          Securing your session...
+        </p>
+        <div className="w-5 h-5 border-2 border-[#2E7D32] border-t-transparent rounded-full animate-spin" />
+      </div>
+    </div>
+  );
+}
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -22,60 +45,72 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
-  const isDoctorRoute = pathname.startsWith('/doctor');
+  const isDoctorRoute = pathname.startsWith('/doctor') || pathname.startsWith('/expert');
   const isAdminRoute = pathname.startsWith('/admin');
+  const isCustomerRoute = !isDoctorRoute && !isAdminRoute;
+
+  const isPractitioner = role === 'doctor' || role === 'expert';
+  const isCustomer = role === 'customer';
+  const isAdmin = role === 'admin';
 
   useEffect(() => {
     if (loading) return;
 
-    // Not authenticated → send to login
+    // 1. Not authenticated: redirect to appropriate login portal
     if (!user) {
-      router.replace('/login');
+      if (isAdminRoute) {
+        router.replace('/admin/login');
+      } else {
+        router.replace('/login');
+      }
       return;
     }
 
-    // Authenticated customer: check onboarding completion (only for customer paths)
-    if (role === 'customer' && !isDoctorRoute && !isAdminRoute) {
-      const checkOnboarding = async () => {
-        if (!db) return;
-        try {
-          const userDoc = await getDoc(doc(db, 'users', user.uid));
-          const data = userDoc.data();
-          const isComplete = data?.onboardingComplete === true;
-          if (!isComplete && pathname !== '/onboarding') {
-            router.replace('/onboarding');
-          }
-        } catch {
-          // ignore
-        }
-      };
-      checkOnboarding();
-    }
-  }, [user, role, loading, router, pathname, isDoctorRoute, isAdminRoute]);
+    // Role is still resolving: wait for resolution
+    if (!role) return;
 
-  // Loading Screen
-  if (loading || !user) {
-    return (
-      <div className="min-h-screen bg-[#FAFAF6] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div
-            style={{
-              width: 40, height: 40, borderRadius: 10,
-              background: 'linear-gradient(135deg, #2E7D32, #1B5E20)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 20, fontWeight: 800, color: '#FAFAF6',
-              fontFamily: 'Outfit, sans-serif',
-            }}
-          >
-            F
-          </div>
-          <div className="w-6 h-6 border-2 border-[#2E7D32] border-t-transparent rounded-full animate-spin" />
-        </div>
-      </div>
-    );
+    // 2. Cross-role unauthorized access redirection
+    if (isCustomer && (isDoctorRoute || isAdminRoute)) {
+      router.replace('/dashboard');
+      return;
+    }
+
+    if (isPractitioner && (isCustomerRoute || isAdminRoute)) {
+      router.replace('/doctor/dashboard');
+      return;
+    }
+
+    if (isAdmin && (isCustomerRoute || isDoctorRoute)) {
+      router.replace('/admin/dashboard');
+      return;
+    }
+
+    if (!isAdmin && isAdminRoute) {
+      router.replace('/admin/login');
+      return;
+    }
+
+    // 3. Customer onboarding check (only for verified customers on customer paths)
+    if (isCustomer && isCustomerRoute && pathname !== '/onboarding') {
+      if (db) {
+        getDoc(doc(db, 'users', user.uid))
+          .then((snap) => {
+            if (snap.exists() && snap.data()?.onboardingComplete === false) {
+              router.replace('/onboarding');
+            }
+          })
+          .catch(() => {});
+      }
+    }
+  }, [user, role, loading, router, pathname, isDoctorRoute, isAdminRoute, isCustomerRoute, isCustomer, isPractitioner, isAdmin]);
+
+  // ── GATE 1: Session & Role Resolution ─────────────────────────────────────
+  // Mandatory Zero-Flash: NEVER render children or dashboard before auth & role are fully known
+  if (loading || !user || !role) {
+    return <ZeroFlashLoadingScreen />;
   }
 
-  // Account Suspended Screen
+  // ── GATE 2: Account Status Check ──────────────────────────────────────────
   if (status === 'suspended') {
     return (
       <div className="min-h-screen bg-[#FAFAF6] flex items-center justify-center p-4">
@@ -85,7 +120,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
           <h2 className="font-['Outfit'] text-xl font-bold text-[#12160F] m-0">Account Suspended</h2>
           <p className="text-xs text-[#586151] m-0 leading-relaxed">
-            Your account has been temporarily suspended by system administrators. Please reach out to support@fluetas.com to resolve any verification issues.
+            Your account has been temporarily suspended by platform administrators. Please contact support@fluetas.com to review your credentials.
           </p>
           <DevRoleSwitcher />
         </div>
@@ -93,66 +128,25 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Unauthorized Access Guard
-  // 1. Doctor route accessed by non-doctor (and non-admin)
-  if (isDoctorRoute && role !== 'doctor' && role !== 'admin') {
-    return (
-      <div className="min-h-screen bg-[#FAFAF6] flex items-center justify-center p-4">
-        <div className="fluetas-card p-8 max-w-md w-full text-center flex flex-col items-center gap-3 border-[#2E6DA4]/30">
-          <div className="w-14 h-14 rounded-2xl bg-[#2E6DA4]/10 text-[#2E6DA4] flex items-center justify-center text-2xl">
-            <Lock size={28} />
-          </div>
-          <span className="px-2.5 py-0.5 rounded text-[0.65rem] font-bold bg-[#2E6DA4]/10 text-[#2E6DA4]">
-            403 · Access Denied
-          </span>
-          <h2 className="font-['Outfit'] text-xl font-bold text-[#12160F] m-0">
-            Doctor Panel Restricted
-          </h2>
-          <p className="text-xs text-[#586151] m-0 leading-relaxed">
-            The clinical portal is strictly restricted to verified doctors and practitioners. If you are a doctor awaiting credential approval, your status will update upon admin verification.
-          </p>
-          <Link
-            href="/dashboard"
-            className="btn-primary mt-3 flex items-center gap-2 text-xs font-bold px-4 py-2 no-underline"
-          >
-            <ArrowLeft size={14} /> Return to Customer Dashboard
-          </Link>
-          <DevRoleSwitcher />
-        </div>
-      </div>
-    );
+  // ── GATE 3: Role Route Authorization Matrix ──────────────────────────────
+  // Intercept mismatched roles immediately: NEVER render the wrong dashboard
+  if (isCustomer && (isDoctorRoute || isAdminRoute)) {
+    return <ZeroFlashLoadingScreen />;
   }
 
-  // 2. Admin route accessed by non-admin
-  if (isAdminRoute && role !== 'admin') {
-    return (
-      <div className="min-h-screen bg-[#FAFAF6] flex items-center justify-center p-4">
-        <div className="fluetas-card p-8 max-w-md w-full text-center flex flex-col items-center gap-3 border-amber-500/30">
-          <div className="w-14 h-14 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center text-2xl">
-            <Lock size={28} />
-          </div>
-          <span className="px-2.5 py-0.5 rounded text-[0.65rem] font-bold bg-amber-500/10 text-amber-600">
-            403 · Access Denied
-          </span>
-          <h2 className="font-['Outfit'] text-xl font-bold text-[#12160F] m-0">
-            Administrator Access Required
-          </h2>
-          <p className="text-xs text-[#586151] m-0 leading-relaxed">
-            This console is restricted to verified platform administrators. All unauthorized access attempts are logged to the immutable audit trail.
-          </p>
-          <Link
-            href="/dashboard"
-            className="btn-primary mt-3 flex items-center gap-2 text-xs font-bold px-4 py-2 no-underline"
-          >
-            <ArrowLeft size={14} /> Return to Customer Dashboard
-          </Link>
-          <DevRoleSwitcher />
-        </div>
-      </div>
-    );
+  if (isPractitioner && (isCustomerRoute || isAdminRoute)) {
+    return <ZeroFlashLoadingScreen />;
   }
 
-  // Render Role-Specific Sidebar & TopBar
+  if (isAdmin && (isCustomerRoute || isDoctorRoute)) {
+    return <ZeroFlashLoadingScreen />;
+  }
+
+  if (!isAdmin && isAdminRoute) {
+    return <ZeroFlashLoadingScreen />;
+  }
+
+  // ── GATE 4: Render Authorized UI ──────────────────────────────────────────
   const SelectedSidebar = isAdminRoute ? AdminSidebar : isDoctorRoute ? DoctorSidebar : Sidebar;
   const SelectedTopBar = isAdminRoute ? AdminTopBar : isDoctorRoute ? DoctorTopBar : TopBar;
 
@@ -169,10 +163,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </main>
       </div>
 
-      {/* Mobile Bottom Navigation for Customer */}
-      {!isAdminRoute && !isDoctorRoute && <MobileBottomNav />}
+      {/* Mobile Bottom Navigation (Customer only) */}
+      {isCustomer && <MobileBottomNav />}
 
-      {/* Dev Role Switcher for instant persona testing */}
+      {/* Dev Role Switcher for local persona testing */}
       <DevRoleSwitcher />
     </div>
   );

@@ -35,43 +35,16 @@ export default function DoctorPatientsPage() {
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  const doctorId = user?.uid || 'dr_rajesh_sharma';
+  const doctorId = user?.uid;
 
   useEffect(() => {
+    if (!doctorId) {
+      setLoading(false);
+      return;
+    }
     getAuthorizedPatientsForDoctor(doctorId)
       .then(res => {
-        if (res.length === 0) {
-          setPatients([
-            {
-              relationshipId: 'rel_demo_rahul',
-              doctorId,
-              customerId: 'patient_demo_rahul',
-              customerName: 'Rahul Mehta',
-              customerEmail: 'rahul.mehta@example.com',
-              status: 'active',
-              lastConsultationDate: '24 Aug 2026',
-              nextFollowUpDate: '04 Sep 2026',
-              consentId: 'consent_demo_1',
-              createdAt: { seconds: Math.floor(Date.now() / 1000), nanoseconds: 0 } as any,
-              updatedAt: { seconds: Math.floor(Date.now() / 1000), nanoseconds: 0 } as any,
-            },
-            {
-              relationshipId: 'rel_demo_priya',
-              doctorId,
-              customerId: 'patient_demo_priya',
-              customerName: 'Priya Sharma',
-              customerEmail: 'priya.sharma@example.com',
-              status: 'active',
-              lastConsultationDate: '18 Aug 2026',
-              nextFollowUpDate: '08 Sep 2026',
-              consentId: 'consent_demo_2',
-              createdAt: { seconds: Math.floor(Date.now() / 1000), nanoseconds: 0 } as any,
-              updatedAt: { seconds: Math.floor(Date.now() / 1000), nanoseconds: 0 } as any,
-            },
-          ]);
-        } else {
-          setPatients(res);
-        }
+        setPatients(res || []);
         setLoading(false);
       })
       .catch(() => {

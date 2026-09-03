@@ -50,11 +50,11 @@ export default function DoctorReportsPage() {
   const [followUpRequired, setFollowUpRequired] = useState(true);
   const [reviewState, setReviewState] = useState<'idle' | 'submitting' | 'completed'>('idle');
 
-  const doctorId = user?.uid || 'dr_rajesh_sharma';
-  const doctorName = user?.displayName || 'Dr. Rajesh Sharma, MD';
+  const doctorId = user?.uid || '';
+  const doctorName = user?.displayName || 'Clinical Practitioner';
 
   const handleSaveReview = async () => {
-    if (!selectedReport) return;
+    if (!selectedReport || !doctorId) return;
     setReviewState('submitting');
     try {
       await reviewMedicalReport({

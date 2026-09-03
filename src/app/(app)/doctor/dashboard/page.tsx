@@ -22,13 +22,17 @@ import {
 } from 'lucide-react';
 
 export default function DoctorDashboardPage() {
-  const { user } = useAuth();
+  const { user, verificationStatus } = useAuth();
   const [patients, setPatients] = useState<DoctorPatientRelationship[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const doctorId = user?.uid || 'dr_rajesh_sharma';
+  const doctorId = user?.uid;
 
   useEffect(() => {
+    if (!doctorId) {
+      setLoading(false);
+      return;
+    }
     getAuthorizedPatientsForDoctor(doctorId)
       .then(res => {
         setPatients(res);
@@ -39,21 +43,52 @@ export default function DoctorDashboardPage() {
       });
   }, [doctorId]);
 
+  const isPendingVerification = verificationStatus === 'pending';
+
   return (
     <div className="flex flex-col gap-5 max-w-6xl mx-auto w-full">
+      {/* ── Pending Verification Alert Banner ── */}
+      {isPendingVerification && (
+        <div className="p-4 sm:p-5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-left animate-slide-up">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-600 flex items-center justify-center shrink-0 mt-0.5">
+              <Clock size={20} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[0.65rem] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-amber-500/20 text-amber-700">
+                  Verification Pending
+                </span>
+                <span className="text-xs text-[#586151]">Estimated turnaround: 24–48 hours</span>
+              </div>
+              <h3 className="font-['Outfit'] text-sm sm:text-base font-bold text-[#12160F] m-0 mt-1">
+                Your Practitioner Application is Under Review
+              </h3>
+              <p className="text-xs text-[#586151] m-0 mt-0.5 leading-relaxed">
+                The Medical &amp; Governance Board is reviewing your clinical credentials and registration certificates. You have full access to your portal tools, and you will become bookable in the public Expert Directory once approved.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Stagger 0: Doctor Header Banner ── */}
       <StaggerItem index={0}>
         <div className="fluetas-card p-5 sm:p-6 bg-gradient-to-r from-[#13161F] via-[#0E2433] to-[#0A1A24] border-[#38BDF8]/30 relative overflow-hidden">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-2 mb-1.5">
-                <span className="px-2.5 py-0.5 rounded-full text-[0.68rem] font-bold bg-[#38BDF8]/20 text-[#38BDF8] border border-[#38BDF8]/40 flex items-center gap-1">
+                <span className={`px-2.5 py-0.5 rounded-full text-[0.68rem] font-bold border flex items-center gap-1 ${
+                  isPendingVerification
+                    ? 'bg-amber-500/20 text-amber-400 border-amber-500/40'
+                    : 'bg-[#38BDF8]/20 text-[#38BDF8] border-[#38BDF8]/40'
+                }`}>
                   <ShieldCheck size={11} />
-                  Verified Clinical Practitioner Portal
+                  {isPendingVerification ? 'Clinical Practitioner Portal · Pending Review' : 'Verified Clinical Practitioner Portal'}
                 </span>
               </div>
               <h1 className="font-['Outfit'] text-xl sm:text-2xl font-black text-[#E8EAF6] m-0">
-                WELCOME, {user?.displayName ? user.displayName.toUpperCase() : 'DR. RAJESH SHARMA'}
+                WELCOME, {user?.displayName ? user.displayName.toUpperCase() : 'PRACTITIONER'}
               </h1>
               <p className="text-[#8B91B0] text-xs sm:text-sm m-0 mt-1">
                 Encrypted clinical consultations, patient consent enforcement, and lab reviews.
