@@ -152,7 +152,7 @@ export default function AdminUsersPage() {
     <div className="flex flex-col gap-6 max-w-6xl mx-auto w-full">
       {/* Toast */}
       {toastMessage && (
-        <div className="fixed top-20 right-6 z-50 bg-[#10B981] text-black font-bold text-xs py-2.5 px-4 rounded-xl shadow-2xl flex items-center gap-2 animate-slide-up">
+        <div className="fixed top-20 right-6 z-50 bg-[#2E7D32] text-white font-bold text-xs py-2.5 px-4 rounded-xl shadow-2xl flex items-center gap-2 animate-slide-up">
           <CheckCircle2 size={16} />
           {toastMessage}
         </div>
@@ -162,34 +162,36 @@ export default function AdminUsersPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <Users size={20} className="text-[#10B981]" />
-            <h1 className="font-['Outfit'] text-xl sm:text-2xl font-black text-[#E8EAF6] m-0">
+            <div className="w-8 h-8 rounded-xl bg-[#2E7D32]/10 text-[#2E7D32] flex items-center justify-center font-bold">
+              <Users size={18} />
+            </div>
+            <h1 className="font-['Outfit'] text-xl sm:text-2xl font-black text-[#12160F] m-0">
               USER &amp; ADMINISTRATOR GOVERNANCE
             </h1>
           </div>
-          <p className="text-[#8B91B0] text-xs sm:text-sm m-0">
+          <p className="text-[#586151] text-xs sm:text-sm m-0">
             Authoritative RBAC management, administrator invitations, and account status governance.
           </p>
         </div>
       </div>
 
       {/* ── CARD 1: Administrator Management Section ────────────────────── */}
-      <div className="fluetas-card p-5 sm:p-6 bg-[#13161F] border border-amber-500/30">
-        <div className="flex items-center justify-between pb-3 mb-4 border-b border-[#1E2133]">
+      <div className="fluetas-card p-5 sm:p-6 bg-white border border-[rgba(18,22,15,0.08)] shadow-xs">
+        <div className="flex items-center justify-between pb-3 mb-4 border-b border-[rgba(18,22,15,0.08)]">
           <div className="flex items-center gap-2">
-            <Shield size={18} className="text-amber-400" />
-            <h2 className="font-['Outfit'] text-base font-bold text-white m-0">
+            <Shield size={18} className="text-[#D9622B]" />
+            <h2 className="font-['Outfit'] text-base font-bold text-[#12160F] m-0">
               Platform Administrators ({adminsList.length})
             </h2>
           </div>
-          <span className="text-[0.65rem] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30">
+          <span className="text-[0.65rem] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#D9622B]/10 text-[#D9622B] border border-[#D9622B]/20">
             Immutable Audit Logging Active
           </span>
         </div>
 
         {/* Add Admin Form */}
         <form onSubmit={handleAddAdmin} className="mb-5">
-          <label className="block text-xs font-semibold text-[#8B91B0] mb-2">
+          <label className="block text-xs font-bold text-[#12160F] mb-1.5">
             Grant Administrator Privileges by Registered Email
           </label>
           <div className="flex flex-col sm:flex-row gap-2.5">
@@ -199,12 +201,12 @@ export default function AdminUsersPage() {
               placeholder="existing-user@example.com"
               value={newAdminEmail}
               onChange={e => setNewAdminEmail(e.target.value)}
-              className="flex-1 min-h-[42px] px-3.5 py-2 rounded-xl bg-[#0E111A] border border-[#2A2F45] text-white text-xs sm:text-sm focus:border-amber-500 outline-none"
+              className="flex-1 min-h-[42px] px-3.5 py-2 rounded-xl bg-[#FAFAF6] border border-[rgba(18,22,15,0.12)] text-[#12160F] placeholder-[#8A9482] text-xs sm:text-sm focus:border-[#D9622B] outline-none"
             />
             <button
               type="submit"
               disabled={addingAdmin || !newAdminEmail.trim()}
-              className="min-h-[42px] px-5 rounded-xl bg-amber-500 hover:bg-amber-600 text-black text-xs font-bold flex items-center justify-center gap-2 cursor-pointer transition-colors disabled:opacity-50"
+              className="min-h-[42px] px-5 rounded-xl bg-[#D9622B] hover:bg-[#B84E1E] text-white text-xs font-bold flex items-center justify-center gap-2 cursor-pointer transition-colors disabled:opacity-50 shadow-2xs"
             >
               {addingAdmin ? (
                 <>
@@ -220,13 +222,13 @@ export default function AdminUsersPage() {
             </button>
           </div>
           {adminError && (
-            <div className="mt-2 text-xs text-red-400 flex items-center gap-1.5 animate-slide-up">
+            <div className="mt-2 text-xs text-red-600 font-semibold flex items-center gap-1.5 animate-slide-up">
               <AlertCircle size={14} />
               <span>{adminError}</span>
             </div>
           )}
           {adminSuccess && (
-            <div className="mt-2 text-xs text-[#10B981] flex items-center gap-1.5 animate-slide-up">
+            <div className="mt-2 text-xs text-[#2E7D32] font-semibold flex items-center gap-1.5 animate-slide-up">
               <CheckCircle2 size={14} />
               <span>{adminSuccess}</span>
             </div>
@@ -237,30 +239,30 @@ export default function AdminUsersPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="border-b border-[#1E2133] text-[#8B91B0] uppercase text-[0.65rem] tracking-wider">
-                <th className="pb-2.5 font-semibold">Admin</th>
-                <th className="pb-2.5 font-semibold">Email</th>
-                <th className="pb-2.5 font-semibold">Status</th>
-                <th className="pb-2.5 font-semibold text-right">Access Control</th>
+              <tr className="border-b border-[rgba(18,22,15,0.08)] text-[#586151] uppercase text-[0.65rem] tracking-wider font-bold">
+                <th className="pb-2.5">Admin</th>
+                <th className="pb-2.5">Email</th>
+                <th className="pb-2.5">Status</th>
+                <th className="pb-2.5 text-right">Access Control</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#1E2133]">
+            <tbody className="divide-y divide-[rgba(18,22,15,0.06)]">
               {adminsList.map(adm => (
-                <tr key={adm.id} className="hover:bg-[#1A1E2E]/50 transition-colors">
-                  <td className="py-3 pr-3 font-bold text-white flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-amber-500/15 text-amber-400 flex items-center justify-center font-bold text-xs">
+                <tr key={adm.id} className="hover:bg-[#FAFAF6] transition-colors">
+                  <td className="py-3 pr-3 font-bold text-[#12160F] flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-[#D9622B]/10 text-[#D9622B] border border-[#D9622B]/20 flex items-center justify-center font-bold text-xs">
                       {adm.name ? adm.name[0] : 'A'}
                     </div>
                     <span>{adm.name || 'Platform Administrator'}</span>
                     {adm.id === user?.uid && (
-                      <span className="text-[0.62rem] font-bold px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400">
+                      <span className="text-[0.62rem] font-bold px-1.5 py-0.5 rounded bg-[#2E7D32]/10 text-[#2E7D32] border border-[#2E7D32]/20">
                         You
                       </span>
                     )}
                   </td>
-                  <td className="py-3 pr-3 text-[#8B91B0] font-mono text-xs">{adm.email}</td>
+                  <td className="py-3 pr-3 text-[#586151] font-mono text-xs">{adm.email}</td>
                   <td className="py-3 pr-3">
-                    <span className="px-2 py-0.5 rounded-full text-[0.62rem] font-bold bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/30">
+                    <span className="px-2 py-0.5 rounded-full text-[0.62rem] font-bold bg-[#2E7D32]/10 text-[#2E7D32] border border-[#2E7D32]/20">
                       {adm.status}
                     </span>
                   </td>
@@ -269,7 +271,7 @@ export default function AdminUsersPage() {
                       <button
                         onClick={() => handleRemoveAdmin(adm)}
                         disabled={processingId === adm.id}
-                        className="px-2.5 py-1 rounded-lg text-xs font-bold text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20 cursor-pointer transition-colors"
+                        className="px-2.5 py-1 rounded-lg text-xs font-bold text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-200 cursor-pointer transition-colors"
                       >
                         Revoke Admin
                       </button>
@@ -283,18 +285,18 @@ export default function AdminUsersPage() {
       </div>
 
       {/* ── CARD 2: All Platform Users Table ───────────────────────────── */}
-      <div className="fluetas-card p-5">
+      <div className="fluetas-card p-5 bg-white border border-[rgba(18,22,15,0.08)]">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
-          <h2 className="font-['Outfit'] text-base font-bold text-[#E8EAF6] m-0">
+          <h2 className="font-['Outfit'] text-base font-bold text-[#12160F] m-0">
             All Registered Platform Accounts ({users.length})
           </h2>
           <div className="relative w-full sm:w-72">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8B91B0]" />
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8A9482]" />
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search by name, email, role..."
-              className="w-full pl-9 pr-3.5 py-1.5 rounded-xl bg-[#0E111A] border border-[#2A2F45] text-xs text-[#E8EAF6] outline-none focus:border-[#10B981]"
+              className="w-full pl-9 pr-3.5 py-2 rounded-xl bg-[#FAFAF6] border border-[rgba(18,22,15,0.12)] text-xs text-[#12160F] placeholder-[#8A9482] outline-none focus:border-[#2E7D32]"
             />
           </div>
         </div>
@@ -302,34 +304,34 @@ export default function AdminUsersPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="border-b border-[#1E2133] text-[#8B91B0] uppercase text-[0.65rem] tracking-wider">
-                <th className="pb-3 font-semibold">User</th>
-                <th className="pb-3 font-semibold">Email</th>
-                <th className="pb-3 font-semibold">Role</th>
-                <th className="pb-3 font-semibold">Status</th>
-                <th className="pb-3 font-semibold text-right">Actions</th>
+              <tr className="border-b border-[rgba(18,22,15,0.08)] text-[#586151] uppercase text-[0.65rem] tracking-wider font-bold">
+                <th className="pb-3">User</th>
+                <th className="pb-3">Email</th>
+                <th className="pb-3">Role</th>
+                <th className="pb-3">Status</th>
+                <th className="pb-3 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#1E2133]">
+            <tbody className="divide-y divide-[rgba(18,22,15,0.06)]">
               {filtered.map(usr => {
                 const isSuspended = usr.status === 'suspended';
                 const isProcessing = processingId === usr.id;
                 return (
-                  <tr key={usr.id} className="hover:bg-[#13161F]/50 transition-colors">
-                    <td className="py-3.5 pr-3 font-bold text-[#E8EAF6] flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-lg bg-[#1E2133] flex items-center justify-center font-bold text-xs text-[#10B981]">
+                  <tr key={usr.id} className="hover:bg-[#FAFAF6] transition-colors">
+                    <td className="py-3.5 pr-3 font-bold text-[#12160F] flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-lg bg-[#FAFAF6] border border-[rgba(18,22,15,0.10)] flex items-center justify-center font-bold text-xs text-[#2E7D32]">
                         {usr.name ? usr.name[0] : 'U'}
                       </div>
                       <span>{usr.name || 'User'}</span>
                     </td>
-                    <td className="py-3.5 pr-3 text-[#8B91B0]">{usr.email}</td>
+                    <td className="py-3.5 pr-3 text-[#586151] font-mono text-xs">{usr.email}</td>
                     <td className="py-3.5 pr-3">
                       <span className={`px-2 py-0.5 rounded-full text-[0.62rem] font-bold uppercase ${
                         usr.role === 'admin'
-                          ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                          ? 'bg-[#D9622B]/10 text-[#D9622B] border border-[#D9622B]/20'
                           : usr.role === 'expert' || usr.role === 'doctor'
-                          ? 'bg-blue-500/15 text-blue-400 border border-blue-500/30'
-                          : 'bg-[#1E2133] text-[#E8EAF6]'
+                          ? 'bg-[#2E6DA4]/10 text-[#2E6DA4] border border-[#2E6DA4]/20'
+                          : 'bg-[#FAFAF6] text-[#586151] border border-[rgba(18,22,15,0.08)]'
                       }`}>
                         {usr.role}
                       </span>
@@ -338,8 +340,8 @@ export default function AdminUsersPage() {
                       <span
                         className={`px-2 py-0.5 rounded-full text-[0.62rem] font-bold ${
                           isSuspended
-                            ? 'bg-red-500/15 text-red-400 border border-red-500/30'
-                            : 'bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/30'
+                            ? 'bg-red-50 text-red-600 border border-red-200'
+                            : 'bg-[#2E7D32]/10 text-[#2E7D32] border border-[#2E7D32]/20'
                         }`}
                       >
                         {usr.status}
@@ -351,8 +353,8 @@ export default function AdminUsersPage() {
                         disabled={isProcessing}
                         className={`px-3 py-1 rounded-lg text-xs font-bold cursor-pointer transition-colors ${
                           isSuspended
-                            ? 'bg-[#10B981]/15 text-[#10B981] hover:bg-[#10B981]/25 border border-[#10B981]/30'
-                            : 'bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 border border-amber-500/30'
+                            ? 'bg-[#2E7D32]/10 text-[#2E7D32] hover:bg-[#2E7D32]/20 border border-[#2E7D32]/20'
+                            : 'bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200'
                         }`}
                       >
                         {isProcessing ? 'Updating...' : isSuspended ? 'Reactivate' : 'Suspend'}

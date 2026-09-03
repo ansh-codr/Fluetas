@@ -15,8 +15,8 @@ import {
   ChevronUp,
   ArrowUpDown,
   Code,
+  Loader2,
 } from 'lucide-react';
-import { motion, AnimatePresence } from '@/components/motion/MotionUtils';
 
 type SortField = 'timestamp' | 'actorRole' | 'action' | 'result';
 type SortOrder = 'asc' | 'desc';
@@ -33,47 +33,9 @@ export default function AdminAuditLogsPage() {
   const loadLogs = async () => {
     try {
       const res = await getAuditLogs({ actorRole: roleFilter });
-      if (res.length === 0) {
-        setLogs([
-          {
-            actorId: 'dr_rajesh_sharma',
-            actorRole: 'doctor',
-            action: 'doctor_viewed_patient_record',
-            resourceType: 'health_record',
-            resourceId: 'patient_demo_rahul',
-            customerId: 'patient_demo_rahul',
-            patientName: 'Rahul Mehta',
-            details: 'Viewed authorized patient clinical overview with active consent',
-            result: 'SUCCESS',
-            timestamp: { seconds: Math.floor(Date.now() / 1000) - 3600, nanoseconds: 0 } as any,
-          },
-          {
-            actorId: 'admin_root',
-            actorRole: 'admin',
-            action: 'admin_verified_doctor',
-            resourceType: 'doctor_profile',
-            resourceId: 'dr_rajesh_sharma',
-            details: 'VERIFIED doctor credentials for Dr. Rajesh Sharma. Reason: Medical registration verified',
-            result: 'SUCCESS',
-            timestamp: { seconds: Math.floor(Date.now() / 1000) - 86400, nanoseconds: 0 } as any,
-          },
-          {
-            actorId: 'patient_demo_rahul',
-            actorRole: 'customer',
-            action: 'customer_granted_consent',
-            resourceType: 'consent',
-            resourceId: 'consent_demo_1',
-            customerId: 'patient_demo_rahul',
-            details: 'Granted data access scopes to Dr. Rajesh Sharma',
-            result: 'SUCCESS',
-            timestamp: { seconds: Math.floor(Date.now() / 1000) - 172800, nanoseconds: 0 } as any,
-          },
-        ]);
-      } else {
-        setLogs(res);
-      }
-    } catch {
-      // ignore
+      setLogs(res || []);
+    } catch (err) {
+      console.warn('[AdminAuditLogs] Load error:', err);
     } finally {
       setLoading(false);
     }
@@ -83,251 +45,205 @@ export default function AdminAuditLogsPage() {
     loadLogs();
   }, [roleFilter]);
 
-  const handleSort = (field: SortField) => {
+  const toggleSort = (field: SortField) => {
     if (sortField === field) {
-      setSortOrder(prev => (prev === 'asc' ? 'desc' : 'asc'));
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
     } else {
       setSortField(field);
       setSortOrder('desc');
     }
   };
 
-  const filtered = logs.filter(l =>
-    l.action.toLowerCase().includes(search.toLowerCase()) ||
-    l.actorId.toLowerCase().includes(search.toLowerCase()) ||
-    (l.details && l.details.toLowerCase().includes(search.toLowerCase()))
-  );
+  const filteredLogs = logs
+    .filter(log => {
+      if (!search.trim()) return true;
+      const q = search.toLowerCase();
+      return (
+        (log.actorId && log.actorId.toLowerCase().includes(q)) ||
+        (log.action && log.action.toLowerCase().includes(q)) ||
+        (log.details && log.details.toLowerCase().includes(q)) ||
+        (log.resourceType && log.resourceType.toLowerCase().includes(q))
+      );
+    })
+    .sort((a, b) => {
+      let comparison = 0;
+      if (sortField === 'timestamp') {
+        const aTime = a.timestamp?.seconds || 0;
+        const bTime = b.timestamp?.seconds || 0;
+        comparison = aTime - bTime;
+      } else if (sortField === 'actorRole') {
+        comparison = (a.actorRole || '').localeCompare(b.actorRole || '');
+      } else if (sortField === 'action') {
+        comparison = (a.action || '').localeCompare(b.action || '');
+      } else if (sortField === 'result') {
+        comparison = (a.result || '').localeCompare(b.result || '');
+      }
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
 
-  const sorted = [...filtered].sort((a, b) => {
-    let comparison = 0;
-    if (sortField === 'timestamp') {
-      const timeA = a.timestamp?.seconds || 0;
-      const timeB = b.timestamp?.seconds || 0;
-      comparison = timeA - timeB;
-    } else if (sortField === 'actorRole') {
-      comparison = (a.actorRole || '').localeCompare(b.actorRole || '');
-    } else if (sortField === 'action') {
-      comparison = (a.action || '').localeCompare(b.action || '');
-    } else if (sortField === 'result') {
-      comparison = (a.result || '').localeCompare(b.result || '');
-    }
-    return sortOrder === 'asc' ? comparison : -comparison;
-  });
+  const roles = ['All', 'admin', 'doctor', 'expert', 'customer', 'system'];
 
   return (
-    <div className="flex flex-col gap-5 max-w-6xl mx-auto w-full">
+    <div className="flex flex-col gap-6 max-w-6xl mx-auto w-full">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <Shield size={20} className="text-[#F59E0B]" />
-            <h1 className="font-['Outfit'] text-xl sm:text-2xl font-black text-[#E8EAF6] m-0">
-              IMMUTABLE AUDIT TRAIL &amp; ACCESS LOGS
+            <div className="w-8 h-8 rounded-xl bg-[#7A4E9E]/10 text-[#7A4E9E] flex items-center justify-center font-bold">
+              <Shield size={18} />
+            </div>
+            <h1 className="font-['Outfit'] text-xl sm:text-2xl font-black text-[#12160F] m-0">
+              IMMUTABLE AUDIT &amp; ACCESS TRAIL
             </h1>
           </div>
-          <p className="text-[#8B91B0] text-xs sm:text-sm m-0">
-            Compliant access history recording every clinical review, verification action, and consent event. Click rows to inspect payload.
+          <p className="text-[#586151] text-xs sm:text-sm m-0">
+            Cryptographically timestamped compliance logging for practitioner actions, patient access, and RBAC events.
           </p>
         </div>
       </div>
 
-      {/* Filter Bar */}
-      <div className="fluetas-card p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5 bg-[#0B0D14] border border-[#1E2133] rounded-xl px-3 py-2 flex-1 max-w-md">
-          <Search size={14} className="text-[#8B91B0] shrink-0" />
+      {/* Search & Filters */}
+      <div className="fluetas-card p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white border border-[rgba(18,22,15,0.08)]">
+        <div className="flex items-center gap-2.5 bg-[#FAFAF6] border border-[rgba(18,22,15,0.12)] rounded-xl px-3.5 py-2 flex-1 max-w-md">
+          <Search size={15} className="text-[#8A9482] shrink-0" />
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Search audit actions, actor IDs, details..."
-            className="bg-transparent border-none outline-none text-xs text-[#E8EAF6] w-full"
+            placeholder="Search by actor ID, action type, resource..."
+            className="bg-transparent border-none outline-none text-xs text-[#12160F] placeholder-[#8A9482] w-full"
           />
         </div>
 
-        <div className="flex items-center gap-1.5 bg-[#0B0D14] p-1 rounded-xl border border-[#1E2133]">
-          {['All', 'doctor', 'customer', 'admin'].map(r => (
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+          {roles.map(r => (
             <button
               key={r}
               onClick={() => setRoleFilter(r)}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold capitalize transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-all cursor-pointer ${
                 roleFilter === r
-                  ? 'bg-[#F59E0B] text-black font-bold shadow-xs'
-                  : 'text-[#8B91B0] hover:text-white'
+                  ? 'bg-[#12160F] text-white shadow-xs'
+                  : 'bg-[#FAFAF6] border border-[rgba(18,22,15,0.10)] text-[#586151] hover:text-[#12160F]'
               }`}
             >
-              {r}
+              {r.toUpperCase()}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Audit Logs Table */}
-      <div className="fluetas-card p-5 overflow-x-auto">
-        <table className="w-full text-left text-xs border-collapse">
-          <thead>
-            <tr className="border-b border-[#1E2133] text-[#8B91B0] uppercase text-[0.65rem] tracking-wider">
-              <th
-                onClick={() => handleSort('timestamp')}
-                className="pb-3 font-semibold cursor-pointer hover:text-white select-none"
-              >
-                <div className="flex items-center gap-1">
-                  <span>Timestamp</span>
-                  {sortField === 'timestamp' ? (
-                    sortOrder === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />
-                  ) : <ArrowUpDown size={11} className="opacity-40" />}
-                </div>
-              </th>
-              <th
-                onClick={() => handleSort('actorRole')}
-                className="pb-3 font-semibold cursor-pointer hover:text-white select-none"
-              >
-                <div className="flex items-center gap-1">
-                  <span>Actor &amp; Role</span>
-                  {sortField === 'actorRole' ? (
-                    sortOrder === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />
-                  ) : <ArrowUpDown size={11} className="opacity-40" />}
-                </div>
-              </th>
-              <th
-                onClick={() => handleSort('action')}
-                className="pb-3 font-semibold cursor-pointer hover:text-white select-none"
-              >
-                <div className="flex items-center gap-1">
-                  <span>Action</span>
-                  {sortField === 'action' ? (
-                    sortOrder === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />
-                  ) : <ArrowUpDown size={11} className="opacity-40" />}
-                </div>
-              </th>
-              <th className="pb-3 font-semibold">Target Resource</th>
-              <th className="pb-3 font-semibold">Details</th>
-              <th
-                onClick={() => handleSort('result')}
-                className="pb-3 font-semibold text-right cursor-pointer hover:text-white select-none"
-              >
-                <div className="flex items-center justify-end gap-1">
-                  <span>Result</span>
-                  {sortField === 'result' ? (
-                    sortOrder === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />
-                  ) : <ArrowUpDown size={11} className="opacity-40" />}
-                </div>
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-[#1E2133]">
-            {sorted.map((log, idx) => {
-              const isExpanded = expandedIndex === idx;
-              const roleColors: Record<string, string> = {
-                doctor: '#38BDF8',
-                admin: '#F59E0B',
-                customer: '#10B981',
-                system: '#A78BFA',
-              };
-              const color = roleColors[log.actorRole] || '#8B91B0';
-              const dateStr = log.timestamp?.seconds
-                ? new Date(log.timestamp.seconds * 1000).toLocaleString('en-IN', {
-                    day: 'numeric',
-                    month: 'short',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })
-                : 'Just now';
+      {/* Logs Table */}
+      <div className="fluetas-card p-5 overflow-x-auto bg-white border border-[rgba(18,22,15,0.08)]">
+        {loading ? (
+          <div className="p-12 text-center text-xs text-[#586151]">
+            <Loader2 size={24} className="animate-spin mx-auto mb-2 text-[#7A4E9E]" />
+            Loading audit records...
+          </div>
+        ) : filteredLogs.length === 0 ? (
+          <div className="p-12 text-center text-xs text-[#586151]">
+            No audit records found matching your filters.
+          </div>
+        ) : (
+          <table className="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr className="border-b border-[rgba(18,22,15,0.08)] text-[#586151] uppercase text-[0.65rem] tracking-wider font-bold">
+                <th className="pb-3 cursor-pointer" onClick={() => toggleSort('timestamp')}>
+                  <div className="flex items-center gap-1">
+                    <span>Timestamp</span>
+                    <ArrowUpDown size={11} />
+                  </div>
+                </th>
+                <th className="pb-3 cursor-pointer" onClick={() => toggleSort('actorRole')}>
+                  <div className="flex items-center gap-1">
+                    <span>Actor &amp; Role</span>
+                    <ArrowUpDown size={11} />
+                  </div>
+                </th>
+                <th className="pb-3 cursor-pointer" onClick={() => toggleSort('action')}>
+                  <div className="flex items-center gap-1">
+                    <span>Action Event</span>
+                    <ArrowUpDown size={11} />
+                  </div>
+                </th>
+                <th className="pb-3">Resource Target</th>
+                <th className="pb-3 text-right">Outcome</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[rgba(18,22,15,0.06)]">
+              {filteredLogs.map((log, idx) => {
+                const isExpanded = expandedIndex === idx;
+                const timeStr = log.timestamp?.seconds
+                  ? new Date(log.timestamp.seconds * 1000).toLocaleString('en-IN', {
+                      day: '2-digit',
+                      month: 'short',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })
+                  : 'Just now';
 
-              return (
-                <React.Fragment key={idx}>
-                  <tr
-                    onClick={() => setExpandedIndex(isExpanded ? null : idx)}
-                    className={`transition-colors cursor-pointer ${
-                      isExpanded ? 'bg-[#1E2133]/60' : 'hover:bg-[#13161F]/70'
-                    }`}
-                  >
-                    <td className="py-3 pr-3 text-[#8B91B0] font-mono text-[0.7rem] whitespace-nowrap">
-                      {dateStr}
-                    </td>
-                    <td className="py-3 pr-3">
-                      <span
-                        className="px-2 py-0.5 rounded text-[0.62rem] font-bold uppercase inline-block"
-                        style={{ backgroundColor: `${color}15`, color: color }}
-                      >
-                        {log.actorRole}
-                      </span>
-                      <span className="text-[#8B91B0] block text-[0.65rem] font-mono mt-0.5">
-                        {log.actorId}
-                      </span>
-                    </td>
-                    <td className="py-3 pr-3 font-bold text-[#E8EAF6] font-mono text-[0.7rem]">
-                      {log.action}
-                    </td>
-                    <td className="py-3 pr-3 text-[#38BDF8] text-[0.7rem]">
-                      {log.resourceType}
-                    </td>
-                    <td className="py-3 pr-3 text-[#8B91B0] max-w-xs truncate">
-                      {log.details || '—'}
-                    </td>
-                    <td className="py-3 text-right whitespace-nowrap">
-                      <span
-                        className={`inline-flex items-center gap-1 text-[0.68rem] font-bold px-2 py-0.5 rounded ${
-                          log.result === 'SUCCESS'
-                            ? 'bg-emerald-500/15 text-emerald-400'
-                            : 'bg-red-500/15 text-red-400'
-                        }`}
-                      >
-                        {log.result === 'SUCCESS' ? <CheckCircle2 size={11} /> : <XCircle size={11} />}
-                        {log.result}
-                      </span>
-                    </td>
-                  </tr>
-
-                  {/* Inline Expandable Details Row */}
-                  {isExpanded && (
-                    <tr className="bg-[#0B0D14]/80">
-                      <td colSpan={6} className="p-4">
-                        <div className="p-3.5 bg-[#13161F] border border-[#1E2133] rounded-xl text-xs space-y-2.5 animate-slide-up">
-                          <div className="flex items-center justify-between border-b border-[#1E2133] pb-2">
-                            <span className="font-bold text-[#E8EAF6] flex items-center gap-1.5 font-mono text-[0.75rem]">
-                              <Code size={13} className="text-[#F59E0B]" />
-                              Audit Record Details ({log.action})
-                            </span>
-                            <span className="text-[0.65rem] text-[#8B91B0] font-mono">
-                              Actor ID: {log.actorId}
-                            </span>
-                          </div>
-
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-[0.72rem]">
-                            <div>
-                              <span className="text-[#8B91B0] block">Target Resource:</span>
-                              <span className="text-[#38BDF8] font-mono font-semibold">
-                                {log.resourceType} ({log.resourceId || 'N/A'})
-                              </span>
-                            </div>
-                            <div>
-                              <span className="text-[#8B91B0] block">Associated Patient / Customer:</span>
-                              <span className="text-[#E8EAF6] font-mono">
-                                {log.patientName || log.customerId || 'N/A'}
-                              </span>
-                            </div>
-                            <div>
-                              <span className="text-[#8B91B0] block">Authorization Result:</span>
-                              <span className={log.result === 'SUCCESS' ? 'text-emerald-400 font-bold' : 'text-red-400 font-bold'}>
-                                {log.result}
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className="pt-2 border-t border-[#1E2133]">
-                            <span className="text-[#8B91B0] block text-[0.68rem] mb-1">Full Audit Summary:</span>
-                            <p className="text-[#E8EAF6] font-mono text-[0.72rem] bg-[#0B0D14] p-2.5 rounded-lg border border-[#1E2133] leading-relaxed m-0">
-                              {log.details || 'No additional telemetry details logged.'}
-                            </p>
-                          </div>
+                return (
+                  <React.Fragment key={idx}>
+                    <tr
+                      onClick={() => setExpandedIndex(isExpanded ? null : idx)}
+                      className="hover:bg-[#FAFAF6] cursor-pointer transition-colors"
+                    >
+                      <td className="py-3.5 pr-3 text-[#586151] font-mono text-[0.72rem] whitespace-nowrap">
+                        <span className="flex items-center gap-1.5">
+                          <Clock size={12} className="text-[#8A9482]" />
+                          {timeStr}
+                        </span>
+                      </td>
+                      <td className="py-3.5 pr-3 font-bold text-[#12160F]">
+                        <div className="flex items-center gap-1.5">
+                          <span className={`px-2 py-0.5 rounded-full text-[0.6rem] font-bold uppercase ${
+                            log.actorRole === 'admin'
+                              ? 'bg-[#D9622B]/10 text-[#D9622B] border border-[#D9622B]/20'
+                              : (log.actorRole as string) === 'doctor' || (log.actorRole as string) === 'expert'
+                              ? 'bg-[#2E6DA4]/10 text-[#2E6DA4] border border-[#2E6DA4]/20'
+                              : 'bg-[#FAFAF6] text-[#586151] border border-[rgba(18,22,15,0.08)]'
+                          }`}>
+                            {log.actorRole || 'user'}
+                          </span>
+                          <span className="text-xs truncate max-w-[120px] font-mono text-[#586151]">
+                            {log.actorId}
+                          </span>
                         </div>
                       </td>
+                      <td className="py-3.5 pr-3 font-bold text-[#12160F] font-mono text-xs">
+                        {log.action}
+                      </td>
+                      <td className="py-3.5 pr-3 text-[#586151] text-xs">
+                        {log.resourceType || 'system'}
+                      </td>
+                      <td className="py-3.5 text-right">
+                        <span className={`px-2.5 py-0.5 rounded-full text-[0.62rem] font-bold uppercase ${
+                          log.result === 'SUCCESS' || !log.result
+                            ? 'bg-[#2E7D32]/10 text-[#2E7D32] border border-[#2E7D32]/20'
+                            : 'bg-red-50 text-red-600 border border-red-200'
+                        }`}>
+                          {log.result || 'SUCCESS'}
+                        </span>
+                      </td>
                     </tr>
-                  )}
-                </React.Fragment>
-              );
-            })}
-          </tbody>
-        </table>
+                    {isExpanded && (
+                      <tr>
+                        <td colSpan={5} className="p-4 bg-[#FAFAF6] border-y border-[rgba(18,22,15,0.06)]">
+                          <div className="space-y-2 text-xs">
+                            <p className="text-[#12160F] font-bold m-0">Event Details:</p>
+                            <p className="text-[#586151] m-0 leading-relaxed">{log.details || 'No additional narrative recorded.'}</p>
+                            <div className="mt-2 p-3 bg-white rounded-xl border border-[rgba(18,22,15,0.08)] font-mono text-[0.7rem] text-[#12160F] overflow-x-auto">
+                              <pre className="m-0">{JSON.stringify(log, null, 2)}</pre>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );

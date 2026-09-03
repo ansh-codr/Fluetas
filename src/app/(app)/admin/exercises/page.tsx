@@ -34,26 +34,28 @@ export default function AdminExercisesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <Dumbbell size={20} className="text-[#A78BFA]" />
-            <h1 className="font-['Outfit'] text-xl sm:text-2xl font-black text-[#E8EAF6] m-0">
+            <div className="w-8 h-8 rounded-xl bg-[#D9622B]/10 text-[#D9622B] flex items-center justify-center font-bold">
+              <Dumbbell size={18} />
+            </div>
+            <h1 className="font-['Outfit'] text-xl sm:text-2xl font-black text-[#12160F] m-0">
               EXERCISE CONTENT &amp; PROVIDER MANAGEMENT
             </h1>
           </div>
-          <p className="text-[#8B91B0] text-xs sm:text-sm m-0">
-            Manage exercise library metadata, target muscle mappings, and external API provider configurations.
+          <p className="text-[#586151] text-xs sm:text-sm m-0">
+            Manage exercise library metadata, target muscle mappings, and video streaming providers.
           </p>
         </div>
       </div>
 
       {/* Search & Muscle Filters */}
-      <div className="fluetas-card p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5 bg-[#0B0D14] border border-[#1E2133] rounded-xl px-3 py-2 flex-1 max-w-md">
-          <Search size={14} className="text-[#8B91B0] shrink-0" />
+      <div className="fluetas-card p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white border border-[rgba(18,22,15,0.08)]">
+        <div className="flex items-center gap-2.5 bg-[#FAFAF6] border border-[rgba(18,22,15,0.12)] rounded-xl px-3.5 py-2 flex-1 max-w-md">
+          <Search size={15} className="text-[#8A9482] shrink-0" />
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Search exercises by movement or apparatus..."
-            className="bg-transparent border-none outline-none text-xs text-[#E8EAF6] w-full"
+            placeholder="Search exercises by movement or equipment..."
+            className="bg-transparent border-none outline-none text-xs text-[#12160F] placeholder-[#8A9482] w-full"
           />
         </div>
 
@@ -62,10 +64,10 @@ export default function AdminExercisesPage() {
             <button
               key={m}
               onClick={() => setSelectedMuscle(m)}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold shrink-0 transition-all cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-all cursor-pointer ${
                 selectedMuscle === m
-                  ? 'bg-[#A78BFA] text-black font-bold'
-                  : 'bg-[#0B0D14] border border-[#1E2133] text-[#8B91B0] hover:text-white'
+                  ? 'bg-[#12160F] text-white shadow-xs'
+                  : 'bg-[#FAFAF6] border border-[rgba(18,22,15,0.10)] text-[#586151] hover:text-[#12160F] hover:bg-white'
               }`}
             >
               {m}
@@ -75,44 +77,52 @@ export default function AdminExercisesPage() {
       </div>
 
       {/* Exercises Table */}
-      <div className="fluetas-card p-5 overflow-x-auto">
+      <div className="fluetas-card p-5 overflow-x-auto bg-white border border-[rgba(18,22,15,0.08)]">
         <table className="w-full text-left text-xs border-collapse">
           <thead>
-            <tr className="border-b border-[#1E2133] text-[#8B91B0] uppercase text-[0.65rem] tracking-wider">
-              <th className="pb-3 font-semibold">Exercise Movement</th>
-              <th className="pb-3 font-semibold">Muscle Group</th>
-              <th className="pb-3 font-semibold">Equipment</th>
-              <th className="pb-3 font-semibold">Difficulty</th>
-              <th className="pb-3 font-semibold">Stream Provider</th>
-              <th className="pb-3 font-semibold text-right">Status</th>
+            <tr className="border-b border-[rgba(18,22,15,0.08)] text-[#586151] uppercase text-[0.65rem] tracking-wider font-bold">
+              <th className="pb-3">Exercise Movement</th>
+              <th className="pb-3">Muscle Group</th>
+              <th className="pb-3">Equipment</th>
+              <th className="pb-3">Difficulty</th>
+              <th className="pb-3">Stream Provider</th>
+              <th className="pb-3 text-right">Status</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#1E2133]">
+          <tbody className="divide-y divide-[rgba(18,22,15,0.06)]">
             {filtered.map(ex => (
-              <tr key={ex.id} className="hover:bg-[#13161F]/50 transition-colors">
-                <td className="py-3.5 pr-3 font-bold text-[#E8EAF6] flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-[#0B0D14] border border-[#1E2133] flex items-center justify-center text-sm shrink-0">
+              <tr key={ex.id} className="hover:bg-[#FAFAF6] transition-colors">
+                <td className="py-3.5 pr-3 font-bold text-[#12160F] flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-[#FAFAF6] border border-[rgba(18,22,15,0.10)] flex items-center justify-center text-sm shrink-0">
                     🏋️
                   </div>
                   <div>
-                    <span>{ex.name}</span>
-                    <span className="text-[0.65rem] text-[#8B91B0] block">{ex.exerciseType}</span>
+                    <span className="text-xs sm:text-sm font-bold text-[#12160F]">{ex.name}</span>
+                    <span className="text-[0.68rem] text-[#586151] font-normal block">{ex.exerciseType}</span>
                   </div>
                 </td>
-                <td className="py-3.5 pr-3 text-[#38BDF8] font-medium">
+                <td className="py-3.5 pr-3 text-[#2E6DA4] font-medium text-xs">
                   {ex.muscleGroups.join(', ')}
                 </td>
-                <td className="py-3.5 pr-3 text-[#8B91B0]">{ex.equipment}</td>
+                <td className="py-3.5 pr-3 text-[#586151] font-medium text-xs">
+                  {ex.equipment}
+                </td>
                 <td className="py-3.5 pr-3">
-                  <span className="px-2 py-0.5 rounded text-[0.62rem] font-bold bg-[#1E2133] text-[#E8EAF6]">
+                  <span className={`px-2 py-0.5 rounded-full text-[0.62rem] font-bold uppercase ${
+                    ex.difficulty === 'Beginner'
+                      ? 'bg-[#2E7D32]/10 text-[#2E7D32] border border-[#2E7D32]/20'
+                      : ex.difficulty === 'Intermediate'
+                      ? 'bg-[#2E6DA4]/10 text-[#2E6DA4] border border-[#2E6DA4]/20'
+                      : 'bg-[#D9622B]/10 text-[#D9622B] border border-[#D9622B]/20'
+                  }`}>
                     {ex.difficulty}
                   </span>
                 </td>
-                <td className="py-3.5 pr-3 text-[#10B981] font-mono text-[0.68rem]">
+                <td className="py-3.5 pr-3 text-[#2E7D32] font-mono text-[0.68rem] font-bold">
                   YourMove (CDN)
                 </td>
                 <td className="py-3.5 text-right">
-                  <span className="px-2 py-0.5 rounded-full text-[0.62rem] font-bold bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/30">
+                  <span className="px-2.5 py-0.5 rounded-full text-[0.65rem] font-bold bg-[#2E7D32]/10 text-[#2E7D32] border border-[#2E7D32]/25">
                     Active
                   </span>
                 </td>
