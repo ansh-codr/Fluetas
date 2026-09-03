@@ -125,23 +125,23 @@ export default function LoginPage() {
         };
 
   return (
-    <div className="relative min-h-screen w-full flex items-center justify-center bg-[#FAFAF6] overflow-x-hidden p-4 sm:p-6 lg:p-12">
+    <div className="relative min-h-screen w-full flex items-center justify-center bg-[#FAFAF6] overflow-x-hidden p-4 sm:p-6 md:p-8 lg:p-12 xl:p-16">
       {/* ── Background Organic Atmosphere ──────────────────────────────── */}
       <div
         className="pointer-events-none fixed inset-0 overflow-hidden"
         aria-hidden="true"
       >
         <div
-          className="absolute -top-[20%] -left-[10%] w-[55vw] h-[55vw] max-w-[650px] max-h-[650px] rounded-full opacity-40 blur-3xl animate-pulse"
+          className="absolute -top-[15%] -left-[10%] w-[55vw] h-[55vw] max-w-[700px] max-h-[700px] rounded-full opacity-40 blur-3xl animate-pulse"
           style={{
-            background: 'radial-gradient(circle, rgba(46,125,50,0.12) 0%, rgba(46,125,50,0.02) 65%, transparent 100%)',
+            background: 'radial-gradient(circle, rgba(46,125,50,0.14) 0%, rgba(46,125,50,0.02) 65%, transparent 100%)',
             animationDuration: '9s',
           }}
         />
         <div
-          className="absolute -bottom-[20%] -right-[10%] w-[60vw] h-[60vw] max-w-[700px] max-h-[700px] rounded-full opacity-35 blur-3xl"
+          className="absolute -bottom-[15%] -right-[10%] w-[60vw] h-[60vw] max-w-[750px] max-h-[750px] rounded-full opacity-35 blur-3xl"
           style={{
-            background: 'radial-gradient(circle, rgba(122,78,158,0.08) 0%, rgba(46,109,164,0.03) 70%, transparent 100%)',
+            background: 'radial-gradient(circle, rgba(122,78,158,0.09) 0%, rgba(46,109,164,0.03) 70%, transparent 100%)',
           }}
         />
         <div
@@ -154,31 +154,31 @@ export default function LoginPage() {
       </div>
 
       {/* ── Main Two-Column Layout ───────────────────────────────────────── */}
-      <main className="relative z-10 w-full max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center">
+      <main className="relative z-10 w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 xl:gap-16 items-center">
         {/* ── LEFT COLUMN: Brand Statement & Capabilities ───────────────── */}
-        <div className="lg:col-span-7 flex flex-col justify-center text-left">
+        <div className="lg:col-span-7 flex flex-col justify-center text-left py-2 lg:py-6">
           {/* Logo & Brand Name */}
-          <motion.div {...anim(0.05)} className="flex items-center gap-3 mb-6 sm:mb-8">
+          <motion.div {...anim(0.05)} className="flex items-center gap-3.5 mb-6 sm:mb-8">
             <Link
               href="/"
-              className="flex items-center gap-3 no-underline group focus-visible:outline-2 focus-visible:outline-[#2E7D32] rounded-xl"
+              className="flex items-center gap-3.5 no-underline group focus-visible:outline-2 focus-visible:outline-[#2E7D32] rounded-xl"
               aria-label="FLUETAS Homepage"
             >
-              <div className="w-10 h-10 sm:w-11 sm:h-11 relative rounded-xl overflow-hidden shadow-xs group-hover:scale-105 transition-transform duration-200">
+              <div className="w-11 h-11 sm:w-13 sm:h-13 relative rounded-2xl overflow-hidden shadow-xs group-hover:scale-105 transition-transform duration-200">
                 <Image
                   src="/assets/image.png"
                   alt="FLUETAS Panther Symbol"
-                  width={44}
-                  height={44}
+                  width={52}
+                  height={52}
                   priority
                   className="w-full h-full object-contain"
                 />
               </div>
               <div className="flex flex-col">
-                <span className="font-['Outfit'] text-2xl sm:text-3xl font-black text-[#12160F] tracking-wider leading-none">
+                <span className="font-['Outfit'] text-2xl sm:text-3xl lg:text-3xl font-black text-[#12160F] tracking-wider leading-none">
                   FLUETAS
                 </span>
-                <span className="text-[0.625rem] tracking-[0.18em] text-[#586151] uppercase font-semibold mt-0.5">
+                <span className="text-[0.65rem] sm:text-xs tracking-[0.2em] text-[#586151] uppercase font-bold mt-1">
                   Health &amp; Performance
                 </span>
               </div>
@@ -186,12 +186,12 @@ export default function LoginPage() {
           </motion.div>
 
           {/* Primary Statement */}
-          <motion.div {...anim(0.12)} className="space-y-1">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[#2E7D32]/10 text-[#2E7D32] border border-[#2E7D32]/20 mb-3">
+          <motion.div {...anim(0.12)} className="space-y-1.5">
+            <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold bg-[#2E7D32]/10 text-[#2E7D32] border border-[#2E7D32]/20 mb-3">
               <Sparkles size={12} />
               <span>CONNECTED HEALTH ARCHITECTURE</span>
             </div>
-            <h1 className="font-['Outfit'] text-3xl sm:text-5xl lg:text-[3.25rem] font-black text-[#12160F] tracking-tight leading-[1.08] m-0">
+            <h1 className="font-['Outfit'] text-3xl sm:text-5xl lg:text-5xl xl:text-6xl font-black text-[#12160F] tracking-tight leading-[1.05] m-0">
               YOUR BODY.<br />
               YOUR DATA.<br />
               <span className="text-[#2E7D32]">YOUR FORMULA.</span>
@@ -201,28 +201,28 @@ export default function LoginPage() {
           {/* Supporting Message */}
           <motion.p
             {...anim(0.2)}
-            className="text-sm sm:text-base text-[#586151] leading-relaxed max-w-lg mt-4 mb-6 sm:mb-8"
+            className="text-sm sm:text-base lg:text-lg text-[#586151] leading-relaxed max-w-xl mt-4 mb-6 sm:mb-8"
           >
             A connected platform for your health, fitness and wellness journey.
             Zero manufactured statistics. Absolute biometric sovereignty.
           </motion.p>
 
           {/* Capability Badges */}
-          <motion.div {...anim(0.28)} className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 max-w-xl">
+          <motion.div {...anim(0.28)} className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-2xl">
             {capabilities.map((cap, i) => {
               const Icon = cap.icon;
               return (
                 <div
                   key={cap.label}
-                  className="bg-white/80 backdrop-blur-xs border border-[rgba(18,22,15,0.08)] rounded-xl p-3 flex flex-col gap-1.5 shadow-2xs hover:border-[#2E7D32]/30 transition-colors"
+                  className="bg-white/85 backdrop-blur-xs border border-[rgba(18,22,15,0.08)] rounded-2xl p-3.5 sm:p-4 flex flex-col gap-1.5 shadow-2xs hover:border-[#2E7D32]/30 transition-colors"
                 >
-                  <div className="w-6 h-6 rounded-lg bg-[#2E7D32]/10 text-[#2E7D32] flex items-center justify-center">
-                    <Icon size={13} />
+                  <div className="w-7 h-7 rounded-xl bg-[#2E7D32]/10 text-[#2E7D32] flex items-center justify-center">
+                    <Icon size={15} />
                   </div>
-                  <span className="font-['Outfit'] font-black text-xs text-[#12160F] tracking-wider">
+                  <span className="font-['Outfit'] font-black text-xs sm:text-sm text-[#12160F] tracking-wider">
                     {cap.label}
                   </span>
-                  <span className="text-[0.65rem] text-[#586151] leading-tight">
+                  <span className="text-[0.6875rem] text-[#586151] leading-tight">
                     {cap.desc}
                   </span>
                 </div>
@@ -234,12 +234,12 @@ export default function LoginPage() {
         {/* ── RIGHT COLUMN: Authentication Interface ────────────────────── */}
         <motion.div
           {...anim(0.18)}
-          className="lg:col-span-5 w-full max-w-md mx-auto"
+          className="lg:col-span-5 w-full max-w-md lg:max-w-[460px] xl:max-w-[480px] mx-auto lg:ml-auto"
         >
-          <div className="bg-white border border-[rgba(18,22,15,0.10)] rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-sm relative">
+          <div className="bg-white border border-[rgba(18,22,15,0.10)] rounded-2xl sm:rounded-3xl p-6 sm:p-8 lg:p-9 shadow-sm relative">
             {/* Header */}
             <div className="mb-6">
-              <h2 className="font-['Outfit'] text-2xl sm:text-[1.75rem] font-bold text-[#12160F] tracking-tight m-0">
+              <h2 className="font-['Outfit'] text-2xl sm:text-[1.85rem] font-bold text-[#12160F] tracking-tight m-0">
                 Welcome back
               </h2>
               <p className="text-xs sm:text-sm text-[#586151] mt-1 m-0">

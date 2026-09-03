@@ -6,14 +6,13 @@ import { useAuth } from '@/context/AuthContext';
 import { useUserProfile } from '@/context/UserProfileContext';
 import { useWorkout } from '@/hooks/useWorkout';
 import { useExerciseDetail } from '@/hooks/useExercises';
-import { WorkoutExercise, getRecentWorkoutSessions, WorkoutSession } from '@/lib/services/workoutService';
+import { WorkoutExercise, getRecentWorkoutSessions, WorkoutSession, ExerciseSet } from '@/lib/services/workoutService';
 import {
   getActiveWorkoutPlan,
   generateWorkoutPlan,
   buildSessionExercisesFromPlanDay,
   getTodaysWorkoutDay,
   WorkoutPlan,
-  PlanDay,
 } from '@/lib/services/workoutPlanService';
 import ExerciseVideoPlayer from '@/components/exercises/ExerciseVideoPlayer';
 import ExerciseDetailModal from '@/components/exercises/ExerciseDetailModal';
@@ -138,17 +137,18 @@ export default function FluetasTrainPage() {
     setActiveExerciseIdx(0);
   };
 
-  // Active exercise video detail
+  // Active exercise video detail with personalized preference resolution
   const currentExercise = exercises[activeExerciseIdx] || exercises[0];
   const {
     exercise: activeVideoExercise,
+    preferredVideo,
     videoExpired,
     handleVideoError,
     refreshVideoUrl,
-  } = useExerciseDetail(currentExercise?.id || null);
+  } = useExerciseDetail(currentExercise?.id || null, healthProfile);
 
   // Timer state
-  const [timerSec, setTimerSec] = useState(120);
+  const [timerSec, setTimerSec] = useState(90);
   const [timerRunning, setTimerRunning] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -163,16 +163,21 @@ export default function FluetasTrainPage() {
     }
   }, [todaySession]);
 
-  // Rest timer countdown
+  // Rest countdown timer
   useEffect(() => {
     if (timerRunning && timerSec > 0) {
-      timerRef.current = setTimeout(() => setTimerSec(t => t - 1), 1000);
-    } else if (timerSec <= 0) {
+      timerRef.current = setTimeout(() => {
+        setTimerSec(s => s - 1);
+      }, 1000);
+    } else if (timerSec === 0) {
       setTimerRunning(false);
     }
-    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
   }, [timerRunning, timerSec]);
 
+  // Handle toggle individual set
   const toggleSet = (exIndex: number, setIndex: number) => {
     if (!activeSession) return;
     const updated = exercises.map((ex, i) => {
@@ -229,17 +234,17 @@ export default function FluetasTrainPage() {
   const timerLabel = `${timerMins}:${timerRemSecs.toString().padStart(2, '0')}`;
 
   return (
-    <div className="flex flex-col gap-5 max-w-5xl mx-auto w-full">
+    <div className={`flex flex-col gap-5 max-w-5xl mx-auto w-full overflow-x-hidden ${activeSession ? 'pb-24 sm:pb-6' : ''}`}>
       {/* Error Banners */}
       {(workoutHookError || planError) && (
-        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-600 text-xs flex items-center gap-2">
+        <div className="p-3.5 bg-red-500/10 border border-red-500/20 rounded-xl text-red-600 text-xs font-semibold flex items-center gap-2">
           <AlertCircle size={15} />
           <span>{workoutHookError || planError}</span>
         </div>
       )}
 
       {/* Program Header Banner */}
-      <div className="fluetas-card p-5 sm:p-6 bg-white border border-[rgba(18,22,15,0.10)] relative overflow-hidden">
+      <div className="fluetas-card p-4 sm:p-6 bg-white border border-[rgba(18,22,15,0.10)] relative overflow-hidden">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative z-10">
           <div>
             <div className="flex items-center gap-2 mb-1.5">
@@ -260,7 +265,7 @@ export default function FluetasTrainPage() {
             <button
               onClick={handleGeneratePlan}
               disabled={generatingPlan || activeSession}
-              className="px-3.5 py-2 rounded-xl bg-[#F2F4EE] border border-[rgba(18,22,15,0.10)] hover:border-[#2E7D32] text-[#586151] hover:text-[#12160F] text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+              className="px-3.5 py-2 min-h-[44px] rounded-xl bg-[#F2F4EE] border border-[rgba(18,22,15,0.10)] hover:border-[#2E7D32] text-[#586151] hover:text-[#12160F] text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
             >
               <RefreshCw size={13} className={generatingPlan ? 'animate-spin text-[#2E7D32]' : ''} />
               {generatingPlan ? 'Building Plan...' : activePlan ? 'Regenerate Plan' : 'Generate Plan'}
@@ -268,14 +273,14 @@ export default function FluetasTrainPage() {
 
             <Link
               href="/exercises"
-              className="px-3.5 py-2 rounded-xl bg-[#F2F4EE] border border-[rgba(18,22,15,0.10)] hover:border-[#2E7D32] text-[#586151] hover:text-[#12160F] text-xs font-semibold flex items-center gap-1.5 transition-colors no-underline"
+              className="px-3.5 py-2 min-h-[44px] rounded-xl bg-[#F2F4EE] border border-[rgba(18,22,15,0.10)] hover:border-[#2E7D32] text-[#586151] hover:text-[#12160F] text-xs font-semibold flex items-center gap-1.5 transition-colors no-underline"
             >
               <Video size={14} className="text-[#2E7D32]" />
               Catalog
             </Link>
 
             {todaySession?.status === 'completed' ? (
-              <div className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#2E7D32]/10 border border-[#2E7D32]/20 text-[#2E7D32] text-xs font-bold">
+              <div className="flex items-center gap-2 px-5 py-2.5 min-h-[44px] rounded-xl bg-[#2E7D32]/10 border border-[#2E7D32]/20 text-[#2E7D32] text-xs font-bold">
                 <CheckCircle2 size={14} />
                 Today&apos;s Session Complete!
               </div>
@@ -283,7 +288,7 @@ export default function FluetasTrainPage() {
               <button
                 onClick={activeSession ? handleFinishSession : handleStartSession}
                 disabled={submitting || loading || planLoading || exercises.length === 0}
-                className="btn-primary px-5 py-2.5 text-xs font-bold flex items-center gap-2 cursor-pointer justify-center disabled:opacity-60 shadow-sm"
+                className="btn-primary px-5 py-2.5 min-h-[44px] text-xs font-bold flex items-center gap-2 cursor-pointer justify-center disabled:opacity-60 shadow-sm"
               >
                 {submitting ? (
                   <Loader2 size={14} className="animate-spin" />
@@ -312,9 +317,9 @@ export default function FluetasTrainPage() {
               <button
                 key={day.dayIndex}
                 onClick={() => handleSelectDay(idx)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold shrink-0 transition-all cursor-pointer ${
+                className={`px-3 py-1.5 min-h-[36px] rounded-lg text-xs font-semibold shrink-0 transition-all cursor-pointer ${
                   selectedDayIdx === idx
-                    ? 'bg-[#2E7D32] text-white shadow-sm'
+                    ? 'bg-[#2E7D32] text-white shadow-sm font-bold'
                     : 'bg-[#F2F4EE] border border-[rgba(18,22,15,0.08)] text-[#586151] hover:text-[#12160F]'
                 }`}
               >
@@ -325,9 +330,10 @@ export default function FluetasTrainPage() {
         )}
       </div>
 
-      {/* Active Workout Session & Video Streaming Player */}
-      {activeSession && (
+      {/* Active Workout Session & Video Showcase */}
+      {activeSession && currentExercise && (
         <div className="fluetas-card p-4 sm:p-5 bg-white border-2 border-[#2E7D32]/40 flex flex-col gap-4 animate-slide-up shadow-sm">
+          {/* Top Session Progress Bar */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-[rgba(18,22,15,0.08)]">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-[#2E7D32] text-white flex items-center justify-center font-bold text-lg animate-pulse shrink-0 shadow-sm">
@@ -342,19 +348,19 @@ export default function FluetasTrainPage() {
             </div>
 
             {/* Rest Timer */}
-            <div className="flex items-center gap-2">
-              <div className={`px-3 py-1.5 rounded-lg font-mono text-sm font-bold bg-[#F2F4EE] border border-[rgba(18,22,15,0.10)] ${timerRunning ? 'text-[#2E7D32]' : 'text-[#586151]'}`}>
+            <div className="flex items-center gap-2 self-stretch sm:self-auto justify-end">
+              <div className={`px-3 py-1.5 min-h-[38px] flex items-center rounded-xl font-mono text-sm font-bold bg-[#F2F4EE] border border-[rgba(18,22,15,0.10)] ${timerRunning ? 'text-[#2E7D32]' : 'text-[#586151]'}`}>
                 Rest: {timerLabel}
               </div>
               <button
                 onClick={() => { setTimerSec(90); setTimerRunning(true); }}
-                className="px-3 py-1.5 rounded-lg bg-[#F2F4EE] text-xs font-semibold text-[#586151] hover:text-[#12160F] border border-[rgba(18,22,15,0.10)] flex items-center gap-1 cursor-pointer"
+                className="px-3 py-1.5 min-h-[38px] rounded-xl bg-[#F2F4EE] text-xs font-semibold text-[#586151] hover:text-[#12160F] border border-[rgba(18,22,15,0.10)] flex items-center gap-1 cursor-pointer"
               >
                 <RotateCcw size={13} /> 90s
               </button>
               <button
                 onClick={() => { setTimerSec(120); setTimerRunning(true); }}
-                className="px-3 py-1.5 rounded-lg bg-[#F2F4EE] text-xs font-semibold text-[#586151] hover:text-[#12160F] border border-[rgba(18,22,15,0.10)] flex items-center gap-1 cursor-pointer"
+                className="px-3 py-1.5 min-h-[38px] rounded-xl bg-[#F2F4EE] text-xs font-semibold text-[#586151] hover:text-[#12160F] border border-[rgba(18,22,15,0.10)] flex items-center gap-1 cursor-pointer"
               >
                 120s
               </button>
@@ -362,13 +368,16 @@ export default function FluetasTrainPage() {
           </div>
 
           {/* Current Active Exercise Showcase with Video */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-center">
-            {/* Left: Video Player */}
-            <div className="w-full">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+            {/* Video Player Section (Full width on mobile, 7 cols on lg) */}
+            <div className="lg:col-span-7 w-full overflow-hidden rounded-2xl">
               <ExerciseVideoPlayer
-                videoUrl={activeVideoExercise?.videoUrl}
-                thumbnailUrl={activeVideoExercise?.thumbnailUrl}
+                videoUrl={preferredVideo?.videoUrl || activeVideoExercise?.videoUrl}
+                thumbnailUrl={preferredVideo?.thumbnailUrl || activeVideoExercise?.thumbnailUrl}
                 title={currentExercise.name}
+                audience={preferredVideo?.audience}
+                instructor={preferredVideo?.instructor}
+                presentationType={preferredVideo?.presentationType}
                 autoPlay={false}
                 onVideoError={handleVideoError}
                 onRefreshUrl={refreshVideoUrl}
@@ -376,51 +385,52 @@ export default function FluetasTrainPage() {
               />
             </div>
 
-            {/* Right: Active Movement Info */}
-            <div className="flex flex-col justify-between gap-3 h-full">
+            {/* Active Movement Info & Steps (5 cols on lg) */}
+            <div className="lg:col-span-5 flex flex-col justify-between gap-3 w-full">
               <div>
-                <div className="flex items-center justify-between gap-2 mb-1">
-                  <span className="text-[0.65rem] font-bold text-[#2E7D32] uppercase tracking-wider">
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <span className="text-[0.68rem] font-bold text-[#2E7D32] uppercase tracking-wider">
                     Current Movement ({activeExerciseIdx + 1} of {exercises.length})
                   </span>
                   <button
                     onClick={() => setDetailModalId(currentExercise.id)}
-                    className="text-xs text-[#2E6DA4] hover:underline font-semibold flex items-center gap-1 cursor-pointer"
+                    className="text-xs text-[#2E6DA4] hover:underline font-bold flex items-center gap-1 cursor-pointer"
                   >
                     <Info size={13} /> Full Instructions
                   </button>
                 </div>
 
-                <h2 className="font-['Outfit'] text-lg font-bold text-[#12160F] m-0">
+                <h2 className="font-['Outfit'] text-lg sm:text-xl font-bold text-[#12160F] m-0">
                   {currentExercise.name}
                 </h2>
-                <p className="text-xs text-[#2E6DA4] font-medium m-0 mt-0.5">
-                  Focus: {currentExercise.targetMuscle}
+                <p className="text-xs text-[#2E6DA4] font-semibold m-0 mt-0.5">
+                  Target: {currentExercise.targetMuscle}
                 </p>
 
                 {currentExercise.notes && (
-                  <p className="text-xs text-[#586151] m-0 mt-2 bg-[#F2F4EE] p-3 rounded-xl border border-[rgba(18,22,15,0.06)] leading-relaxed">
+                  <div className="text-xs text-[#586151] m-0 mt-3 bg-[#F2F4EE] p-3.5 rounded-xl border border-[rgba(18,22,15,0.06)] leading-relaxed">
                     💡 <strong>Progression / Cue:</strong> {currentExercise.notes}
-                  </p>
+                  </div>
                 )}
               </div>
 
-              {/* Next/Prev Exercise Navigation */}
-              <div className="flex items-center justify-between pt-2 border-t border-[rgba(18,22,15,0.08)]">
+              {/* Movement Navigation Controls */}
+              <div className="flex items-center justify-between pt-3 border-t border-[rgba(18,22,15,0.08)] gap-2">
                 <button
                   disabled={activeExerciseIdx === 0}
                   onClick={() => setActiveExerciseIdx(i => Math.max(0, i - 1))}
-                  className="px-3 py-1.5 rounded-lg border border-[rgba(18,22,15,0.12)] text-[#586151] hover:text-[#12160F] text-xs disabled:opacity-30 disabled:cursor-default flex items-center gap-1 cursor-pointer"
+                  className="px-4 py-2.5 min-h-[44px] rounded-xl border border-[rgba(18,22,15,0.12)] text-[#586151] hover:text-[#12160F] text-xs font-semibold disabled:opacity-30 disabled:cursor-default flex items-center gap-1.5 cursor-pointer"
                 >
-                  <ChevronLeft size={14} /> Previous Movement
+                  <ChevronLeft size={15} /> Prev Movement
                 </button>
 
                 <button
                   disabled={activeExerciseIdx === exercises.length - 1}
                   onClick={() => setActiveExerciseIdx(i => Math.min(exercises.length - 1, i + 1))}
-                  className="px-3 py-1.5 rounded-lg border border-[#2E7D32] text-[#2E7D32] hover:bg-[#2E7D32]/10 text-xs disabled:opacity-30 disabled:cursor-default flex items-center gap-1 cursor-pointer font-bold"
+                  className="px-4 py-2.5 min-h-[44px] rounded-xl bg-[#2E7D32] text-white hover:bg-[#256628] text-xs font-bold disabled:opacity-30 disabled:cursor-default flex items-center gap-1.5 cursor-pointer shadow-xs"
                 >
-                  Next Movement <ChevronRight size={14} />
+                  <span>Next Movement</span>
+                  <ChevronRight size={15} />
                 </button>
               </div>
             </div>
@@ -435,7 +445,7 @@ export default function FluetasTrainPage() {
           {!activeSession ? (
             <span className="text-xs text-[#586151]">Click &quot;Start Today&apos;s Workout&quot; to log sets live</span>
           ) : (
-            <span className="text-xs text-[#2E7D32] font-semibold">
+            <span className="text-xs text-[#2E7D32] font-semibold hidden sm:inline">
               Tap set badge to mark done &amp; trigger rest timer
             </span>
           )}
@@ -450,7 +460,7 @@ export default function FluetasTrainPage() {
             <div
               key={ex.id}
               className={`fluetas-card p-4 sm:p-5 transition-all ${
-                isCurrentActive ? 'border-[#2E7D32] shadow-sm bg-white' : 'hover:shadow-md'
+                isCurrentActive ? 'border-2 border-[#2E7D32] shadow-sm bg-white' : 'hover:shadow-md bg-white'
               }`}
             >
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
@@ -485,7 +495,7 @@ export default function FluetasTrainPage() {
                 <div className="flex items-center gap-2 self-end sm:self-auto">
                   <button
                     onClick={() => setDetailModalId(ex.id)}
-                    className="px-2.5 py-1 rounded-lg bg-[#F2F4EE] border border-[rgba(18,22,15,0.10)] hover:border-[#2E6DA4] text-xs text-[#2E6DA4] flex items-center gap-1 cursor-pointer transition-colors font-semibold"
+                    className="px-3 py-1.5 min-h-[36px] rounded-lg bg-[#F2F4EE] border border-[rgba(18,22,15,0.10)] hover:border-[#2E6DA4] text-xs text-[#2E6DA4] flex items-center gap-1 cursor-pointer transition-colors font-semibold"
                   >
                     <Video size={13} />
                     Watch Guide
@@ -493,15 +503,15 @@ export default function FluetasTrainPage() {
                 </div>
               </div>
 
-              {/* Sets Matrix */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 ml-0 sm:ml-8">
+              {/* Sets Matrix with Large Touch Targets (>= 48px) */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 ml-0 sm:ml-8">
                 {ex.sets.map((set, setIdx) => (
                   <button
                     key={setIdx}
                     onClick={() => toggleSet(exIdx, setIdx)}
                     disabled={!activeSession}
-                    className={`p-2.5 rounded-lg border text-xs font-semibold flex items-center justify-between transition-all ${
-                      activeSession ? 'cursor-pointer' : 'cursor-default'
+                    className={`min-h-[50px] p-3 rounded-xl border text-xs font-semibold flex items-center justify-between transition-all select-none ${
+                      activeSession ? 'cursor-pointer active:scale-98' : 'cursor-default'
                     } ${
                       set.done
                         ? 'bg-[#2E7D32]/10 border-[#2E7D32] text-[#2E7D32]'
@@ -517,9 +527,9 @@ export default function FluetasTrainPage() {
                       </span>
                     </div>
                     {set.done ? (
-                      <CheckCircle2 size={16} className="text-[#2E7D32]" />
+                      <CheckCircle2 size={18} className="text-[#2E7D32] shrink-0" />
                     ) : (
-                      <div className="w-4 h-4 rounded-full border border-[rgba(18,22,15,0.20)]" />
+                      <div className="w-5 h-5 rounded-full border border-[rgba(18,22,15,0.25)] shrink-0" />
                     )}
                   </button>
                 ))}
@@ -528,6 +538,32 @@ export default function FluetasTrainPage() {
           );
         })}
       </div>
+
+      {/* Sticky Bottom Bar for Mobile Active Session */}
+      {activeSession && (
+        <div className="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-[rgba(18,22,15,0.12)] p-3 z-40 flex sm:hidden items-center justify-between shadow-lg">
+          <div>
+            <span className="text-[0.65rem] font-bold text-[#586151] block uppercase">Current Movement</span>
+            <span className="text-xs font-bold text-[#12160F] truncate max-w-[150px] block">
+              {currentExercise?.name}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div className="px-2.5 py-1.5 rounded-lg bg-[#F2F4EE] font-mono text-xs font-bold text-[#2E7D32]">
+              {timerLabel}
+            </div>
+
+            <button
+              disabled={activeExerciseIdx === exercises.length - 1}
+              onClick={() => setActiveExerciseIdx(i => Math.min(exercises.length - 1, i + 1))}
+              className="btn-primary min-h-[44px] px-3.5 py-2 text-xs font-bold flex items-center gap-1 disabled:opacity-40"
+            >
+              Next <ChevronRight size={14} />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Modal for In-Depth Demonstration & Form Guide */}
       {detailModalId && (

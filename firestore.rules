@@ -277,6 +277,14 @@ service cloud.firestore {
     }
 
     // ──────────────────────────────────────────────────────────────────────
+    // /exerciseVideos/{videoId} (Demonstration Video Registry & Presentation Variants)
+    // ──────────────────────────────────────────────────────────────────────
+    match /exerciseVideos/{videoId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isAdmin();
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
     // /appointments/{appointmentId} (Top-level booking transactions)
     // ──────────────────────────────────────────────────────────────────────
     match /appointments/{appointmentId} {

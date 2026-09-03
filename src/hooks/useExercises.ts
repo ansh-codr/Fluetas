@@ -46,8 +46,16 @@ export function useExerciseLibrary(params: BrowseExercisesParams = {}) {
   };
 }
 
-export function useExerciseDetail(exerciseId: string | null) {
+import { ExerciseVideoRecord } from '@/lib/exercises/videoTypes';
+import { getPreferredExerciseVideo } from '@/lib/services/exerciseVideoService';
+
+export function useExerciseDetail(
+  exerciseId: string | null,
+  userProfile?: { gender?: string; [key: string]: any } | null,
+  preferences?: { videoAudience?: any; [key: string]: any } | null
+) {
   const [exercise, setExercise] = useState<Exercise | null>(null);
+  const [preferredVideo, setPreferredVideo] = useState<ExerciseVideoRecord | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [videoExpired, setVideoExpired] = useState(false);
@@ -55,6 +63,7 @@ export function useExerciseDetail(exerciseId: string | null) {
   const loadExercise = useCallback(async (isRetry = false) => {
     if (!exerciseId) {
       setExercise(null);
+      setPreferredVideo(null);
       return;
     }
     setLoading(true);
@@ -62,15 +71,18 @@ export function useExerciseDetail(exerciseId: string | null) {
     if (isRetry) setVideoExpired(false);
 
     try {
-      // Always requests a fresh temporary signed video URL
-      const data = await fetchExerciseById(exerciseId, true);
+      const [data, video] = await Promise.all([
+        fetchExerciseById(exerciseId, true),
+        getPreferredExerciseVideo({ exerciseId, userProfile, preferences }),
+      ]);
       setExercise(data);
+      setPreferredVideo(video);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load exercise video and details');
     } finally {
       setLoading(false);
     }
-  }, [exerciseId]);
+  }, [exerciseId, userProfile, preferences]);
 
   useEffect(() => {
     if (exerciseId) {
@@ -89,6 +101,7 @@ export function useExerciseDetail(exerciseId: string | null) {
 
   return {
     exercise,
+    preferredVideo,
     loading,
     error,
     videoExpired,

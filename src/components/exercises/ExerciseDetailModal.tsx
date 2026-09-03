@@ -2,6 +2,7 @@
 
 import React, { useEffect } from 'react';
 import { useExerciseDetail } from '@/hooks/useExercises';
+import { useUserProfile } from '@/context/UserProfileContext';
 import ExerciseVideoPlayer from './ExerciseVideoPlayer';
 import {
   X,
@@ -18,14 +19,16 @@ interface ExerciseDetailModalProps {
 }
 
 export default function ExerciseDetailModal({ exerciseId, onClose }: ExerciseDetailModalProps) {
+  const { healthProfile } = useUserProfile();
   const {
     exercise,
+    preferredVideo,
     loading,
     error,
     videoExpired,
     handleVideoError,
     refreshVideoUrl,
-  } = useExerciseDetail(exerciseId);
+  } = useExerciseDetail(exerciseId, healthProfile);
 
   // Close on Escape key
   useEffect(() => {
@@ -97,9 +100,12 @@ export default function ExerciseDetailModal({ exerciseId, onClose }: ExerciseDet
               {/* 1. Video Player Section */}
               <div className="w-full">
                 <ExerciseVideoPlayer
-                  videoUrl={exercise.videoUrl}
-                  thumbnailUrl={exercise.thumbnailUrl}
+                  videoUrl={preferredVideo?.videoUrl || exercise.videoUrl}
+                  thumbnailUrl={preferredVideo?.thumbnailUrl || exercise.thumbnailUrl}
                   title={exercise.name}
+                  audience={preferredVideo?.audience}
+                  instructor={preferredVideo?.instructor}
+                  presentationType={preferredVideo?.presentationType}
                   autoPlay={true}
                   onVideoError={handleVideoError}
                   onRefreshUrl={refreshVideoUrl}
