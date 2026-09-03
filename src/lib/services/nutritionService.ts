@@ -1,149 +1,35 @@
 /**
  * Nutrition Service
- * Persists to /nutritionLogs/{userId}/entries
+ * Real data-driven multi-item meal persistence to /nutritionLogs/{userId}/entries
  */
 
 import {
   addDoc,
   collection,
+  doc,
   getDocs,
+  setDoc,
+  deleteDoc,
   query,
   where,
-  orderBy,
   Timestamp,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { addTimelineEvent } from './timelineService';
+import {
+  MealType,
+  MealItem,
+  MealEntry,
+  NutritionalProfile,
+} from '../nutrition/types';
+import { calculateMealTotals, roundCalories, roundMacro } from '../nutrition/calculator';
 
-export type MealType =
-  | 'Breakfast'
-  | 'Mid-Morning Snack'
-  | 'Lunch'
-  | 'Evening Snack'
-  | 'Dinner'
-  | 'Post-Workout Fuel'
-  | 'Other';
-
-export interface MacroData {
-  protein: number; // grams
-  carbs: number;
-  fat: number;
-}
-
-export interface NutritionEntry {
-  id?: string;
-  userId: string;
-  mealType: MealType;
-  foodItems: string[];
-  calories?: number;
-  macros?: MacroData;
-  notes?: string;
-  timestamp: Timestamp;
-  date: string; // YYYY-MM-DD
-}
-
-export interface NutritionTotals {
-  calories: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-  mealCount: number;
-}
-
-function todayDateStr() {
-  return new Date().toISOString().split('T')[0];
-}
-
-export async function logMeal(
-  userId: string,
-  data: {
-    mealType: MealType;
-    foodItems: string[];
-    calories?: number;
-    macros?: Partial<MacroData>;
-    notes?: string;
-  }
-): Promise<string> {
-  if (!db) throw new Error('Firebase not configured');
-  if (!data.foodItems.length) throw new Error('Please add at least one food item.');
-  if (data.calories !== undefined && (data.calories < 0 || data.calories > 10000)) {
-    throw new Error('Calorie value appears invalid (0–10,000 kcal).');
-  }
-
-  const entry: Omit<NutritionEntry, 'id'> = {
-    userId,
-    mealType: data.mealType,
-    foodItems: data.foodItems,
-    calories: data.calories,
-    macros: data.macros
-      ? {
-          protein: data.macros.protein ?? 0,
-          carbs: data.macros.carbs ?? 0,
-          fat: data.macros.fat ?? 0,
-        }
-      : undefined,
-    notes: data.notes,
-    timestamp: Timestamp.now(),
-    date: todayDateStr(),
-  };
-
-  const ref = await addDoc(collection(db, 'nutritionLogs', userId, 'entries'), entry);
-
-  await addTimelineEvent(userId, {
-    type: 'meal_logged',
-    title: 'Meal Logged',
-    description: `${data.mealType}${data.calories ? ` · ${data.calories} kcal` : ''}`,
-    category: 'Nutrition',
-    badge: 'Logged',
-    metadata: { mealType: data.mealType, calories: data.calories },
-  });
-
-  return ref.id;
-}
-
-export async function getTodayMeals(userId: string): Promise<NutritionEntry[]> {
-  if (!db) return [];
-  try {
-    const today = todayDateStr();
-    const q = query(
-      collection(db, 'nutritionLogs', userId, 'entries'),
-      where('date', '==', today)
-    );
-    const snap = await getDocs(q);
-    const entries = snap.docs.map(d => ({ id: d.id, ...d.data() } as NutritionEntry));
-    return entries.sort((a, b) => (a.timestamp?.seconds || 0) - (b.timestamp?.seconds || 0));
-  } catch (err) {
-    console.warn('[NutritionService] getTodayMeals failed:', err);
-    return [];
-  }
-}
-
-export function computeTotals(meals: NutritionEntry[]): NutritionTotals {
-  return meals.reduce(
-    (acc, m) => ({
-      calories: acc.calories + (m.calories ?? 0),
-      protein: acc.protein + (m.macros?.protein ?? 0),
-      carbs: acc.carbs + (m.macros?.carbs ?? 0),
-      fat: acc.fat + (m.macros?.fat ?? 0),
-      mealCount: acc.mealCount + 1,
-    }),
-    { calories: 0, protein: 0, carbs: 0, fat: 0, mealCount: 0 }
-  );
-}
+export { type MealType, type MealItem, type MealEntry, type NutritionalProfile };
 
 export interface DayNutrition {
   date: string;
   calories: number;
   protein: number;
-}
-
-export async function getWeeklyNutrition(userId: string): Promise<DayNutrition[]> {
-  const trend = await getNutritionTrend(userId, 7);
-  return trend.days.map(d => ({
-    date: d.date,
-    calories: d.calories,
-    protein: d.protein,
-  }));
 }
 
 export interface NutritionDayTrend {
@@ -166,11 +52,168 @@ export interface NutritionTrendSummary {
   loggedDaysCount: number;
 }
 
+function todayDateStr(): string {
+  return new Date().toISOString().split('T')[0];
+}
+
+function currentTimeStr(): string {
+  const now = new Date();
+  return now.toTimeString().substring(0, 5); // HH:mm
+}
+
+/**
+ * Creates and logs a structured multi-item meal entry.
+ */
+export async function logMeal(
+  userId: string,
+  data: {
+    mealType: MealType;
+    date?: string;
+    time?: string;
+    items: MealItem[];
+    notes?: string;
+  }
+): Promise<string> {
+  if (!db) throw new Error('Firebase not configured');
+  if (!userId) throw new Error('User ID is required');
+  if (!data.items || data.items.length === 0) {
+    throw new Error('A meal must contain at least one food item.');
+  }
+
+  const mealDate = data.date || todayDateStr();
+  const mealTime = data.time || currentTimeStr();
+  const totals = calculateMealTotals(data.items);
+
+  const entry: Omit<MealEntry, 'id'> = {
+    userId,
+    mealType: data.mealType,
+    date: mealDate,
+    time: mealTime,
+    items: data.items,
+    foodItems: data.items.map(i => `${i.quantity}x ${i.foodNameSnapshot}`),
+    calories: totals.calories,
+    macros: {
+      protein: totals.protein,
+      carbs: totals.carbs,
+      fat: totals.fat,
+    },
+    fiber: totals.fiber,
+    totals,
+    notes: data.notes?.trim() || '',
+    timestamp: Timestamp.now(),
+    createdAt: Timestamp.now(),
+    updatedAt: Timestamp.now(),
+  };
+
+  const ref = await addDoc(collection(db, 'nutritionLogs', userId, 'entries'), entry);
+
+  await addTimelineEvent(userId, {
+    type: 'meal_logged',
+    title: `${data.mealType} Logged`,
+    description: `${data.items.length} item(s) · ${totals.calories} kcal · ${totals.protein}g protein`,
+    category: 'Nutrition',
+    badge: 'Logged',
+    metadata: { mealType: data.mealType, calories: totals.calories },
+  });
+
+  return ref.id;
+}
+
+/**
+ * Updates an existing meal entry and recalculates totals.
+ */
+export async function updateMeal(
+  userId: string,
+  mealId: string,
+  data: {
+    mealType: MealType;
+    date?: string;
+    time?: string;
+    items: MealItem[];
+    notes?: string;
+  }
+): Promise<void> {
+  if (!db) throw new Error('Firebase not configured');
+  if (!userId || !mealId) throw new Error('User ID and Meal ID required');
+  if (!data.items || data.items.length === 0) {
+    throw new Error('A meal must contain at least one food item.');
+  }
+
+  const totals = calculateMealTotals(data.items);
+  const ref = doc(db, 'nutritionLogs', userId, 'entries', mealId);
+
+  await setDoc(
+    ref,
+    {
+      mealType: data.mealType,
+      date: data.date || todayDateStr(),
+      time: data.time || currentTimeStr(),
+      items: data.items,
+      foodItems: data.items.map(i => `${i.quantity}x ${i.foodNameSnapshot}`),
+      calories: totals.calories,
+      macros: {
+        protein: totals.protein,
+        carbs: totals.carbs,
+        fat: totals.fat,
+      },
+      fiber: totals.fiber,
+      totals,
+      notes: data.notes?.trim() || '',
+      updatedAt: Timestamp.now(),
+    },
+    { merge: true }
+  );
+}
+
+/**
+ * Deletes a meal entry.
+ */
+export async function deleteMeal(userId: string, mealId: string): Promise<void> {
+  if (!db) throw new Error('Firebase not configured');
+  if (!userId || !mealId) return;
+  await deleteDoc(doc(db, 'nutritionLogs', userId, 'entries', mealId));
+}
+
+/**
+ * Fetches meals for today.
+ */
+export async function getTodayMeals(userId: string): Promise<MealEntry[]> {
+  if (!db || !userId) return [];
+  try {
+    const today = todayDateStr();
+    const q = query(
+      collection(db, 'nutritionLogs', userId, 'entries'),
+      where('date', '==', today)
+    );
+    const snap = await getDocs(q);
+    const entries = snap.docs.map(d => ({ id: d.id, ...d.data() } as MealEntry));
+    return entries.sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+  } catch (err) {
+    console.warn('[NutritionService] getTodayMeals failed:', err);
+    return [];
+  }
+}
+
+/**
+ * Aggregates daily nutrition for 7-day trend.
+ */
+export async function getWeeklyNutrition(userId: string): Promise<DayNutrition[]> {
+  const trend = await getNutritionTrend(userId, 7);
+  return trend.days.map(d => ({
+    date: d.date,
+    calories: d.calories,
+    protein: d.protein,
+  }));
+}
+
+/**
+ * Computes 7-day or 30-day nutrition trends from real persisted meals.
+ */
 export async function getNutritionTrend(
   userId: string,
   days = 7
 ): Promise<NutritionTrendSummary> {
-  if (!db) {
+  if (!db || !userId) {
     return {
       days: [],
       avgCalories: 0,
@@ -200,7 +243,7 @@ export async function getNutritionTrend(
 
   const dayMap: Record<string, { calories: number; protein: number; carbs: number; fat: number; mealCount: number }> = {};
   snap.docs.forEach(d => {
-    const entry = d.data() as NutritionEntry;
+    const entry = d.data() as MealEntry;
     if (!dayMap[entry.date]) {
       dayMap[entry.date] = { calories: 0, protein: 0, carbs: 0, fat: 0, mealCount: 0 };
     }
@@ -218,10 +261,10 @@ export async function getNutritionTrend(
     return {
       date,
       dayLabel,
-      calories: d?.calories ?? 0,
-      protein: Math.round(d?.protein ?? 0),
-      carbs: Math.round(d?.carbs ?? 0),
-      fat: Math.round(d?.fat ?? 0),
+      calories: Math.round(d?.calories ?? 0),
+      protein: roundMacro(d?.protein ?? 0),
+      carbs: roundMacro(d?.carbs ?? 0),
+      fat: roundMacro(d?.fat ?? 0),
       mealCount: d?.mealCount ?? 0,
       isLogged: Boolean(d && d.mealCount > 0),
     };
@@ -233,9 +276,8 @@ export async function getNutritionTrend(
   const totalProtein = dayTrends.reduce((sum, d) => sum + d.protein, 0);
 
   const avgCalories = loggedDaysCount > 0 ? Math.round(totalCalories / loggedDaysCount) : 0;
-  const avgProtein = loggedDaysCount > 0 ? Math.round(totalProtein / loggedDaysCount) : 0;
+  const avgProtein = loggedDaysCount > 0 ? roundMacro(totalProtein / loggedDaysCount) : 0;
 
-  // Delta: compare recent half vs prior half
   const half = Math.floor(numDays / 2);
   let calorieDelta = 0;
   if (half > 0) {
@@ -256,9 +298,4 @@ export async function getNutritionTrend(
     totalCalories,
     loggedDaysCount,
   };
-}
-
-/** Generic trend function matching standard prompt interface */
-export async function getTrend(userId: string, metric = 'calories', days = 7) {
-  return getNutritionTrend(userId, days);
 }

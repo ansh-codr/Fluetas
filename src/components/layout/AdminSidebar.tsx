@@ -13,6 +13,7 @@ const adminNavItems = [
   { href: '/admin/doctors',       label: 'Doctor Verification',   emoji: '🛡️' },
   { href: '/admin/consultations', label: 'Consultations Ops',     emoji: '📋' },
   { href: '/admin/exercises',     label: 'Exercise Content',      emoji: '🏋️' },
+  { href: '/admin/nutrition',     label: 'Nutrition Catalog',     emoji: '🥗' },
   { href: '/admin/audit-logs',    label: 'Audit & Access Logs',   emoji: '📜' },
   { href: '/admin/settings',      label: 'System Settings',       emoji: '⚙️' },
 ];

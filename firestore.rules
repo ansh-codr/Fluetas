@@ -111,6 +111,11 @@ service cloud.firestore {
         allow write: if isAuthenticated() && (isOwner(userId) || isAdmin());
       }
 
+      // Custom Foods created by user
+      match /customFoods/{foodId} {
+        allow read, write: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      }
+
       // Recommendations
       match /recommendations/{recId} {
         allow read: if isAuthenticated() && (isOwner(userId) || isAdmin() || hasActiveDoctorConsent(userId));
