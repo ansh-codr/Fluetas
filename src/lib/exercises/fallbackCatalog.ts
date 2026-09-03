@@ -29,7 +29,7 @@ export const FALLBACK_EXERCISES: Exercise[] = [
     commonMistakes: ['Bouncing the bar off the ribcage.', 'Flaring elbows out at 90 degrees.'],
     breathing: 'Inhale and brace at top. Lower under control, exhale powerfully as you press up.',
     thumbnailUrl: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&w=600&q=80',
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+    videoUrl: '/videos/exercise-demo.mp4',
     videoProvider: 'fallback',
   },
   {
@@ -52,7 +52,7 @@ export const FALLBACK_EXERCISES: Exercise[] = [
     commonMistakes: ['Setting bench too high (>45°), overloading anterior deltoids.'],
     breathing: 'Inhale on descent; exhale forcefully on the upward drive.',
     thumbnailUrl: 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?auto=format&fit=crop&w=600&q=80',
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+    videoUrl: '/videos/exercise-demo.mp4',
     videoProvider: 'fallback',
   },
   {
@@ -75,7 +75,7 @@ export const FALLBACK_EXERCISES: Exercise[] = [
     commonMistakes: ['Flaring elbows out to T-shape.', 'Sagging hips or piking pelvis up.'],
     breathing: 'Inhale as you lower; exhale as you push the ground away.',
     thumbnailUrl: 'https://images.unsplash.com/photo-1598971639058-fab3c3109a00?auto=format&fit=crop&w=600&q=80',
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+    videoUrl: '/videos/exercise-demo.mp4',
     videoProvider: 'fallback',
   },
   {
@@ -97,7 +97,7 @@ export const FALLBACK_EXERCISES: Exercise[] = [
     commonMistakes: ['Turning fly into a press by excessively bending and extending elbows.'],
     breathing: 'Exhale on contraction; inhale on stretch.',
     thumbnailUrl: 'https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?auto=format&fit=crop&w=600&q=80',
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyBlazes.mp4',
+    videoUrl: '/videos/exercise-demo.mp4',
     videoProvider: 'fallback',
   },
 
@@ -121,7 +121,7 @@ export const FALLBACK_EXERCISES: Exercise[] = [
     commonMistakes: ['Pulling bar behind the neck.', 'Using body momentum.'],
     breathing: 'Exhale on pull; inhale on stretch.',
     thumbnailUrl: 'https://images.unsplash.com/photo-1605296867304-46d5465a13f1?auto=format&fit=crop&w=600&q=80',
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4',
+    videoUrl: '/videos/exercise-demo.mp4',
     videoProvider: 'fallback',
   },
   {
@@ -144,7 +144,7 @@ export const FALLBACK_EXERCISES: Exercise[] = [
     commonMistakes: ['Rounding the lower back.', 'Shrugging shoulders upward.'],
     breathing: 'Exhale as you row; inhale as you lower weights.',
     thumbnailUrl: 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?auto=format&fit=crop&w=600&q=80',
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
+    videoUrl: '/videos/exercise-demo.mp4',
     videoProvider: 'fallback',
   },
   {
@@ -167,7 +167,7 @@ export const FALLBACK_EXERCISES: Exercise[] = [
     commonMistakes: ['Kipping or swinging.', 'Half reps omitting full extension.'],
     breathing: 'Exhale on ascent; inhale on descent.',
     thumbnailUrl: 'https://images.unsplash.com/photo-1598971639058-fab3c3109a00?auto=format&fit=crop&w=600&q=80',
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4',
+    videoUrl: '/videos/exercise-demo.mp4',
     videoProvider: 'fallback',
   },
   {
@@ -190,7 +190,7 @@ export const FALLBACK_EXERCISES: Exercise[] = [
     commonMistakes: ['Hyperextending spine or rotating pelvis.'],
     breathing: 'Smooth, rhythmic diaphragmatic breathing.',
     thumbnailUrl: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=600&q=80',
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+    videoUrl: '/videos/exercise-demo.mp4',
     videoProvider: 'fallback',
   },
 
@@ -215,7 +215,7 @@ export const FALLBACK_EXERCISES: Exercise[] = [
     commonMistakes: ['Leaning backward excessively.', 'Pressing bar in front of head.'],
     breathing: 'Inhale and brace at bottom; exhale at lockout.',
     thumbnailUrl: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=600&q=80',
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
+    videoUrl: '/videos/exercise-demo.mp4',
     videoProvider: 'fallback',
   },
   {
@@ -238,7 +238,7 @@ export const FALLBACK_EXERCISES: Exercise[] = [
     commonMistakes: ['Swinging torso to generate momentum.', 'Lifting hands higher than elbows.'],
     breathing: 'Exhale on lift; inhale on descent.',
     thumbnailUrl: 'https://images.unsplash.com/photo-1584735935682-2f2b69dff9d2?auto=format&fit=crop&w=600&q=80',
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyBlazes.mp4',
+    videoUrl: '/videos/exercise-demo.mp4',
     videoProvider: 'fallback',
   },
   {
@@ -260,7 +260,7 @@ export const FALLBACK_EXERCISES: Exercise[] = [
     commonMistakes: ['Allowing hips to drop into a standard push-up.'],
     breathing: 'Inhale as head descends; exhale as you push up.',
     thumbnailUrl: 'https://images.unsplash.com/photo-1598971639058-fab3c3109a00?auto=format&fit=crop&w=600&q=80',
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+    videoUrl: '/videos/exercise-demo.mp4',
     videoProvider: 'fallback',
   },
 
@@ -285,7 +285,7 @@ export const FALLBACK_EXERCISES: Exercise[] = [
     commonMistakes: ['Knee valgus collapse.', 'Heels lifting off floor.'],
     breathing: 'Brace at top; hold on descent; exhale past sticking point.',
     thumbnailUrl: 'https://images.unsplash.com/photo-1574680096145-d05b474e2155?auto=format&fit=crop&w=600&q=80',
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackSeeTheWorld.mp4',
+    videoUrl: '/videos/exercise-demo.mp4',
     videoProvider: 'fallback',
   },
   {
@@ -307,7 +307,7 @@ export const FALLBACK_EXERCISES: Exercise[] = [
     commonMistakes: ['Rounding forward.', 'Not reaching parallel depth.'],
     breathing: 'Inhale down; exhale up.',
     thumbnailUrl: 'https://images.unsplash.com/photo-1574680096145-d05b474e2155?auto=format&fit=crop&w=600&q=80',
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+    videoUrl: '/videos/exercise-demo.mp4',
     videoProvider: 'fallback',
   },
   {
@@ -329,7 +329,7 @@ export const FALLBACK_EXERCISES: Exercise[] = [
     commonMistakes: ['Squatting instead of hinging.', 'Rounding lower back.'],
     breathing: 'Inhale down; exhale as hips return forward.',
     thumbnailUrl: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=600&q=80',
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4',
+    videoUrl: '/videos/exercise-demo.mp4',
     videoProvider: 'fallback',
   },
   {
@@ -351,7 +351,7 @@ export const FALLBACK_EXERCISES: Exercise[] = [
     commonMistakes: ['Arching lumbar spine instead of extending hips.'],
     breathing: 'Exhale on hip lift; inhale on lowering.',
     thumbnailUrl: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=600&q=80',
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+    videoUrl: '/videos/exercise-demo.mp4',
     videoProvider: 'fallback',
   },
   {
@@ -372,7 +372,7 @@ export const FALLBACK_EXERCISES: Exercise[] = [
     commonMistakes: ['Front heel coming off ground.', 'Torso collapsing forward.'],
     breathing: 'Rhythmic breathing with each step.',
     thumbnailUrl: 'https://images.unsplash.com/photo-1574680096145-d05b474e2155?auto=format&fit=crop&w=600&q=80',
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyBlazes.mp4',
+    videoUrl: '/videos/exercise-demo.mp4',
     videoProvider: 'fallback',
   },
 
@@ -396,7 +396,7 @@ export const FALLBACK_EXERCISES: Exercise[] = [
     commonMistakes: ['Using momentum from back.'],
     breathing: 'Exhale up; inhale down.',
     thumbnailUrl: 'https://images.unsplash.com/photo-1584735935682-2f2b69dff9d2?auto=format&fit=crop&w=600&q=80',
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4',
+    videoUrl: '/videos/exercise-demo.mp4',
     videoProvider: 'fallback',
   },
   {
@@ -418,7 +418,7 @@ export const FALLBACK_EXERCISES: Exercise[] = [
     commonMistakes: ['Shrugging shoulders up toward ears.'],
     breathing: 'Inhale down; exhale as you push up.',
     thumbnailUrl: 'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?auto=format&fit=crop&w=600&q=80',
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+    videoUrl: '/videos/exercise-demo.mp4',
     videoProvider: 'fallback',
   },
 
@@ -442,7 +442,7 @@ export const FALLBACK_EXERCISES: Exercise[] = [
     commonMistakes: ['Swinging like a pendulum.'],
     breathing: 'Exhale as legs raise; inhale as they lower.',
     thumbnailUrl: 'https://images.unsplash.com/photo-1599058945522-28d584b6f0ff?auto=format&fit=crop&w=600&q=80',
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WhatCarCanYouGetForAGrand.mp4',
+    videoUrl: '/videos/exercise-demo.mp4',
     videoProvider: 'fallback',
   },
   {
@@ -464,7 +464,7 @@ export const FALLBACK_EXERCISES: Exercise[] = [
     commonMistakes: ['Sagging lower back.', 'Holding breath.'],
     breathing: 'Continuous shallow diaphragmatic breathing.',
     thumbnailUrl: 'https://images.unsplash.com/photo-1599058945522-28d584b6f0ff?auto=format&fit=crop&w=600&q=80',
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+    videoUrl: '/videos/exercise-demo.mp4',
     videoProvider: 'fallback',
   },
   {
@@ -487,7 +487,7 @@ export const FALLBACK_EXERCISES: Exercise[] = [
     commonMistakes: ['Lower back arching off the floor.'],
     breathing: 'Exhale as limbs extend; inhale as they return.',
     thumbnailUrl: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=600&q=80',
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+    videoUrl: '/videos/exercise-demo.mp4',
     videoProvider: 'fallback',
   },
 
@@ -512,7 +512,7 @@ export const FALLBACK_EXERCISES: Exercise[] = [
     commonMistakes: ['Rushing through rotation without full thoracic extension.'],
     breathing: 'Exhale into the reach; inhale back to center.',
     thumbnailUrl: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=600&q=80',
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+    videoUrl: '/videos/exercise-demo.mp4',
     videoProvider: 'fallback',
   },
 ];

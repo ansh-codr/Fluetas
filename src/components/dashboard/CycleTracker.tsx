@@ -4,13 +4,19 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { useUserProfile } from '@/context/UserProfileContext';
-import { getRecentCycleEntries, CycleEntry } from '@/lib/services/cycleService';
+import {
+  getAllCycleLogs,
+  getCycleSettings,
+} from '@/lib/services/cycleService';
+import { DailyCycleLog, CycleSettings, CycleAnalysis } from '@/lib/cycle/types';
+import { analyzeCycleData } from '@/lib/cycle/calculator';
 import { Heart, Plus, CalendarHeart, Moon } from 'lucide-react';
 
 export default function CycleTracker() {
   const { user } = useAuth();
   const { profile } = useUserProfile();
-  const [entries, setEntries] = useState<CycleEntry[]>([]);
+  const [logs, setLogs] = useState<DailyCycleLog[]>([]);
+  const [settings, setSettings] = useState<CycleSettings | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -18,9 +24,10 @@ export default function CycleTracker() {
       setLoading(false);
       return;
     }
-    getRecentCycleEntries(user.uid, 5)
-      .then(res => {
-        setEntries(res);
+    Promise.all([getAllCycleLogs(user.uid), getCycleSettings(user.uid)])
+      .then(([fetchedLogs, fetchedSettings]) => {
+        setLogs(fetchedLogs);
+        setSettings(fetchedSettings);
         setLoading(false);
       })
       .catch(() => {
@@ -59,7 +66,8 @@ export default function CycleTracker() {
     );
   }
 
-  const latestEntry = entries[0];
+  const analysis: CycleAnalysis = analyzeCycleData(logs, settings || undefined);
+  const latestLog = logs[0];
 
   return (
     <div className="fluetas-card p-4 sm:p-4.5 flex flex-col justify-between h-full bg-[#FFFFFF]">
@@ -79,42 +87,48 @@ export default function CycleTracker() {
 
         {loading ? (
           <div className="h-24 bg-[#FAFAF6] rounded-xl animate-pulse border border-[rgba(18,22,15,0.06)]" />
-        ) : !latestEntry ? (
+        ) : !analysis.configured && logs.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-4 text-center bg-[#FAFAF6] rounded-xl border border-[rgba(18,22,15,0.06)]">
             <div className="w-9 h-9 rounded-xl bg-[#C23B6B]/10 text-[#C23B6B] flex items-center justify-center mb-2">
               <Heart size={16} />
             </div>
             <p className="text-xs font-bold text-[#12160F] m-0">No cycle entry logged</p>
             <p className="text-[0.6875rem] text-[#586151] m-0 mt-0.5 max-w-[190px]">
-              Log period dates or daily symptoms for personalized phase wellness context.
+              Set up your cycle or log period dates for personalized phase telemetry.
             </p>
           </div>
         ) : (
           <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between p-2.5 bg-[#FAFAF6] rounded-xl border border-[rgba(18,22,15,0.06)]">
+            <div className="flex items-center justify-between p-2.5 bg-[#FDF2F8]/60 rounded-xl border border-[#C23B6B]/15">
               <div>
-                <span className="text-[0.65rem] text-[#8A9482] block">Last Logged</span>
-                <p className="text-xs font-bold text-[#12160F] m-0">{latestEntry.date}</p>
+                <span className="text-[0.65rem] text-[#8A9482] block">Current Phase</span>
+                <p className="text-xs font-bold text-[#12160F] m-0">
+                  {analysis.currentCycleDay
+                    ? `Day ${analysis.currentCycleDay} · ${analysis.currentPhase}`
+                    : analysis.currentPhase}
+                </p>
               </div>
-              {latestEntry.flow && (
-                <span className="px-2 py-0.5 rounded-full text-[0.65rem] font-bold bg-[#C23B6B]/10 text-[#C23B6B]">
-                  Flow: {latestEntry.flow}
-                </span>
-              )}
-              {latestEntry.mood && (
-                <span className="text-xs font-medium text-[#12160F]">Mood: {latestEntry.mood}</span>
+              {analysis.predictedNextPeriodStart && !analysis.factorsSuppressingPredictions && (
+                <div className="text-right">
+                  <span className="text-[0.62rem] text-[#8A9482] block">Next Period</span>
+                  <span className="text-xs font-bold text-[#C23B6B]">
+                    ~ {new Date(analysis.predictedNextPeriodStart + 'T12:00:00').toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                    })}
+                  </span>
+                </div>
               )}
             </div>
-            {latestEntry.symptoms && latestEntry.symptoms.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-1">
-                {latestEntry.symptoms.map((s, i) => (
-                  <span
-                    key={i}
-                    className="px-2 py-0.5 rounded text-[0.62rem] bg-[#FAFAF6] border border-[rgba(18,22,15,0.08)] text-[#586151]"
-                  >
-                    {s}
+
+            {latestLog && (
+              <div className="text-xs text-[#586151] flex items-center justify-between px-1">
+                <span>Last Logged: <strong>{latestLog.date}</strong></span>
+                {latestLog.flow && latestLog.flow !== 'none' && (
+                  <span className="text-[0.68rem] font-bold text-[#C23B6B] capitalize">
+                    {latestLog.flow} flow
                   </span>
-                ))}
+                )}
               </div>
             )}
           </div>
