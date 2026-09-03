@@ -1,22 +1,33 @@
-import admin from 'firebase-admin';
+#!/usr/bin/env node
+
+/**
+ * Authoritative Admin Role Promotion CLI
+ * Usage: node scripts/make-admin.mjs <user-email-or-uid>
+ */
+
 import fs from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, resolve } from 'path';
+import path from 'path';
+import { initializeApp, getApps, cert } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const targetIdentifier = process.argv[2];
 
-// Manually parse .env.local without external dependencies
-const envPath = resolve(__dirname, '../.env.local');
+if (!targetIdentifier) {
+  console.log('Usage: node scripts/make-admin.mjs <user-email-or-uid>');
+  process.exit(1);
+}
+
+// Load .env.local
+const envPath = path.resolve(process.cwd(), '.env.local');
 if (fs.existsSync(envPath)) {
-  const content = fs.readFileSync(envPath, 'utf-8');
-  for (const line of content.split('\n')) {
+  const envContent = fs.readFileSync(envPath, 'utf8');
+  for (const line of envContent.split('\n')) {
     const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith('#')) continue;
-    const eqIdx = trimmed.indexOf('=');
-    if (eqIdx !== -1) {
-      const key = trimmed.slice(0, eqIdx).trim();
-      let val = trimmed.slice(eqIdx + 1).trim();
+    if (trimmed && !trimmed.startsWith('#') && trimmed.includes('=')) {
+      const idx = trimmed.indexOf('=');
+      const key = trimmed.slice(0, idx).trim();
+      let val = trimmed.slice(idx + 1).trim();
       if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
         val = val.slice(1, -1);
       }
@@ -36,60 +47,75 @@ if (!projectId || !clientEmail || !privateKey) {
 
 privateKey = privateKey.replace(/\\n/g, '\n');
 
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId,
-      clientEmail,
-      privateKey,
-    }),
-  });
-}
+const app = !getApps().length
+  ? initializeApp({
+      credential: cert({
+        projectId,
+        clientEmail,
+        privateKey,
+      }),
+    })
+  : getApps()[0];
 
-const auth = admin.auth();
-const db = admin.firestore();
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-async function makeAdmin(identifier) {
-  if (!identifier) {
-    console.error('Usage: node scripts/make-admin.mjs <user-email-or-uid>');
-    process.exit(1);
-  }
-
+async function makeAdmin() {
+  console.log(`[Admin Tool] Resolving account for: ${targetIdentifier}...`);
   let userRecord;
+
   try {
-    if (identifier.includes('@')) {
-      userRecord = await auth.getUserByEmail(identifier);
+    if (targetIdentifier.includes('@')) {
+      userRecord = await auth.getUserByEmail(targetIdentifier.trim().toLowerCase());
     } else {
-      userRecord = await auth.getUser(identifier);
+      userRecord = await auth.getUser(targetIdentifier.trim());
     }
   } catch (err) {
-    console.error(`User not found in Firebase Auth for identifier: "${identifier}"`);
-    console.error('Please ensure this account has signed up or registered first.');
+    console.error(`[Admin Tool] User not found: ${err.message}`);
     process.exit(1);
   }
 
   const uid = userRecord.uid;
-  console.log(`Found user: ${userRecord.email || uid} (${uid})`);
+  console.log(`[Admin Tool] Found user UID: ${uid} (${userRecord.email})`);
 
-  // 1. Set Custom Claims on Firebase Auth
-  await auth.setCustomUserClaims(uid, { role: 'admin' });
-  console.log('✔ Custom claims updated: role = "admin"');
+  // 1. Set Custom Claims
+  await auth.setCustomUserClaims(uid, {
+    role: 'admin',
+    admin: true,
+  });
+  console.log(`[Admin Tool] Firebase Auth custom claims updated: { role: 'admin', admin: true }`);
 
-  // 2. Set Firestore document
+  // 2. Set Firestore users/{uid}
   await db.collection('users').doc(uid).set(
     {
       role: 'admin',
-      roleUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      status: 'active',
+      roleUpdatedAt: FieldValue.serverTimestamp(),
+      roleUpdatedBy: 'cli_bootstrap_script',
     },
     { merge: true }
   );
-  console.log(`✔ Firestore document updated: users/${uid}.role = "admin"`);
+  console.log(`[Admin Tool] Firestore users/${uid} document updated with role: 'admin'`);
 
-  console.log('\nSUCCESS: User has been granted Administrator permissions!');
-  console.log('When this user signs in at /login, they will be routed directly to /admin/dashboard.');
-  console.log('From there, visit /admin/doctors to review all practitioner submissions.');
+  // 3. Write immutable audit log
+  await db.collection('auditLogs').add({
+    action: 'ADMIN_INITIALIZED',
+    actorId: 'cli_bootstrap_script',
+    actorRole: 'system',
+    targetId: uid,
+    targetEmail: userRecord.email,
+    timestamp: FieldValue.serverTimestamp(),
+    details: `Authoritatively promoted ${userRecord.email} to platform administrator.`,
+    result: 'SUCCESS',
+  });
+  console.log(`[Admin Tool] Audit log entry recorded in /auditLogs`);
+
+  console.log(`\n SUCCESS: User ${userRecord.email} is now a verified platform administrator.`);
+  console.log(`They can log in at: /admin/login\n`);
   process.exit(0);
 }
 
-const arg = process.argv[2];
-makeAdmin(arg);
+makeAdmin().catch(err => {
+  console.error('[Admin Tool] Failed:', err);
+  process.exit(1);
+});

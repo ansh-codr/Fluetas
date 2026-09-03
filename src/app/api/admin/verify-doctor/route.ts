@@ -20,8 +20,8 @@ export async function POST(request: NextRequest) {
       return apiError('VALIDATION_ERROR', 'Missing doctorId or status', 400);
     }
 
-    if (!['verified', 'rejected', 'suspended'].includes(status)) {
-      return apiError('INVALID_STATUS', 'Status must be verified, rejected, or suspended', 400);
+    if (!['verified', 'rejected', 'suspended', 'under_review', 'pending'].includes(status)) {
+      return apiError('INVALID_STATUS', 'Status must be verified, rejected, suspended, under_review, or pending', 400);
     }
 
     const result = await verifyDoctorAccountServer({

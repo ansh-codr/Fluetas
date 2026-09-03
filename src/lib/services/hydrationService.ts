@@ -6,6 +6,9 @@
 import {
   addDoc,
   collection,
+  doc,
+  updateDoc,
+  deleteDoc,
   getDocs,
   query,
   where,
@@ -53,6 +56,39 @@ export async function logHydration(
     badge: 'Logged',
     metadata: { amount, type },
   });
+}
+
+/**
+ * Updates an existing hydration entry.
+ */
+export async function updateHydrationEntry(
+  userId: string,
+  entryId: string,
+  amount: number,
+  type?: string
+): Promise<void> {
+  if (!db) throw new Error('Firebase not configured');
+  if (amount <= 0 || amount > 5000) throw new Error('Hydration amount must be between 1 and 5000 ml');
+
+  const ref = doc(db, 'hydrationLogs', userId, 'entries', entryId);
+  const updateData: Record<string, any> = {
+    amount,
+    updatedAt: Timestamp.now(),
+  };
+  if (type) updateData.type = type;
+  await updateDoc(ref, updateData);
+}
+
+/**
+ * Deletes a hydration entry.
+ */
+export async function deleteHydrationEntry(
+  userId: string,
+  entryId: string
+): Promise<void> {
+  if (!db) throw new Error('Firebase not configured');
+  const ref = doc(db, 'hydrationLogs', userId, 'entries', entryId);
+  await deleteDoc(ref);
 }
 
 export async function getTodayHydrationEntries(userId: string): Promise<HydrationEntry[]> {

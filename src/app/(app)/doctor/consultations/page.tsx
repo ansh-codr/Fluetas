@@ -1,8 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
+import {
+  getDoctorAppointments,
+  AppointmentRecord,
+} from '@/lib/services/consultationService';
 import {
   Calendar,
   Clock,
@@ -11,47 +15,36 @@ import {
   ShieldCheck,
   Video,
   User,
+  Loader2,
 } from 'lucide-react';
 
-const mockDoctorConsultations = [
-  {
-    id: 'cons-1',
-    patientId: 'patient_demo_rahul',
-    patientName: 'Rahul Mehta',
-    date: 'Today · 04:30 PM',
-    type: 'Telehealth Video',
-    reason: 'Rotator cuff impingement follow-up and mobility review',
-    status: 'Confirmed',
-    consentVerified: true,
-  },
-  {
-    id: 'cons-2',
-    patientId: 'patient_demo_priya',
-    patientName: 'Priya Sharma',
-    date: 'Today · 06:00 PM',
-    type: 'Telehealth Video',
-    reason: 'Post-menstrual iron deficiency & fatigue management',
-    status: 'Scheduled',
-    consentVerified: true,
-  },
-  {
-    id: 'cons-3',
-    patientId: 'patient_demo_rahul',
-    patientName: 'Rahul Mehta',
-    date: '24 Aug 2026',
-    type: 'Telehealth Video',
-    reason: 'Initial consultation regarding shoulder pinch during bench press',
-    status: 'Completed',
-    consentVerified: true,
-  },
-];
-
 export default function DoctorConsultationsPage() {
+  const { user } = useAuth();
+  const [appointments, setAppointments] = useState<AppointmentRecord[]>([]);
+  const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<'upcoming' | 'completed'>('upcoming');
 
+  useEffect(() => {
+    if (!user?.uid) {
+      setLoading(false);
+      return;
+    }
+    getDoctorAppointments(user.uid)
+      .then(res => {
+        setAppointments(res || []);
+        setLoading(false);
+      })
+      .catch(() => {
+        setLoading(false);
+      });
+  }, [user?.uid]);
+
   const filtered = tab === 'upcoming'
-    ? mockDoctorConsultations.filter(c => c.status !== 'Completed')
-    : mockDoctorConsultations.filter(c => c.status === 'Completed');
+    ? appointments.filter(c => c.status !== 'Completed' && c.status !== 'Cancelled')
+    : appointments.filter(c => c.status === 'Completed');
+
+  const upcomingCount = appointments.filter(c => c.status !== 'Completed' && c.status !== 'Cancelled').length;
+  const completedCount = appointments.filter(c => c.status === 'Completed').length;
 
   return (
     <div className="flex flex-col gap-5 max-w-5xl mx-auto w-full">
@@ -61,7 +54,7 @@ export default function DoctorConsultationsPage() {
           <div className="flex items-center gap-2 mb-1">
             <Stethoscope size={20} className="text-[#38BDF8]" />
             <h1 className="font-['Outfit'] text-xl sm:text-2xl font-black text-[#E8EAF6] m-0">
-              CLINICAL CONSULTATIONS SESSIONS
+              CLINICAL CONSULTATION SESSIONS
             </h1>
           </div>
           <p className="text-[#8B91B0] text-xs sm:text-sm m-0">
@@ -71,70 +64,91 @@ export default function DoctorConsultationsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-[#1E2133] gap-2">
-        {[
-          { id: 'upcoming', label: `Scheduled / In Queue (${mockDoctorConsultations.filter(c => c.status !== 'Completed').length})` },
-          { id: 'completed', label: `Completed Sessions (${mockDoctorConsultations.filter(c => c.status === 'Completed').length})` },
-        ].map(t => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id as any)}
-            className={`px-4 py-2.5 text-xs sm:text-sm font-semibold border-b-2 -mb-[2px] transition-all cursor-pointer ${
-              tab === t.id
-                ? 'text-[#38BDF8] border-[#38BDF8]'
-                : 'text-[#8B91B0] border-transparent hover:text-[#E8EAF6]'
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
+      <div className="flex items-center gap-2 border-b border-[#1E2133] pb-2">
+        <button
+          onClick={() => setTab('upcoming')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+            tab === 'upcoming'
+              ? 'bg-[#38BDF8] text-black shadow-xs'
+              : 'text-[#8B91B0] hover:text-white'
+          }`}
+        >
+          <Clock size={14} />
+          <span>Scheduled / In Queue ({upcomingCount})</span>
+        </button>
+        <button
+          onClick={() => setTab('completed')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+            tab === 'completed'
+              ? 'bg-[#38BDF8] text-black shadow-xs'
+              : 'text-[#8B91B0] hover:text-white'
+          }`}
+        >
+          <Calendar size={14} />
+          <span>Completed Sessions ({completedCount})</span>
+        </button>
       </div>
 
-      {/* Consultations List */}
-      <div className="flex flex-col gap-3.5">
-        {filtered.map(cons => (
-          <div
-            key={cons.id}
-            className="fluetas-card p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-[#38BDF8]/40 transition-colors"
-          >
-            <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#38BDF8] to-[#0284C7] text-black font-bold flex items-center justify-center text-lg shrink-0">
-                {cons.patientName[0]}
-              </div>
-
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="font-['Outfit'] text-base font-bold text-[#E8EAF6] m-0">
-                    {cons.patientName}
-                  </h3>
-                  <span
-                    className={`px-2 py-0.5 rounded text-[0.62rem] font-bold ${
-                      cons.status === 'Completed'
-                        ? 'bg-[#10B981]/15 text-[#10B981]'
-                        : 'bg-[#38BDF8]/15 text-[#38BDF8]'
-                    }`}
-                  >
-                    {cons.status}
-                  </span>
-                </div>
-                <p className="text-xs text-[#8B91B0] m-0 mt-0.5">
-                  {cons.reason}
-                </p>
-                <div className="flex items-center gap-3 text-[0.68rem] text-[#38BDF8] font-semibold mt-1">
-                  <span className="flex items-center gap-1"><Clock size={12} /> {cons.date}</span>
-                  <span className="flex items-center gap-1 text-[#10B981]"><ShieldCheck size={12} /> Consent Verified</span>
-                </div>
-              </div>
-            </div>
-
-            <Link
-              href={`/doctor/patients/${cons.patientId}`}
-              className="btn-primary bg-[#38BDF8] text-black hover:bg-[#38BDF8]/90 text-xs px-4 py-2 font-bold shrink-0 no-underline self-end sm:self-auto shadow-[0_0_12px_rgba(56,189,248,0.25)] flex items-center gap-1"
-            >
-              Open Workspace <ChevronRight size={14} />
-            </Link>
+      {/* Content */}
+      <div className="flex flex-col gap-3">
+        {loading ? (
+          <div className="fluetas-card p-12 text-center text-xs text-[#8B91B0]">
+            <Loader2 size={24} className="animate-spin mx-auto mb-2 text-[#38BDF8]" />
+            Loading consultation records...
           </div>
-        ))}
+        ) : filtered.length === 0 ? (
+          <div className="fluetas-card p-12 text-center text-xs text-[#8B91B0]">
+            {tab === 'upcoming'
+              ? 'No upcoming consultations scheduled in your queue. Booked patient sessions will appear here.'
+              : 'No completed consultations on record yet.'}
+          </div>
+        ) : (
+          filtered.map(c => (
+            <div
+              key={c.id}
+              className="fluetas-card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-[#1E2133] hover:border-[#38BDF8]/40 transition-colors"
+            >
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#1E2133] flex items-center justify-center text-[#38BDF8] font-bold text-sm shrink-0">
+                  {c.customerName ? c.customerName[0] : 'P'}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-[#E8EAF6] text-sm sm:text-base">
+                      {c.customerName || 'Patient'}
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full text-[0.62rem] font-bold uppercase bg-[#38BDF8]/15 text-[#38BDF8] border border-[#38BDF8]/30">
+                      {c.status}
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#8B91B0] m-0 mt-0.5">{c.reason}</p>
+                  <div className="flex flex-wrap items-center gap-3 mt-2 text-[0.68rem] text-[#8B91B0]">
+                    <span className="flex items-center gap-1 text-white font-medium">
+                      <Clock size={12} className="text-[#38BDF8]" />
+                      {c.date} · {c.time}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Video size={12} />
+                      {c.consultationType}
+                    </span>
+                    <span className="flex items-center gap-1 text-[#10B981]">
+                      <ShieldCheck size={12} />
+                      Patient Consent Verified
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <Link
+                href={`/doctor/patients/${c.customerId}`}
+                className="px-3.5 py-2 rounded-xl bg-[#1E2133] hover:bg-[#38BDF8]/20 text-[#38BDF8] text-xs font-bold flex items-center gap-1.5 self-end sm:self-auto no-underline transition-colors shrink-0"
+              >
+                <span>Access Clinical Chart</span>
+                <ChevronRight size={14} />
+              </Link>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );

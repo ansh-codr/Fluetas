@@ -4,7 +4,14 @@ import { useState, useEffect, useCallback } from 'react';
 import { onSnapshot, collection, query, where, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { useAuth } from '@/context/AuthContext';
-import { logHydration, getWeeklyHydration, HydrationEntry, DayHydration } from '@/lib/services/hydrationService';
+import {
+  logHydration,
+  updateHydrationEntry,
+  deleteHydrationEntry,
+  getWeeklyHydration,
+  HydrationEntry,
+  DayHydration,
+} from '@/lib/services/hydrationService';
 import { useUserProfile } from '@/context/UserProfileContext';
 
 interface UseHydrationResult {
@@ -16,6 +23,8 @@ interface UseHydrationResult {
   loading: boolean;
   error: string | null;
   addWater: (amount: number, type?: string) => Promise<void>;
+  updateWater: (entryId: string, amount: number, type?: string) => Promise<void>;
+  deleteWater: (entryId: string) => Promise<void>;
   submitting: boolean;
 }
 
@@ -66,7 +75,6 @@ export function useHydration(): UseHydrationResult {
     setError(null);
     try {
       await logHydration(user.uid, amount, type);
-      // Weekly data reload
       getWeeklyHydration(user.uid).then(setWeeklyData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to log hydration.');
@@ -75,5 +83,33 @@ export function useHydration(): UseHydrationResult {
     }
   }, [user]);
 
-  return { logs, totalMl, goalMl, pct, weeklyData, loading, error, addWater, submitting };
+  const updateWater = useCallback(async (entryId: string, amount: number, type?: string) => {
+    if (!user) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      await updateHydrationEntry(user.uid, entryId, amount, type);
+      getWeeklyHydration(user.uid).then(setWeeklyData);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update hydration.');
+    } finally {
+      setSubmitting(false);
+    }
+  }, [user]);
+
+  const deleteWater = useCallback(async (entryId: string) => {
+    if (!user) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      await deleteHydrationEntry(user.uid, entryId);
+      getWeeklyHydration(user.uid).then(setWeeklyData);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete hydration entry.');
+    } finally {
+      setSubmitting(false);
+    }
+  }, [user]);
+
+  return { logs, totalMl, goalMl, pct, weeklyData, loading, error, addWater, updateWater, deleteWater, submitting };
 }

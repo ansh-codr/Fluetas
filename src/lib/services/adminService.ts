@@ -39,10 +39,17 @@ export interface DoctorApplication {
   reviews?: number;
   fee?: string;
   bio?: string;
-  verificationStatus: 'pending' | 'verified' | 'rejected' | 'suspended';
+  qualification?: string;
+  consultationType?: string;
+  durationMinutes?: number;
+  workingDays?: string[];
+  verificationStatus: 'pending' | 'under_review' | 'verified' | 'rejected' | 'suspended';
   verificationDocuments?: string[];
   appliedAt?: Timestamp | any;
   verifiedAt?: Timestamp | any;
+  verifiedBy?: string;
+  rejectionReason?: string;
+  correctionRequest?: string;
 }
 
 export interface AdminUserRecord {

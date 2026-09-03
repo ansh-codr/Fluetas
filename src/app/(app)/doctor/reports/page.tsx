@@ -1,57 +1,92 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
-import { reviewMedicalReport } from '@/lib/services/doctorService';
+import {
+  reviewMedicalReport,
+  getAuthorizedPatientsForDoctor,
+  getCustomerMedicalReports,
+} from '@/lib/services/doctorService';
 import {
   FileText,
   CheckCircle2,
   AlertCircle,
+  Clock,
   Eye,
   Send,
   Loader2,
-  Calendar,
-  User,
-  Check,
+  ShieldCheck,
 } from 'lucide-react';
 
-const mockUploadedReports = [
-  {
-    id: 'report_demo_1',
-    customerId: 'patient_demo_rahul',
-    customerName: 'Rahul Mehta',
-    documentType: 'Lab Test',
-    name: 'Comprehensive Metabolic & Vitamin D Panel',
-    uploadedAt: '28 Aug 2026',
-    status: 'pending_review',
-    testName: 'Vitamin D (25-OH) & CMP',
-    summaryText: 'Serum 25-OH Vitamin D: 18.2 ng/mL (Sub-optimal). Serum Calcium: 9.4 mg/dL. Creatinine: 1.0 mg/dL. Total Protein: 7.2 g/dL.',
-  },
-  {
-    id: 'report_demo_2',
-    customerId: 'patient_demo_rahul',
-    customerName: 'Rahul Mehta',
-    documentType: 'MRI/X-Ray',
-    name: '3T MRI Right Shoulder Scapular Plane',
-    uploadedAt: '22 Aug 2026',
-    status: 'reviewed',
-    testName: '3T MRI Right Shoulder',
-    summaryText: 'Mild subacromial bursitis without full-thickness rotator cuff tear. Intact supraspinatus tendon.',
-  },
-];
+interface ReportItem {
+  id: string;
+  customerId: string;
+  customerName: string;
+  documentType: string;
+  name: string;
+  uploadedAt: string;
+  status: 'pending_review' | 'reviewed';
+  summaryText?: string;
+  downloadUrl?: string;
+}
 
 export default function DoctorReportsPage() {
   const { user } = useAuth();
   const { success } = useToast();
-  const [selectedReport, setSelectedReport] = useState<any | null>(mockUploadedReports[0]);
-  const [findings, setFindings] = useState('Patient exhibits sub-optimal Vitamin D (18.2 ng/mL) with normal electrolyte and kidney function parameters.');
-  const [recommendations, setRecommendations] = useState('Initiate Cholecalciferol (Vitamin D3) 60,000 IU weekly for 8 weeks with healthy dietary fats. Re-test serum level in 2 months.');
+  const [reports, setReports] = useState<ReportItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedReport, setSelectedReport] = useState<ReportItem | null>(null);
+  const [findings, setFindings] = useState('');
+  const [recommendations, setRecommendations] = useState('');
   const [followUpRequired, setFollowUpRequired] = useState(true);
   const [reviewState, setReviewState] = useState<'idle' | 'submitting' | 'completed'>('idle');
 
   const doctorId = user?.uid || '';
   const doctorName = user?.displayName || 'Clinical Practitioner';
+
+  useEffect(() => {
+    if (!doctorId) {
+      setLoading(false);
+      return;
+    }
+
+    // Load authorized patients and their uploaded documents
+    getAuthorizedPatientsForDoctor(doctorId)
+      .then(async relationships => {
+        const collectedReports: ReportItem[] = [];
+        for (const rel of relationships) {
+          try {
+            const patientReports = await getCustomerMedicalReports(rel.customerId);
+            for (const doc of patientReports) {
+              collectedReports.push({
+                id: doc.id || doc.documentId,
+                customerId: rel.customerId,
+                customerName: rel.customerName,
+                documentType: doc.documentType || 'Diagnostic Report',
+                name: doc.name || 'Medical Document',
+                uploadedAt: doc.uploadedAt?.seconds
+                  ? new Date(doc.uploadedAt.seconds * 1000).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+                  : 'Recent',
+                status: (doc.status as any) || 'pending_review',
+                summaryText: doc.notes || 'Encrypted diagnostic document.',
+                downloadUrl: doc.fileUrl,
+              });
+            }
+          } catch {
+            // skip if inaccessible
+          }
+        }
+        setReports(collectedReports);
+        if (collectedReports.length > 0) {
+          setSelectedReport(collectedReports[0]);
+        }
+        setLoading(false);
+      })
+      .catch(() => {
+        setLoading(false);
+      });
+  }, [doctorId]);
 
   const handleSaveReview = async () => {
     if (!selectedReport || !doctorId) return;
@@ -68,14 +103,16 @@ export default function DoctorReportsPage() {
         followUpRequired,
       });
 
-      selectedReport.status = 'reviewed';
       setReviewState('completed');
-      success('Report Marked as Reviewed', `Clinical findings recorded and appended to ${selectedReport.customerName}'s timeline.`);
-
+      success('Clinical review and recommendations securely saved to patient timeline.');
       setTimeout(() => {
         setReviewState('idle');
-      }, 3000);
-    } catch (err) {
+        setSelectedReport(prev => prev ? { ...prev, status: 'reviewed' } : null);
+        setReports(prev =>
+          prev.map(r => (r.id === selectedReport.id ? { ...r, status: 'reviewed' } : r))
+        );
+      }, 2000);
+    } catch {
       alert('Failed to save review');
       setReviewState('idle');
     }
@@ -98,168 +135,176 @@ export default function DoctorReportsPage() {
         </div>
       </div>
 
-      {/* Reports Split Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* Left Column: Report List */}
-        <div className="flex flex-col gap-3">
-          <span className="section-title">DIAGNOSTIC DOCUMENTS ({mockUploadedReports.length})</span>
+      {loading ? (
+        <div className="fluetas-card p-12 text-center text-xs text-[#8B91B0]">
+          <Loader2 size={24} className="animate-spin mx-auto mb-2 text-[#FBBF24]" />
+          Loading patient diagnostic documents...
+        </div>
+      ) : reports.length === 0 ? (
+        <div className="fluetas-card p-12 text-center text-xs text-[#8B91B0]">
+          No diagnostic reports awaiting review. When your authorized patients upload lab panels or clinical scans, they will appear here automatically.
+        </div>
+      ) : (
+        /* Reports Split Grid */
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          {/* Left Column: Report List */}
+          <div className="flex flex-col gap-3">
+            <span className="section-title">DIAGNOSTIC DOCUMENTS ({reports.length})</span>
 
-          {mockUploadedReports.map(rep => {
-            const isSelected = selectedReport?.id === rep.id;
-            return (
-              <div
-                key={rep.id}
-                onClick={() => setSelectedReport(rep)}
-                className={`fluetas-card-interactive p-4 flex flex-col gap-2 cursor-pointer transition-all ${
-                  isSelected ? 'border-[#FBBF24] bg-[#13161F] shadow-[0_0_15px_rgba(251,191,36,0.15)]' : 'hover:border-[#2A3050]'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-[0.65rem] font-bold text-[#8B91B0] uppercase">
-                    {rep.documentType}
-                  </span>
-                  <span
-                    className={`px-2 py-0.5 rounded text-[0.6rem] font-bold ${
-                      rep.status === 'reviewed'
-                        ? 'bg-[#10B981]/15 text-[#10B981]'
-                        : 'bg-[#FBBF24]/15 text-[#FBBF24]'
-                    }`}
-                  >
-                    {rep.status === 'reviewed' ? '✓ Reviewed' : 'Review Pending'}
+            {reports.map(rep => {
+              const isSelected = selectedReport?.id === rep.id;
+              return (
+                <div
+                  key={rep.id}
+                  onClick={() => {
+                    setSelectedReport(rep);
+                    setFindings('');
+                    setRecommendations('');
+                  }}
+                  className={`fluetas-card-interactive p-4 flex flex-col gap-2 cursor-pointer transition-all ${
+                    isSelected ? 'border-[#FBBF24] bg-[#13161F] shadow-[0_0_15px_rgba(251,191,36,0.15)]' : 'hover:border-[#2A3050]'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-[0.65rem] font-bold text-[#8B91B0] uppercase">
+                      {rep.documentType}
+                    </span>
+                    <span
+                      className={`px-2 py-0.5 rounded text-[0.6rem] font-bold ${
+                        rep.status === 'reviewed'
+                          ? 'bg-[#10B981]/15 text-[#10B981]'
+                          : 'bg-[#FBBF24]/15 text-[#FBBF24]'
+                      }`}
+                    >
+                      {rep.status === 'reviewed' ? '✓ Reviewed' : 'Review Pending'}
+                    </span>
+                  </div>
+
+                  <h3 className="font-['Outfit'] text-sm font-bold text-[#E8EAF6] m-0 line-clamp-2">
+                    {rep.name}
+                  </h3>
+
+                  <div className="flex items-center justify-between text-xs text-[#8B91B0] pt-2 border-t border-[#1E2133]">
+                    <span>Patient: <strong className="text-[#E8EAF6]">{rep.customerName}</strong></span>
+                    <span>{rep.uploadedAt}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Right 2 Columns: Document Viewer & Reviewer Panel */}
+          {selectedReport && (
+            <div className="lg:col-span-2 flex flex-col gap-4 animate-slide-up">
+              {/* Document Viewer Frame */}
+              <div className="fluetas-card p-5 bg-[#0B0D14] border-[#1E2133]">
+                <div className="flex items-center justify-between pb-3 border-b border-[#1E2133] mb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-[#FBBF24]/15 text-[#FBBF24] flex items-center justify-center shadow-md">
+                      <FileText size={18} />
+                    </div>
+                    <div>
+                      <h3 className="font-['Outfit'] text-base font-bold text-[#E8EAF6] m-0">
+                        {selectedReport.name}
+                      </h3>
+                      <p className="text-xs text-[#8B91B0] m-0">
+                        Patient: {selectedReport.customerName} · Uploaded {selectedReport.uploadedAt}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-[0.65rem] font-mono px-2 py-0.5 rounded bg-[#13161F] text-[#8B91B0] border border-[#1E2133]">
+                    Sovereign Encrypted Storage
                   </span>
                 </div>
 
-                <h3 className="font-['Outfit'] text-sm font-bold text-[#E8EAF6] m-0 line-clamp-2">
-                  {rep.name}
+                {/* Simulated Viewer Area */}
+                <div className="p-4 rounded-xl bg-[#13161F] border border-[#1E2133] text-xs space-y-3 font-mono">
+                  <div className="flex items-center justify-between text-[#8B91B0] pb-2 border-b border-[#1E2133]">
+                    <span>DOCUMENT SUMMARY EXTRACT</span>
+                    <span className="text-[#10B981] flex items-center gap-1">
+                      <ShieldCheck size={12} /> HIPAA / Consent Compliant
+                    </span>
+                  </div>
+                  <p className="text-[#E8EAF6] leading-relaxed m-0 whitespace-pre-wrap">
+                    {selectedReport.summaryText || 'Document content encrypted. Stored in client sovereignty partition.'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Doctor Review Form */}
+              <div className="fluetas-card p-5 border-[#FBBF24]/30">
+                <h3 className="font-['Outfit'] text-base font-bold text-[#E8EAF6] m-0 mb-3 flex items-center gap-2">
+                  <Eye size={18} className="text-[#FBBF24]" />
+                  Practitioner Diagnostic Review &amp; Recommendations
                 </h3>
 
-                <div className="flex items-center justify-between text-xs text-[#8B91B0] pt-2 border-t border-[#1E2133]">
-                  <span>Patient: <strong className="text-[#E8EAF6]">{rep.customerName}</strong></span>
-                  <span>{rep.uploadedAt}</span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Right 2 Columns: Document Viewer & Reviewer Panel */}
-        {selectedReport && (
-          <div className="lg:col-span-2 flex flex-col gap-4 animate-slide-up">
-            {/* Document Viewer Frame */}
-            <div className="fluetas-card p-5 bg-[#0B0D14] border-[#1E2133]">
-              <div className="flex items-center justify-between pb-3 border-b border-[#1E2133] mb-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-xl bg-[#FBBF24]/15 text-[#FBBF24] flex items-center justify-center shadow-md">
-                    <FileText size={18} />
-                  </div>
+                <div className="space-y-4 text-xs">
                   <div>
-                    <h3 className="font-['Outfit'] text-base font-bold text-[#E8EAF6] m-0">
-                      {selectedReport.name}
-                    </h3>
-                    <p className="text-xs text-[#8B91B0] m-0">
-                      Patient: {selectedReport.customerName} · Uploaded {selectedReport.uploadedAt}
-                    </p>
+                    <label className="block text-[#8B91B0] font-semibold mb-1">
+                      Clinical Findings &amp; Observations
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={findings}
+                      onChange={e => setFindings(e.target.value)}
+                      placeholder="Enter clinical observations regarding lab values, scan findings, or deviations from normal ranges..."
+                      className="w-full p-3 rounded-xl bg-[#0E111A] border border-[#2A2F45] text-[#E8EAF6] outline-none focus:border-[#FBBF24] leading-relaxed"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[#8B91B0] font-semibold mb-1">
+                      Actionable Recommendations / Prescription Advice
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={recommendations}
+                      onChange={e => setRecommendations(e.target.value)}
+                      placeholder="Specify therapeutic adjustments, supplementation, or lifestyle interventions..."
+                      className="w-full p-3 rounded-xl bg-[#0E111A] border border-[#2A2F45] text-[#E8EAF6] outline-none focus:border-[#FBBF24] leading-relaxed"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2">
+                    <label className="flex items-center gap-2 text-[#E8EAF6] cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={followUpRequired}
+                        onChange={e => setFollowUpRequired(e.target.checked)}
+                        className="rounded accent-[#FBBF24] w-4 h-4 cursor-pointer"
+                      />
+                      <span>Flag for formal clinical follow-up</span>
+                    </label>
+
+                    <button
+                      onClick={handleSaveReview}
+                      disabled={reviewState === 'submitting' || !findings.trim()}
+                      className="btn-primary bg-[#FBBF24] hover:bg-[#F59E0B] text-black text-xs font-bold px-5 py-2.5 flex items-center gap-2 cursor-pointer transition-colors disabled:opacity-50"
+                    >
+                      {reviewState === 'submitting' ? (
+                        <>
+                          <Loader2 size={14} className="animate-spin" />
+                          <span>Saving Review...</span>
+                        </>
+                      ) : reviewState === 'completed' ? (
+                        <>
+                          <CheckCircle2 size={14} />
+                          <span>Review Saved!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Send size={14} />
+                          <span>Submit Clinical Review</span>
+                        </>
+                      )}
+                    </button>
                   </div>
                 </div>
-
-                <span className="text-xs text-[#38BDF8] font-bold font-mono">PDF · 2.4 MB (Encrypted)</span>
-              </div>
-
-              {/* Lab Values Preview */}
-              <div className="p-4 bg-[#13161F] rounded-xl border border-[#1E2133] text-xs leading-relaxed text-[#E8EAF6]">
-                <strong className="text-[#FBBF24] block mb-1 font-['Outfit']">Extracted Diagnostic Values:</strong>
-                {selectedReport.summaryText}
               </div>
             </div>
-
-            {/* Doctor Review Form (§18 & §19) */}
-            <div className="fluetas-card p-5 flex flex-col gap-4">
-              <div className="flex items-center justify-between">
-                <span className="section-title">DOCTOR CLINICAL REVIEW &amp; FINDINGS</span>
-                <span
-                  className={`px-2.5 py-0.5 rounded-full text-[0.62rem] font-bold transition-all ${
-                    reviewState === 'completed' || selectedReport.status === 'reviewed'
-                      ? 'bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/30'
-                      : 'bg-[#FBBF24]/15 text-[#FBBF24] border border-[#FBBF24]/30'
-                  }`}
-                >
-                  {reviewState === 'completed' || selectedReport.status === 'reviewed' ? '✓ Reviewed' : 'Pending Review'}
-                </span>
-              </div>
-
-              <div className="text-xs flex flex-col gap-3">
-                <div>
-                  <label className="block text-[#8B91B0] font-semibold mb-1">
-                    Doctor Findings &amp; Observations *
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={findings}
-                    onChange={e => setFindings(e.target.value)}
-                    placeholder="Enter diagnostic interpretation, reference range notes..."
-                    className="w-full bg-[#0B0D14] border border-[#1E2133] rounded-xl p-3 text-[#E8EAF6] focus:border-[#FBBF24] focus:outline-none transition-colors"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[#8B91B0] font-semibold mb-1">
-                    Actionable Clinical Directive / Supplement Recommendation
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={recommendations}
-                    onChange={e => setRecommendations(e.target.value)}
-                    placeholder="Prescribe dosage modifications or therapies..."
-                    className="w-full bg-[#0B0D14] border border-[#1E2133] rounded-xl p-3 text-[#E8EAF6] focus:border-[#FBBF24] focus:outline-none transition-colors"
-                  />
-                </div>
-
-                <div className="flex items-center gap-2 pt-1">
-                  <input
-                    type="checkbox"
-                    id="fu-req"
-                    checked={followUpRequired}
-                    onChange={e => setFollowUpRequired(e.target.checked)}
-                    className="accent-[#FBBF24]"
-                  />
-                  <label htmlFor="fu-req" className="text-xs text-[#E8EAF6] font-semibold cursor-pointer">
-                    Clinical follow-up consultation required for this patient
-                  </label>
-                </div>
-              </div>
-
-              <div className="flex justify-end pt-2">
-                <button
-                  onClick={handleSaveReview}
-                  disabled={reviewState === 'submitting' || !findings.trim()}
-                  className={`btn-primary font-bold text-xs px-5 py-2.5 flex items-center gap-2 cursor-pointer transition-all shadow-lg ${
-                    reviewState === 'completed'
-                      ? 'bg-[#10B981] text-black shadow-[0_0_16px_rgba(16,185,129,0.35)]'
-                      : 'bg-gradient-to-r from-[#FBBF24] to-[#F59E0B] text-black shadow-[0_0_12px_rgba(251,191,36,0.3)]'
-                  }`}
-                >
-                  {reviewState === 'submitting' ? (
-                    <>
-                      <Loader2 size={14} className="animate-spin" />
-                      <span>Reviewing...</span>
-                    </>
-                  ) : reviewState === 'completed' ? (
-                    <>
-                      <Check size={14} />
-                      <span>Reviewed ✓</span>
-                    </>
-                  ) : (
-                    <>
-                      <Send size={14} />
-                      <span>Submit &amp; Update Patient Timeline</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

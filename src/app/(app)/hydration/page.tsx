@@ -1,13 +1,19 @@
 'use client';
 
 import React, { useState } from 'react';
-import CircleProgress from '@/components/ui/CircleProgress';
 import { useHydration } from '@/hooks/useHydration';
+import { HydrationEntry } from '@/lib/services/hydrationService';
 import {
   Droplets,
   Plus,
-  CheckCircle2,
   TrendingUp,
+  Check,
+  RotateCcw,
+  Sparkles,
+  Info,
+  Pencil,
+  Trash2,
+  X,
   Loader2,
 } from 'lucide-react';
 import {
@@ -15,18 +21,17 @@ import {
   Bar,
   XAxis,
   YAxis,
-  CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  CartesianGrid,
 } from 'recharts';
 
-const DRINK_OPTIONS = [
-  { label: 'Water', emoji: '💧', amount: 250, type: 'Pure Filtered Water' },
-  { label: 'Large', emoji: '🥤', amount: 500, type: 'Pure Filtered Water' },
-  { label: 'Green Tea', emoji: '🍵', amount: 200, type: 'Green Tea' },
-  { label: 'Coffee', emoji: '☕', amount: 150, type: 'Coffee (Black)' },
-  { label: 'Coconut', emoji: '🥥', amount: 300, type: 'Coconut Water' },
-  { label: 'Custom', emoji: '✏️', amount: 0, type: 'Pure Filtered Water' },
+const QUICK_AMOUNTS = [
+  { amount: 250, label: 'Glass', icon: '🥛', desc: 'Standard glass (250 ml)' },
+  { amount: 500, label: 'Bottle', icon: '🍶', desc: 'Small bottle (500 ml)' },
+  { amount: 750, label: 'Sports', icon: '🏃', desc: 'Sports bottle (750 ml)' },
+  { amount: 1000, label: 'Large', icon: '🫙', desc: 'Large flask (1000 ml)' },
+  { amount: 0, label: 'Custom', icon: '✏️', desc: 'Enter exact amount' },
 ];
 
 function formatTime(ts: { seconds: number }): string {
@@ -43,11 +48,16 @@ function dayLabel(dateStr: string): string {
 }
 
 export default function HydrationPage() {
-  const { logs, totalMl, goalMl, pct, weeklyData, loading, error, addWater, submitting } = useHydration();
+  const { logs, totalMl, goalMl, pct, weeklyData, loading, error, addWater, updateWater, deleteWater, submitting } = useHydration();
 
   const [customAmount, setCustomAmount] = useState(300);
   const [customType, setCustomType] = useState('Pure Filtered Water');
   const [showCustom, setShowCustom] = useState(false);
+
+  // Edit State
+  const [editingLog, setEditingLog] = useState<HydrationEntry | null>(null);
+  const [editAmount, setEditAmount] = useState(250);
+  const [editType, setEditType] = useState('Pure Filtered Water');
 
   const handleQuickAdd = async (amount: number, type: string) => {
     if (amount === 0) { setShowCustom(true); return; }
@@ -58,6 +68,19 @@ export default function HydrationPage() {
     if (customAmount < 1 || customAmount > 5000) return;
     await addWater(customAmount, customType);
     setShowCustom(false);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingLog?.id || editAmount < 1 || editAmount > 5000) return;
+    await updateWater(editingLog.id, editAmount, editType);
+    setEditingLog(null);
+  };
+
+  const handleDelete = async (logId?: string) => {
+    if (!logId) return;
+    if (confirm('Delete this hydration entry?')) {
+      await deleteWater(logId);
+    }
   };
 
   const weeklyChartData = weeklyData.map(d => ({
@@ -78,109 +101,109 @@ export default function HydrationPage() {
         <h1 className="font-['Outfit'] text-xl sm:text-2xl font-black text-[#12160F] m-0">
           DAILY HYDRATION TRACKER
         </h1>
-        <p className="text-[#586151] text-xs sm:text-sm m-0">
-          Real-time fluid intake, electrolyte balance, and cellular hydration insights.
+        <p className="text-xs sm:text-sm text-[#586151] m-0 mt-0.5">
+          Real-time fluid telemetry, sovereign logging, and hydration volume.
         </p>
       </div>
 
-      {/* Error Banner */}
       {error && (
-        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-600 text-xs">
+        <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-600 font-semibold">
           {error}
         </div>
       )}
 
-      {/* Main Score + Quick Add */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Progress Ring */}
-        <div className="fluetas-card p-6 flex flex-col items-center justify-center gap-3 bg-white border border-[rgba(18,22,15,0.10)] text-center">
-          {loading ? (
-            <div className="w-36 h-36 rounded-full bg-[#F2F4EE] animate-pulse" />
-          ) : (
-            <>
-              <CircleProgress
-                score={pct}
-                max={100}
-                size={140}
-                strokeWidth={10}
-                color="#2E6DA4"
-                trackColor="rgba(46,109,164,0.12)"
-                label={`${pct}%`}
-                labelColor="#12160F"
-              />
-              <div>
-                <p className="font-['Outfit'] text-2xl font-black text-[#2E6DA4] m-0">
-                  {(totalMl / 1000).toFixed(1)}L
-                </p>
-                <p className="text-[#586151] text-xs m-0">
-                  of {(goalMl / 1000).toFixed(1)}L daily goal
-                </p>
-                {pct >= 100 && (
-                  <div className="flex items-center justify-center gap-1 mt-1.5 text-[#2E7D32] text-xs font-bold">
-                    <CheckCircle2 size={14} /> Goal reached! 🎉
-                  </div>
-                )}
-              </div>
-            </>
-          )}
+      {/* Quick Add Bar */}
+      <div className="fluetas-card p-4 sm:p-5">
+        <span className="section-title mb-3 block">LOG FLUID INTAKE</span>
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+          {QUICK_AMOUNTS.map(item => (
+            <button
+              key={item.label}
+              onClick={() => handleQuickAdd(item.amount, item.label === 'Custom' ? '' : 'Pure Filtered Water')}
+              disabled={submitting}
+              className="flex flex-col items-center gap-1 p-3 rounded-xl border border-[rgba(18,22,15,0.10)] bg-white hover:border-[#2E6DA4] hover:bg-[#2E6DA4]/5 transition-all text-center cursor-pointer disabled:opacity-50"
+            >
+              <span className="text-xl">{item.icon}</span>
+              <span className="text-xs font-bold text-[#12160F]">{item.label}</span>
+              <span className="text-[0.65rem] text-[#586151]">{item.amount > 0 ? `+${item.amount} ml` : 'Custom'}</span>
+            </button>
+          ))}
         </div>
 
-        {/* Quick Add Buttons */}
-        <div className="fluetas-card p-5 md:col-span-2 flex flex-col gap-4">
-          <span className="section-title">QUICK ADD</span>
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-            {DRINK_OPTIONS.map(opt => (
-              <button
-                key={opt.label}
-                onClick={() => handleQuickAdd(opt.amount, opt.type)}
-                disabled={submitting}
-                id={`hydration-add-${opt.label.toLowerCase()}`}
-                className="flex flex-col items-center gap-1.5 p-2.5 rounded-xl border border-[rgba(18,22,15,0.10)] bg-[#F2F4EE] hover:border-[#2E6DA4] hover:bg-[#F4F8FC] transition-all disabled:opacity-50 cursor-pointer"
-              >
-                <span className="text-xl">{opt.emoji}</span>
-                <span className="text-[0.65rem] font-semibold text-[#12160F]">{opt.label}</span>
-                {opt.amount > 0 && (
-                  <span className="text-[0.6rem] text-[#2E6DA4] font-bold">+{opt.amount}ml</span>
-                )}
-              </button>
-            ))}
-          </div>
-
-          {/* Custom Input */}
-          {showCustom && (
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 p-3 bg-[#F2F4EE] border border-[rgba(18,22,15,0.08)] rounded-xl animate-slide-up">
+        {/* Custom Input Drawer */}
+        {showCustom && (
+          <div className="mt-4 pt-4 border-t border-[rgba(18,22,15,0.08)] flex flex-col sm:flex-row gap-3 items-end animate-slide-up">
+            <div className="flex-1 w-full">
+              <label className="block text-xs font-semibold text-[#586151] mb-1">Amount (ml)</label>
               <input
                 type="number"
-                min={1} max={5000}
+                min="1"
+                max="5000"
                 value={customAmount}
                 onChange={e => setCustomAmount(Number(e.target.value))}
-                className="bg-white border border-[rgba(18,22,15,0.15)] rounded-lg px-3 py-2 text-[#12160F] text-sm w-28 focus:border-[#2E6DA4] focus:outline-none"
-                placeholder="ml"
+                className="w-full px-3 py-2 rounded-xl border border-[rgba(18,22,15,0.15)] text-xs text-[#12160F] outline-none focus:border-[#2E6DA4]"
               />
+            </div>
+            <div className="flex-1 w-full">
+              <label className="block text-xs font-semibold text-[#586151] mb-1">Fluid Type</label>
               <input
+                type="text"
                 value={customType}
                 onChange={e => setCustomType(e.target.value)}
-                placeholder="Drink type"
-                className="flex-1 bg-white border border-[rgba(18,22,15,0.15)] rounded-lg px-3 py-2 text-[#12160F] text-sm focus:border-[#2E6DA4] focus:outline-none"
+                placeholder="e.g. Electrolytes, Herbal Tea"
+                className="w-full px-3 py-2 rounded-xl border border-[rgba(18,22,15,0.15)] text-xs text-[#12160F] outline-none focus:border-[#2E6DA4]"
               />
+            </div>
+            <div className="flex gap-2">
               <button
-                onClick={handleCustomAdd}
-                disabled={submitting || customAmount < 1 || customAmount > 5000}
-                className="btn-primary px-4 py-2 text-sm font-bold disabled:opacity-50 cursor-pointer hover:opacity-90 transition-all flex items-center gap-1.5 justify-center"
+                onClick={() => setShowCustom(false)}
+                className="px-3 py-2 rounded-xl border border-[rgba(18,22,15,0.15)] text-xs font-bold text-[#586151] cursor-pointer"
               >
-                {submitting ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
-                Add
-              </button>
-              <button onClick={() => setShowCustom(false)} className="px-3 py-2 rounded-lg border border-[rgba(18,22,15,0.10)] text-[#586151] text-sm hover:text-[#12160F] cursor-pointer">
                 Cancel
               </button>
+              <button
+                onClick={handleCustomAdd}
+                disabled={submitting}
+                className="px-4 py-2 rounded-xl bg-[#2E6DA4] hover:bg-[#255885] text-white text-xs font-bold cursor-pointer transition-colors"
+              >
+                Log Intake
+              </button>
             </div>
-          )}
+          </div>
+        )}
+      </div>
 
-          {/* Adjust goal hint */}
-          <div className="flex items-center justify-between text-xs text-[#586151]">
-            <span>Remaining: <span className="text-[#2E6DA4] font-bold">{Math.max(0, goalMl - totalMl)} ml</span></span>
-            <span>Goal set in <a href="/profile" className="text-[#2E7D32] hover:underline">Profile</a></span>
+      {/* Today's Intake Status Card */}
+      <div className="fluetas-card p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-5 bg-gradient-to-br from-white to-[#F0F6FA]">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-[#2E6DA4]/10 text-[#2E6DA4] flex items-center justify-center font-black text-xl">
+            <Droplets size={28} />
+          </div>
+          <div>
+            <span className="text-xs font-bold text-[#2E6DA4] uppercase tracking-wider">Today&apos;s Total Intake</span>
+            <div className="flex items-baseline gap-2">
+              <span className="font-['Outfit'] text-3xl font-black text-[#12160F]">
+                {totalMl}
+              </span>
+              <span className="text-sm font-semibold text-[#586151]">/ {goalMl} ml</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex-1 max-w-xs w-full space-y-1.5">
+          <div className="flex justify-between text-xs font-semibold">
+            <span className="text-[#586151]">Daily Progress</span>
+            <span className="text-[#2E6DA4] font-bold">{pct}%</span>
+          </div>
+          <div className="h-3 w-full bg-[#E2E8F0] rounded-full overflow-hidden">
+            <div
+              className="h-full bg-[#2E6DA4] rounded-full transition-all duration-500"
+              style={{ width: `${Math.min(100, pct)}%` }}
+            />
+          </div>
+          <div className="flex items-center justify-between text-[0.68rem] text-[#586151]">
+            <span>Remaining: <strong className="text-[#2E6DA4]">{Math.max(0, goalMl - totalMl)} ml</strong></span>
+            <span>Target: {(goalMl / 1000).toFixed(1)}L</span>
           </div>
         </div>
       </div>
@@ -188,8 +211,8 @@ export default function HydrationPage() {
       {/* Today's Log Timeline */}
       <div className="fluetas-card p-4 sm:p-5">
         <div className="flex items-center justify-between mb-3">
-          <span className="section-title">TODAY&apos;S LOG ({logs.length} entries)</span>
-          <span className="text-xs text-[#2E6DA4] font-semibold">{totalMl} ml total</span>
+          <span className="section-title">TODAY&apos;S INTAKE HISTORY ({logs.length} entries)</span>
+          <span className="text-xs text-[#2E6DA4] font-semibold">{totalMl} ml verified</span>
         </div>
 
         {loading ? (
@@ -202,14 +225,14 @@ export default function HydrationPage() {
           <div className="py-8 text-center">
             <p className="text-3xl mb-2">💧</p>
             <p className="font-semibold text-[#12160F] text-sm m-0">No water logged yet today</p>
-            <p className="text-[#586151] text-xs m-0 mt-1">Use the quick-add buttons above to start tracking.</p>
+            <p className="text-[#586151] text-xs m-0 mt-1">Use the quick-add buttons above to log your hydration telemetry.</p>
           </div>
         ) : (
           <div className="flex flex-col gap-2">
             {logs.map(log => (
               <div
                 key={log.id}
-                className="flex items-center justify-between p-3 rounded-xl bg-[#F2F4EE] border border-[rgba(18,22,15,0.06)]"
+                className="flex items-center justify-between p-3 rounded-xl bg-[#F2F4EE] border border-[rgba(18,22,15,0.06)] hover:border-[#2E6DA4]/30 transition-colors"
               >
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-lg bg-[#2E6DA4]/10 flex items-center justify-center">
@@ -220,7 +243,30 @@ export default function HydrationPage() {
                     <p className="text-[0.65rem] text-[#586151] m-0">{formatTime(log.timestamp as { seconds: number })}</p>
                   </div>
                 </div>
-                <span className="text-sm font-bold text-[#2E6DA4]">+{log.amount} ml</span>
+
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-bold text-[#2E6DA4]">+{log.amount} ml</span>
+                  <div className="flex items-center gap-1 border-l border-[rgba(18,22,15,0.10)] pl-2">
+                    <button
+                      onClick={() => {
+                        setEditingLog(log);
+                        setEditAmount(log.amount);
+                        setEditType(log.type);
+                      }}
+                      className="p-1 rounded text-[#586151] hover:text-[#2E6DA4] cursor-pointer transition-colors"
+                      title="Edit Entry"
+                    >
+                      <Pencil size={13} />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(log.id)}
+                      className="p-1 rounded text-[#586151] hover:text-red-500 cursor-pointer transition-colors"
+                      title="Delete Entry"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
@@ -255,6 +301,63 @@ export default function HydrationPage() {
           </ResponsiveContainer>
         </div>
       </div>
+
+      {/* Inline Edit Modal */}
+      {editingLog && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl border border-[rgba(18,22,15,0.10)]">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-['Outfit'] text-base font-bold text-[#12160F] m-0">Edit Hydration Entry</h3>
+              <button
+                onClick={() => setEditingLog(null)}
+                className="p-1 rounded-lg text-[#586151] hover:text-[#12160F] cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs mb-4">
+              <div>
+                <label className="block text-[#586151] font-semibold mb-1">Volume (ml)</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="5000"
+                  value={editAmount}
+                  onChange={e => setEditAmount(Number(e.target.value))}
+                  className="w-full px-3 py-2 rounded-xl border border-[rgba(18,22,15,0.15)] text-xs text-[#12160F] outline-none focus:border-[#2E6DA4]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[#586151] font-semibold mb-1">Fluid Type</label>
+                <input
+                  type="text"
+                  value={editType}
+                  onChange={e => setEditType(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-[rgba(18,22,15,0.15)] text-xs text-[#12160F] outline-none focus:border-[#2E6DA4]"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2">
+              <button
+                onClick={() => setEditingLog(null)}
+                className="px-3.5 py-2 rounded-xl text-xs font-semibold text-[#586151] hover:text-[#12160F] cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                disabled={submitting || editAmount < 1}
+                className="px-4 py-2 rounded-xl bg-[#2E6DA4] hover:bg-[#255885] text-white text-xs font-bold cursor-pointer transition-colors"
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
