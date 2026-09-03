@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { doc, getDoc } from 'firebase/firestore';
 import Sidebar from '@/components/layout/Sidebar';
@@ -15,7 +16,7 @@ import DevRoleSwitcher from '@/components/auth/DevRoleSwitcher';
 import { useAuth } from '@/context/AuthContext';
 import { db } from '@/lib/firebase/config';
 import { isHealthEngineReady, UserProfile, HealthProfile } from '@/lib/services/userService';
-import { ShieldAlert } from 'lucide-react';
+import { ShieldAlert, Stethoscope, Users } from 'lucide-react';
 
 function ZeroFlashLoadingScreen() {
   return (
@@ -71,28 +72,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     // Role is still resolving: wait for resolution
     if (!role) return;
 
-    // 2. Cross-role unauthorized access redirection
-    if (isCustomer && (isDoctorRoute || isAdminRoute)) {
-      router.replace('/dashboard');
-      return;
-    }
-
-    if (isPractitioner && (isCustomerRoute || isAdminRoute)) {
-      router.replace('/doctor/dashboard');
-      return;
-    }
-
-    if (isAdmin && (isCustomerRoute || isDoctorRoute)) {
-      router.replace('/admin/dashboard');
-      return;
-    }
-
-    if (!isAdmin && isAdminRoute) {
-      router.replace('/admin/login');
-      return;
-    }
-
-    // 3. Customer Onboarding Gate (Zero-Flash protection)
+    // 2. Customer Onboarding Gate (Zero-Flash protection)
     if (isCustomer && isCustomerRoute) {
       if (pathname === '/onboarding') {
         setOnboardingChecked(true);
@@ -126,7 +106,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     } else {
       setOnboardingChecked(true);
     }
-  }, [user, role, loading, router, pathname, isDoctorRoute, isAdminRoute, isCustomerRoute, isCustomer, isPractitioner, isAdmin]);
+  }, [user, role, loading, router, pathname, isCustomerRoute, isCustomer, isAdminRoute]);
 
   // ── GATE 1: Session, Role & Onboarding Resolution ──────────────────────────
   // Mandatory Zero-Flash: NEVER render children or dashboard before auth, role & onboarding are fully resolved
@@ -152,22 +132,87 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // ── GATE 3: Role Route Authorization Matrix ──────────────────────────────
-  // Intercept mismatched roles immediately: NEVER render the wrong dashboard
-  if (isCustomer && (isDoctorRoute || isAdminRoute)) {
-    return <ZeroFlashLoadingScreen />;
-  }
-
-  if (isPractitioner && (isCustomerRoute || isAdminRoute)) {
-    return <ZeroFlashLoadingScreen />;
-  }
-
-  if (isAdmin && (isCustomerRoute || isDoctorRoute)) {
-    return <ZeroFlashLoadingScreen />;
+  // ── GATE 3: Explicit Wrong-Role Access States (Section 19 & 27 Requirements) ─
+  // Display explicit role explanation and navigation instead of silent redirect loops or arbitrary navigation
+  if (isCustomer && isDoctorRoute) {
+    return (
+      <div className="min-h-screen bg-[#FAFAF6] flex items-center justify-center p-4">
+        <div className="fluetas-card p-8 max-w-md w-full text-center flex flex-col items-center gap-3 bg-white border border-[rgba(18,22,15,0.08)] shadow-sm">
+          <div className="w-14 h-14 rounded-2xl bg-[#2E7D32]/10 text-[#2E7D32] flex items-center justify-center text-2xl">
+            <Stethoscope size={28} />
+          </div>
+          <h2 className="font-['Outfit'] text-xl font-bold text-[#12160F] m-0">Practitioner Access Required</h2>
+          <p className="text-xs text-[#586151] m-0 leading-relaxed">
+            This clinical area is reserved for licensed doctors and verified wellness practitioners. If you are a practitioner, you can register your credentials with our Medical Board.
+          </p>
+          <div className="flex items-center gap-2 pt-2">
+            <Link
+              href="/dashboard"
+              className="btn-primary bg-[#12160F] hover:bg-[#25201A] text-white text-xs px-4 py-2.5 rounded-xl no-underline"
+            >
+              Return to Dashboard
+            </Link>
+            <Link
+              href="/expert-register"
+              className="px-4 py-2.5 rounded-xl border border-[rgba(18,22,15,0.12)] text-xs font-bold text-[#586151] hover:text-[#12160F] hover:bg-[#FAFAF6] no-underline transition-colors"
+            >
+              Apply as Practitioner
+            </Link>
+          </div>
+          <DevRoleSwitcher />
+        </div>
+      </div>
+    );
   }
 
   if (!isAdmin && isAdminRoute) {
-    return <ZeroFlashLoadingScreen />;
+    return (
+      <div className="min-h-screen bg-[#FAFAF6] flex items-center justify-center p-4">
+        <div className="fluetas-card p-8 max-w-md w-full text-center flex flex-col items-center gap-3 bg-white border border-[rgba(18,22,15,0.08)] shadow-sm">
+          <div className="w-14 h-14 rounded-2xl bg-red-500/10 text-red-500 flex items-center justify-center text-2xl">
+            <ShieldAlert size={28} />
+          </div>
+          <h2 className="font-['Outfit'] text-xl font-bold text-[#12160F] m-0">Administrator Access Required</h2>
+          <p className="text-xs text-[#586151] m-0 leading-relaxed">
+            Your account does not have platform administration privileges. Administrative roles are server-authoritative and audited.
+          </p>
+          <div className="pt-2">
+            <Link
+              href={isPractitioner ? '/doctor/dashboard' : '/dashboard'}
+              className="btn-primary bg-[#12160F] hover:bg-[#25201A] text-white text-xs px-5 py-2.5 rounded-xl no-underline"
+            >
+              Return to {isPractitioner ? 'Practitioner Portal' : 'Dashboard'}
+            </Link>
+          </div>
+          <DevRoleSwitcher />
+        </div>
+      </div>
+    );
+  }
+
+  if (isPractitioner && isCustomerRoute) {
+    return (
+      <div className="min-h-screen bg-[#FAFAF6] flex items-center justify-center p-4">
+        <div className="fluetas-card p-8 max-w-md w-full text-center flex flex-col items-center gap-3 bg-white border border-[rgba(18,22,15,0.08)] shadow-sm">
+          <div className="w-14 h-14 rounded-2xl bg-[#2E6DA4]/10 text-[#2E6DA4] flex items-center justify-center text-2xl">
+            <Users size={28} />
+          </div>
+          <h2 className="font-['Outfit'] text-xl font-bold text-[#12160F] m-0">This Area is Available to Customer Accounts</h2>
+          <p className="text-xs text-[#586151] m-0 leading-relaxed">
+            You are currently logged in as a clinical practitioner. To access patient records, consultations, and medical review tools, use your practitioner portal.
+          </p>
+          <div className="pt-2">
+            <Link
+              href="/doctor/dashboard"
+              className="btn-primary bg-[#2E6DA4] hover:bg-[#255885] text-white text-xs px-5 py-2.5 rounded-xl no-underline shadow-xs"
+            >
+              Go to Practitioner Portal
+            </Link>
+          </div>
+          <DevRoleSwitcher />
+        </div>
+      </div>
+    );
   }
 
   // ── GATE 4: Render Authorized UI ──────────────────────────────────────────

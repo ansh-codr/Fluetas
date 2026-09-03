@@ -1,12 +1,11 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { onSnapshot, collection, query, where, orderBy } from 'firebase/firestore';
+import { onSnapshot, collection, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { useAuth } from '@/context/AuthContext';
 import {
   logMeal,
-  getTodayMeals,
   getWeeklyNutrition,
   computeTotals,
   NutritionEntry,
@@ -29,6 +28,7 @@ interface UseNutritionResult {
     macros?: { protein?: number; carbs?: number; fat?: number };
     notes?: string;
   }) => Promise<void>;
+  reload: () => void;
 }
 
 function todayDateStr() {
@@ -42,51 +42,75 @@ export function useNutrition(): UseNutritionResult {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [reloadTrigger, setReloadTrigger] = useState(0);
 
   const totals = computeTotals(meals);
 
-  useEffect(() => {
-    if (!user || !db) { setLoading(false); return; }
+  const reload = useCallback(() => {
+    setReloadTrigger(prev => prev + 1);
+  }, []);
 
+  useEffect(() => {
+    if (!user || !db) {
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
     const today = todayDateStr();
+
+    // Query entries for today without compound index requirement
     const q = query(
       collection(db, 'nutritionLogs', user.uid, 'entries'),
-      where('date', '==', today),
-      orderBy('timestamp', 'asc')
+      where('date', '==', today)
     );
 
-    const unsub = onSnapshot(q, snap => {
-      setMeals(snap.docs.map(d => ({ id: d.id, ...d.data() } as NutritionEntry)));
-      setLoading(false);
-    }, () => {
-      setError('Failed to load nutrition data.');
-      setLoading(false);
-    });
+    const unsub = onSnapshot(
+      q,
+      snap => {
+        const items = snap.docs.map(d => ({ id: d.id, ...d.data() } as NutritionEntry));
+        items.sort((a, b) => (a.timestamp?.seconds || 0) - (b.timestamp?.seconds || 0));
+        setMeals(items);
+        setError(null);
+        setLoading(false);
+      },
+      err => {
+        console.warn('[useNutrition] Snapshot error:', err);
+        setError('Unable to load your nutrition records right now.');
+        setLoading(false);
+      }
+    );
 
-    getWeeklyNutrition(user.uid).then(setWeeklyData);
+    getWeeklyNutrition(user.uid)
+      .then(res => setWeeklyData(res || []))
+      .catch(() => setWeeklyData([]));
 
     return () => unsub();
-  }, [user]);
+  }, [user, reloadTrigger]);
 
-  const addMeal = useCallback(async (data: {
-    mealType: MealType;
-    foodItems: string[];
-    calories?: number;
-    macros?: { protein?: number; carbs?: number; fat?: number };
-    notes?: string;
-  }) => {
-    if (!user) return;
-    setSubmitting(true);
-    setError(null);
-    try {
-      await logMeal(user.uid, data);
-      getWeeklyNutrition(user.uid).then(setWeeklyData);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to log meal.');
-    } finally {
-      setSubmitting(false);
-    }
-  }, [user]);
+  const addMeal = useCallback(
+    async (data: {
+      mealType: MealType;
+      foodItems: string[];
+      calories?: number;
+      macros?: { protein?: number; carbs?: number; fat?: number };
+      notes?: string;
+    }) => {
+      if (!user) return;
+      setSubmitting(true);
+      setError(null);
+      try {
+        await logMeal(user.uid, data);
+        getWeeklyNutrition(user.uid).then(res => setWeeklyData(res || []));
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to log meal.');
+      } finally {
+        setSubmitting(false);
+      }
+    },
+    [user]
+  );
 
-  return { meals, totals, weeklyData, loading, error, submitting, addMeal };
+  return { meals, totals, weeklyData, loading, error, submitting, addMeal, reload };
 }

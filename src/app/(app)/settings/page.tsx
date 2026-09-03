@@ -2,15 +2,23 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { getPatientConsents, revokeConsent, ConsentRecord } from '@/lib/services/consentService';
 import {
-  Shield,
+  getPatientConsents,
+  revokeConsent,
+  ConsentRecord,
+} from '@/lib/services/consentService';
+import {
+  ShieldCheck,
   Bell,
-  Smartphone,
+  Cpu,
   Lock,
-  Trash2,
   AlertTriangle,
   CheckCircle2,
+  XCircle,
+  ExternalLink,
+  Smartphone,
+  ChevronRight,
+  Sparkles,
 } from 'lucide-react';
 
 export default function SettingsPage() {
@@ -23,12 +31,6 @@ export default function SettingsPage() {
     { label: 'Hydration Hourly Reminders', desc: 'Contextual reminders based on workout intensity and weather', checked: true },
     { label: 'Clinical Report Upload & Doctor Notes', desc: 'Instant notification when doctor publishes a consultation report', checked: true },
     { label: 'Upcoming Product Launch VIP Alerts', desc: 'Early access notifications for pre-launch formulas', checked: true },
-  ]);
-  const [devices, setDevices] = useState([
-    { name: 'Apple HealthKit', icon: '🍎', connected: true, syncTime: 'Synced 2m ago' },
-    { name: 'Garmin Connect', icon: '⌚', connected: true, syncTime: 'Synced 15m ago' },
-    { name: 'Whoop Strap 4.0', icon: '⚡', connected: false, syncTime: 'Pair via Bluetooth' },
-    { name: 'Oura Ring Gen 3', icon: '💍', connected: false, syncTime: 'Connect Cloud API' },
   ]);
 
   useEffect(() => {
@@ -50,15 +52,6 @@ export default function SettingsPage() {
     }
   };
 
-  const toggleDevice = (name: string) => {
-    setDevices(prev => prev.map(d => d.name === name ? { ...d, connected: !d.connected, syncTime: !d.connected ? 'Just connected' : 'Disconnected' } : d));
-    const dev = devices.find(d => d.name === name);
-    if (dev) {
-      setRevokeToast(dev.connected ? `${name} disconnected.` : `${name} connected successfully!`);
-      setTimeout(() => setRevokeToast(null), 3000);
-    }
-  };
-
   return (
     <div className="flex flex-col gap-5 max-w-5xl mx-auto w-full">
       {/* Toast */}
@@ -72,113 +65,118 @@ export default function SettingsPage() {
       {/* Header */}
       <div>
         <h1 className="font-['Outfit'] text-xl sm:text-2xl font-black text-[#12160F] m-0">
-          ACCOUNT & PRIVACY SETTINGS
+          ACCOUNT &amp; PRIVACY SETTINGS
         </h1>
         <p className="text-[#586151] text-xs sm:text-sm m-0">
-          Manage clinical access permissions, connected wearables, and notification alerts.
+          Manage clinical access permissions, device integrations, and notifications.
         </p>
       </div>
 
       {/* Settings Navigation Tabs */}
       <div className="flex border-b border-[rgba(18,22,15,0.10)] gap-2 overflow-x-auto no-scrollbar">
         {[
-          { id: 'privacy', label: 'Privacy & Doctor Consents', icon: Shield },
-          { id: 'notifications', label: 'Notification Preferences', icon: Bell },
-          { id: 'devices', label: 'Connected Wearables', icon: Smartphone },
+          { id: 'privacy', label: 'Clinical Consent & Privacy', icon: ShieldCheck },
+          { id: 'notifications', label: 'Notifications', icon: Bell },
+          { id: 'devices', label: 'Connect Devices', icon: Cpu },
           { id: 'account', label: 'Account Security', icon: Lock },
         ].map(tab => {
           const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
           return (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-semibold transition-all border-b-2 -mb-[2px] shrink-0 cursor-pointer ${
-                isActive
+              className={`flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-semibold border-b-2 -mb-[2px] transition-all cursor-pointer whitespace-nowrap ${
+                activeTab === tab.id
                   ? 'text-[#2E7D32] border-[#2E7D32]'
                   : 'text-[#586151] border-transparent hover:text-[#12160F]'
               }`}
             >
-              <Icon size={16} />
-              <span>{tab.label}</span>
+              <Icon size={14} />
+              {tab.label}
             </button>
           );
         })}
       </div>
 
-      {/* ─── TAB 1: PRIVACY & DOCTOR CONSENTS ────────────────────────────── */}
+      {/* ─── TAB 1: CLINICAL CONSENT & PRIVACY ─────────────────────────────── */}
       {activeTab === 'privacy' && (
-        <div className="flex flex-col gap-4">
-          <div className="fluetas-card p-5 bg-[#F2F4EE] border-[rgba(18,22,15,0.10)]">
-            <div className="flex items-center gap-2 mb-1.5">
-              <Shield size={18} className="text-[#2E7D32]" />
-              <h2 className="font-['Outfit'] text-base font-bold text-[#12160F] m-0">
-                ACTIVE CLINICAL DATA AUTHORIZATIONS
-              </h2>
+        <div className="space-y-4">
+          <div className="fluetas-card p-5 bg-gradient-to-r from-white to-[#F2F4EE]">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-[#2E7D32]/10 text-[#2E7D32] flex items-center justify-center shrink-0">
+                <ShieldCheck size={20} />
+              </div>
+              <div>
+                <h3 className="font-['Outfit'] text-sm font-bold text-[#12160F] m-0">
+                  Sovereign Health Data Governance
+                </h3>
+                <p className="text-xs text-[#586151] m-0 mt-1 leading-relaxed">
+                  Your medical data is encrypted and strictly isolated. Doctors only have access to records you explicitly authorize during appointment scheduling. You can instantly revoke doctor access at any time.
+                </p>
+              </div>
             </div>
-            <p className="text-xs text-[#586151] m-0 leading-relaxed">
-              In accordance with FLUETAS data sovereignty principles, doctors only access the specific subcollections you explicitly authorize. You can revoke access at any second.
-            </p>
           </div>
 
-          <div className="flex flex-col gap-3.5">
+          <div className="fluetas-card p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="section-title">ACTIVE PRACTITIONER CONSENTS ({consents.length})</span>
+              <span className="text-[0.68rem] text-[#8A9482]">Zero-Knowledge Audit Trail</span>
+            </div>
+
             {consents.length === 0 ? (
-              <div className="fluetas-card p-8 text-center text-[#586151]">
-                <Shield size={32} className="mx-auto mb-2 text-[#8A9482]" />
-                <p className="text-sm font-bold text-[#12160F] m-0">No Active Doctor Consents</p>
-                <p className="text-xs m-0 mt-1">All your medical data is currently locked in private storage.</p>
+              <div className="py-8 text-center bg-[#FAFAF6] rounded-xl border border-[rgba(18,22,15,0.06)]">
+                <CheckCircle2 size={28} className="text-[#2E7D32] mx-auto mb-2 opacity-80" />
+                <p className="font-semibold text-xs text-[#12160F] m-0">No Active Data Sharing Consents</p>
+                <p className="text-[0.68rem] text-[#586151] m-0 mt-0.5">
+                  No practitioners or external clinics currently have access to your health records.
+                </p>
               </div>
             ) : (
               consents.map(consent => {
-                const expiresStr = consent.expiresAt?.seconds
-                  ? new Date(consent.expiresAt.seconds * 1000).toLocaleDateString()
-                  : 'Active Consent';
+                const grantedDate = consent.grantedAt
+                  ? new Date(consent.grantedAt.seconds * 1000).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                    })
+                  : 'Recent';
 
                 return (
                   <div
-                    key={consent.consentId || consent.id}
-                    className="fluetas-card p-5 flex flex-col gap-3.5 hover:shadow-md transition-shadow bg-white"
+                    key={consent.id || consent.consentId}
+                    className="p-4 bg-[#F2F4EE] border border-[rgba(18,22,15,0.06)] rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-[#2E7D32]/30 transition-colors"
                   >
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-['Outfit'] text-base font-bold text-[#12160F] m-0">
-                            {consent.doctorName}
-                          </h3>
-                        </div>
-                        <p className="text-xs text-[#2E7D32] font-semibold m-0 mt-0.5">
-                          Status: Active · {expiresStr}
-                        </p>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-sm text-[#12160F]">{consent.doctorName}</span>
+                        <span className="text-[0.62rem] font-bold px-2 py-0.5 rounded-full bg-[#2E7D32]/10 text-[#2E7D32] border border-[#2E7D32]/20">
+                          Active Consent
+                        </span>
                       </div>
-
-                      <button
-                        onClick={() => handleRevokeConsent(consent.consentId || consent.id || '', consent.doctorName)}
-                        className="px-3 py-1.5 rounded-lg bg-[#EF4444]/10 border border-[#EF4444]/20 hover:bg-[#EF4444]/20 text-[#EF4444] text-xs font-bold flex items-center gap-1.5 self-start sm:self-auto cursor-pointer transition-colors"
-                      >
-                        <Trash2 size={13} /> Revoke Access Now
-                      </button>
-                    </div>
-
-                    {/* Granted Scope Badges */}
-                    <div>
-                      <span className="text-[0.65rem] font-bold text-[#586151] uppercase block mb-1.5">
-                        Authorized Data Scopes:
-                      </span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {Object.entries(consent.permissions || {}).map(([scope, granted]) => (
-                          <span
-                            key={scope}
-                            className={`px-2 py-0.5 rounded text-[0.68rem] font-semibold flex items-center gap-1 ${
-                              granted
-                                ? 'bg-[#2E7D32]/10 text-[#2E7D32] border border-[#2E7D32]/20'
-                                : 'bg-[#F2F4EE] text-[#8A9482] line-through opacity-60'
-                            }`}
-                          >
-                            {granted ? '✓' : '✗'} {scope.replace(/([A-Z])/g, ' $1')}
-                          </span>
-                        ))}
+                      <p className="text-xs text-[#586151] m-0">
+                        Granted on {grantedDate} · Scope: <span className="text-[#12160F]">Clinical Consultation</span>
+                      </p>
+                      <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                        <span className="text-[0.65rem] text-[#8A9482]">Authorized Scopes:</span>
+                        {Object.entries(consent.permissions || {})
+                          .filter(([, val]) => val)
+                          .map(([key]) => (
+                            <span
+                              key={key}
+                              className="text-[0.62rem] px-2 py-0.5 rounded bg-white border border-[rgba(18,22,15,0.08)] text-[#586151]"
+                            >
+                              {key.replace(/_/g, ' ')}
+                            </span>
+                          ))}
                       </div>
                     </div>
+
+                    <button
+                      onClick={() => handleRevokeConsent(consent.id || consent.consentId, consent.doctorName)}
+                      className="px-3 py-1.5 rounded-lg bg-[#EF4444]/10 border border-[#EF4444]/20 text-[#EF4444] hover:bg-[#EF4444]/20 text-xs font-bold self-start sm:self-auto cursor-pointer transition-colors"
+                    >
+                      Revoke Access
+                    </button>
                   </div>
                 );
               })
@@ -190,7 +188,7 @@ export default function SettingsPage() {
       {/* ─── TAB 2: NOTIFICATIONS ─────────────────────────────────────────── */}
       {activeTab === 'notifications' && (
         <div className="fluetas-card p-5 space-y-4 text-xs">
-          <span className="section-title">NOTIFICATION & TELEMETRY ALERTS</span>
+          <span className="section-title">NOTIFICATION &amp; TELEMETRY ALERTS</span>
 
           {notifSettings.map((item, idx) => (
             <label
@@ -212,63 +210,75 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {/* ─── TAB 3: CONNECTED WEARABLES ──────────────────────────────────── */}
+      {/* ─── TAB 3: CONNECT YOUR DEVICES (Section 5 Requirement) ─────────── */}
       {activeTab === 'devices' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {devices.map(device => (
-            <div
-              key={device.name}
-              className="fluetas-card p-4 flex items-center justify-between"
-            >
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">{device.icon}</span>
-                <div>
-                  <h3 className="font-['Outfit'] text-sm font-bold text-[#12160F] m-0">{device.name}</h3>
-                  <p className="text-[0.68rem] text-[#586151] m-0">{device.syncTime}</p>
-                </div>
-              </div>
-              <button
-                onClick={() => toggleDevice(device.name)}
-                className={`text-xs font-bold px-3 py-1.5 rounded-full cursor-pointer transition-colors ${
-                  device.connected
-                    ? 'bg-[#EF4444]/10 border border-[#EF4444]/20 text-[#EF4444] hover:bg-[#EF4444]/20'
-                    : 'bg-[#2E7D32]/10 border border-[#2E7D32]/20 text-[#2E7D32] hover:bg-[#2E7D32]/20'
-                }`}
-              >
-                {device.connected ? 'Disconnect' : 'Connect'}
-              </button>
+        <div className="fluetas-card p-6 sm:p-8 bg-white border border-[rgba(18,22,15,0.08)] text-center flex flex-col items-center gap-5">
+          <div className="w-14 h-14 rounded-2xl bg-[#2E6DA4]/10 text-[#2E6DA4] flex items-center justify-center">
+            <Sparkles size={28} />
+          </div>
+
+          <div className="max-w-md space-y-1">
+            <span className="text-[0.68rem] font-bold uppercase tracking-wider text-[#2E6DA4] bg-[#2E6DA4]/10 px-2.5 py-0.5 rounded-full inline-block mb-1">
+              Coming Soon
+            </span>
+            <h3 className="font-['Outfit'] text-lg font-bold text-[#12160F] m-0">
+              CONNECT YOUR DEVICES
+            </h3>
+            <p className="text-xs text-[#586151] m-0 leading-relaxed">
+              Connect supported health and fitness devices to automatically sync selected activity and wellness data.
+            </p>
+          </div>
+
+          <div className="p-4 bg-[#FAFAF6] rounded-xl border border-[rgba(18,22,15,0.08)] text-left w-full max-w-md text-xs space-y-1.5">
+            <div className="flex items-center gap-2 font-bold text-[#12160F]">
+              <CheckCircle2 size={15} className="text-[#2E7D32]" />
+              <span>Manual tracking is available</span>
             </div>
-          ))}
+            <p className="text-[#586151] text-[0.72rem] m-0 pl-6">
+              You can currently log hydration, sleep, workouts, meals, and symptoms manually with real-time biometric progress calculations.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full max-w-lg pt-1">
+            {[
+              { name: 'Apple HealthKit', icon: '🍎', desc: 'Planned' },
+              { name: 'Health Connect', icon: '🤖', desc: 'Planned' },
+              { name: 'Garmin Connect', icon: '⌚', desc: 'Planned' },
+              { name: 'Oura / Whoop', icon: '💍', desc: 'Planned' },
+            ].map(dev => (
+              <div key={dev.name} className="p-3 bg-[#FAFAF6] border border-[rgba(18,22,15,0.06)] rounded-xl text-center">
+                <span className="text-2xl block mb-1">{dev.icon}</span>
+                <span className="font-bold text-xs text-[#12160F] block">{dev.name}</span>
+                <span className="text-[0.62rem] text-[#8A9482] block">{dev.desc}</span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
       {/* ─── TAB 4: ACCOUNT SECURITY ─────────────────────────────────────── */}
       {activeTab === 'account' && (
         <div className="fluetas-card p-5 space-y-4 text-xs">
-          <span className="section-title">ACCOUNT SECURITY & CREDENTIALS</span>
+          <span className="section-title">ACCOUNT SECURITY &amp; CREDENTIALS</span>
 
           <div className="p-3.5 bg-[#F2F4EE] border border-[rgba(18,22,15,0.06)] rounded-xl flex items-center justify-between">
             <div>
               <p className="font-bold text-sm text-[#12160F] m-0">Two-Factor Authentication (2FA)</p>
               <p className="text-[#586151] text-xs m-0 mt-0.5">Protect your medical data with biometrics or SMS 2FA</p>
             </div>
-            <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-[#2E7D32]/10 text-[#2E7D32]">
-              Enabled
+            <span className="px-3 py-1 rounded-full bg-[#2E7D32]/10 border border-[#2E7D32]/20 text-[#2E7D32] text-xs font-bold">
+              Active
             </span>
           </div>
 
           <div className="p-3.5 bg-[#F2F4EE] border border-[rgba(18,22,15,0.06)] rounded-xl flex items-center justify-between">
             <div>
-              <p className="font-bold text-sm text-[#12160F] m-0">End-to-End Encryption Key</p>
-              <p className="text-[#586151] text-xs m-0 mt-0.5">AES-256 client encryption for medical uploads</p>
+              <p className="font-bold text-sm text-[#12160F] m-0">End-to-End Clinical Encryption</p>
+              <p className="text-[#586151] text-xs m-0 mt-0.5">All consult notes are encrypted via AES-GCM at rest</p>
             </div>
-            <button
-              onClick={() => { navigator.clipboard.writeText('KEY-9824-OK'); setRevokeToast('Encryption key copied to clipboard.'); setTimeout(() => setRevokeToast(null), 3000); }}
-              className="font-mono text-xs text-[#2E6DA4] bg-white px-2.5 py-1 rounded-lg border border-[rgba(18,22,15,0.10)] font-bold hover:bg-[#F2F4EE] cursor-pointer transition-colors"
-              title="Click to copy"
-            >
-              KEY-9824-OK
-            </button>
+            <span className="px-3 py-1 rounded-full bg-[#2E7D32]/10 border border-[#2E7D32]/20 text-[#2E7D32] text-xs font-bold">
+              Enforced
+            </span>
           </div>
         </div>
       )}

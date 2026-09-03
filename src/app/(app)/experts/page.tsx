@@ -169,13 +169,16 @@ export default function ExpertsDirectoryPage() {
       ) : filteredDoctors.length === 0 ? (
         <div className="fluetas-card p-10 flex flex-col items-center justify-center text-center bg-white border border-[rgba(18,22,15,0.10)] rounded-2xl">
           <div className="w-14 h-14 rounded-2xl bg-[#2E7D32]/10 text-[#2E7D32] flex items-center justify-center mb-3">
-            <UserCheck size={28} />
+            <Stethoscope size={28} />
           </div>
-          <h3 className="font-['Outfit'] text-base font-bold text-[#12160F] m-0">
-            No verified experts available right now
+          <span className="text-[0.68rem] font-bold uppercase tracking-wider text-[#2E7D32] bg-[#2E7D32]/10 px-2.5 py-0.5 rounded-full mb-2">
+            EXPERT CONSULTATIONS
+          </span>
+          <h3 className="font-['Outfit'] text-base sm:text-lg font-bold text-[#12160F] m-0">
+            Doctors and wellness experts are coming soon.
           </h3>
           <p className="text-xs text-[#586151] max-w-md mt-1.5 mb-5 leading-relaxed">
-            All practitioners on FLUETAS undergo strict medical credential and licensing audits. Newly verified experts will appear here immediately once authorized.
+            Verified FLUETAS experts will appear here as they become available. Check back soon.
           </p>
           <Link
             href="/expert-register"

@@ -18,7 +18,7 @@ export default function AICoachCard() {
   let dynamicInsight = 'Log your daily hydration, sleep, and workouts so I can provide contextual wellness insights and habit reminders.';
 
   if (wellness && !wellness.insufficientData) {
-    if (totalMl < goalMl * 0.5) {
+    if (goalMl && totalMl < goalMl * 0.5) {
       dynamicInsight = `You have reached ${Math.round((totalMl / goalMl) * 100)}% of your hydration target. Consider having a glass of water before your next activity to maintain steady energy.`;
     } else if (todaySleep && todaySleep.durationHrs < 7) {
       dynamicInsight = `You logged ${todaySleep.durationHrs}h of sleep last night. Consider a lighter training session if you feel fatigued today and prioritize early rest.`;

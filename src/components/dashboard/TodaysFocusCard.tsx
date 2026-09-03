@@ -50,8 +50,8 @@ export default function TodaysFocusCard() {
       progress: hPct,
       done: hPct >= 100,
       detail: totalMl > 0
-        ? `${(totalMl / 1000).toFixed(1)}L / ${(goalMl / 1000).toFixed(1)}L`
-        : `${(goalMl / 1000).toFixed(1)}L target today`,
+        ? goalMl ? `${(totalMl / 1000).toFixed(1)}L / ${(goalMl / 1000).toFixed(1)}L` : `${(totalMl / 1000).toFixed(1)}L logged`
+        : goalMl ? `${(goalMl / 1000).toFixed(1)}L target today` : 'Log fluid intake',
       actionText: '+250ml',
       color: '#2E6DA4',
       bg: 'bg-[#2E6DA4]/10',

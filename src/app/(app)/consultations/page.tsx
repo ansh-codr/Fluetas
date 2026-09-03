@@ -102,21 +102,19 @@ export default function ConsultationsPage() {
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="fluetas-card p-10 text-center flex flex-col items-center justify-center">
+        <div className="fluetas-card p-10 text-center flex flex-col items-center justify-center bg-white border border-[rgba(18,22,15,0.08)] rounded-2xl">
           <div className="w-14 h-14 rounded-2xl bg-[#2E7D32]/10 text-[#2E7D32] flex items-center justify-center mb-3">
             <Stethoscope size={26} />
           </div>
           <h3 className="font-['Outfit'] text-base font-bold text-[#12160F] m-0">
-            {tab === 'upcoming' ? 'No upcoming consultations' : 'No past consultation history'}
+            No consultations yet.
           </h3>
           <p className="text-xs text-[#586151] m-0 mt-1 max-w-sm">
-            {tab === 'upcoming'
-              ? 'Schedule a 1-on-1 consultation with top physiotherapists, doctors, and sports nutritionists.'
-              : 'Your clinical summaries, prescription notes, and diagnostic tests will be organized here.'}
+            Your completed and upcoming consultations will appear here.
           </p>
           <Link
             href="/experts"
-            className="btn-primary mt-4 flex items-center gap-2 px-5 py-2.5 text-xs font-bold no-underline"
+            className="btn-primary mt-4 flex items-center gap-2 px-5 py-2.5 text-xs font-bold no-underline shadow-xs"
           >
             <Plus size={14} /> Find an Expert
           </Link>
