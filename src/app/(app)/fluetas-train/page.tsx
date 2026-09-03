@@ -14,6 +14,7 @@ import {
   getTodaysWorkoutDay,
   WorkoutPlan,
 } from '@/lib/services/workoutPlanService';
+import { isWorkoutPlanReady } from '@/lib/services/userService';
 import ExerciseVideoPlayer from '@/components/exercises/ExerciseVideoPlayer';
 import ExerciseDetailModal from '@/components/exercises/ExerciseDetailModal';
 import {
@@ -31,11 +32,12 @@ import {
   ArrowUpRight,
   RefreshCw,
   AlertCircle,
+  Dumbbell,
 } from 'lucide-react';
 
 export default function FluetasTrainPage() {
   const { user } = useAuth();
-  const { healthProfile } = useUserProfile();
+  const { profile, healthProfile, loading: profileLoading } = useUserProfile();
   const { todaySession, loading, submitting, startSession, finishSession, error: workoutHookError } = useWorkout();
 
   const [activePlan, setActivePlan] = useState<WorkoutPlan | null>(null);
@@ -91,20 +93,18 @@ export default function FluetasTrainPage() {
 
   // Generate / Regenerate plan from profile
   const handleGeneratePlan = async () => {
-    if (!user) return;
+    if (!user || !healthProfile) return;
+    const readiness = isWorkoutPlanReady(profile, healthProfile);
+    if (!readiness.ready) {
+      setPlanError(`Incomplete profile: Missing [${readiness.missingFields.join(', ')}]`);
+      return;
+    }
+
     setGeneratingPlan(true);
     setPlanError(null);
 
     try {
-      const profileToUse = healthProfile || {
-        primaryGoal: 'Build Muscle',
-        fitnessLevel: 'Intermediate',
-        daysPerWeek: 4,
-        equipmentAccess: 'full_gym',
-        injuryTags: [],
-      };
-
-      const newPlan = await generateWorkoutPlan(user.uid, profileToUse);
+      const newPlan = await generateWorkoutPlan(user.uid, healthProfile);
       setActivePlan(newPlan);
       setSelectedDayIdx(0);
       const { exercises: builtEx, suggestions: sug } = buildSessionExercisesFromPlanDay(
@@ -232,6 +232,61 @@ export default function FluetasTrainPage() {
   const timerMins = Math.floor(timerSec / 60);
   const timerRemSecs = timerSec % 60;
   const timerLabel = `${timerMins}:${timerRemSecs.toString().padStart(2, '0')}`;
+
+  const readiness = isWorkoutPlanReady(profile, healthProfile);
+
+  if (!planLoading && !profileLoading && !readiness.ready) {
+    return (
+      <div className="flex flex-col gap-6 max-w-4xl mx-auto w-full">
+        {/* Header */}
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-8 h-8 rounded-xl bg-[#2E7D32]/10 text-[#2E7D32] flex items-center justify-center font-bold">
+              <Dumbbell size={18} />
+            </div>
+            <h1 className="font-['Outfit'] text-xl sm:text-2xl font-black text-[#12160F] m-0">
+              FLUETAS TRAIN: PERSONALIZED PROTOCOL
+            </h1>
+          </div>
+          <p className="text-[#586151] text-xs sm:text-sm m-0">
+            Deterministic progressive overload engine calibrated to your individual biometric profile.
+          </p>
+        </div>
+
+        {/* Gated Incomplete Profile Notice */}
+        <div className="fluetas-card p-6 sm:p-8 bg-white border border-[rgba(18,22,15,0.08)] text-center flex flex-col items-center gap-4 shadow-sm">
+          <div className="w-14 h-14 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center text-2xl">
+            <AlertCircle size={28} />
+          </div>
+          <div className="max-w-md">
+            <h2 className="font-['Outfit'] text-lg sm:text-xl font-bold text-[#12160F] m-0">
+              Your personalized training plan isn&apos;t ready yet.
+            </h2>
+            <p className="text-xs sm:text-sm text-[#586151] m-0 mt-1.5 leading-relaxed">
+              Complete your health and fitness profile first. FLUETAS requires your baseline fitness level, apparatus access, and injury screening to safely generate your training protocol.
+            </p>
+          </div>
+
+          <div className="p-3.5 bg-[#FAFAF6] rounded-xl border border-[rgba(18,22,15,0.08)] text-left w-full max-w-md text-xs space-y-1.5">
+            <span className="font-bold text-[#12160F] block">Required Information Missing:</span>
+            <ul className="list-disc pl-4 text-[#586151] m-0 space-y-0.5">
+              {readiness.missingFields.map((field, idx) => (
+                <li key={idx}>{field}</li>
+              ))}
+            </ul>
+          </div>
+
+          <Link
+            href="/onboarding"
+            className="btn-primary bg-[#2E7D32] hover:bg-[#256628] text-white text-xs font-bold px-6 py-3 rounded-xl flex items-center gap-2 no-underline transition-colors shadow-xs"
+          >
+            <span>Complete Profile &amp; Unlock Training</span>
+            <ChevronRight size={14} />
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`flex flex-col gap-5 max-w-5xl mx-auto w-full overflow-x-hidden ${activeSession ? 'pb-24 sm:pb-6' : ''}`}>

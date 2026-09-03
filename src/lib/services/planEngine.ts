@@ -196,21 +196,39 @@ export function classifyUser(profile: HealthProfile): PlanProfile {
     throw new PlanClassificationError('HealthProfile is undefined.', 'profile', profile);
   }
 
-  const goal = normalizeGoal(profile.primaryGoal);
+  const goal = normalizeGoal(profile.primaryGoal || profile.fitnessGoal);
   const fitnessLevel = normalizeFitnessLevel(profile.fitnessLevel);
 
-  const daysPerWeek = typeof profile.daysPerWeek === 'number'
-    ? Math.min(6, Math.max(2, profile.daysPerWeek))
-    : 4;
+  if (typeof profile.daysPerWeek !== 'number' || profile.daysPerWeek < 2 || profile.daysPerWeek > 6) {
+    throw new PlanClassificationError(
+      'Workout frequency (daysPerWeek) is required and must be between 2 and 6 days per week.',
+      'daysPerWeek',
+      profile.daysPerWeek
+    );
+  }
+  const daysPerWeek = profile.daysPerWeek;
 
-  const equipmentAccess: EquipmentAccess = profile.equipmentAccess || 'full_gym';
-  const rawInjuryTags = Array.isArray(profile.injuryTags) ? profile.injuryTags : [];
+  const rawEquipment = profile.equipmentAccess || profile.equipment;
+  if (!rawEquipment) {
+    throw new PlanClassificationError(
+      'Equipment access must be specified (none, basic, or full_gym).',
+      'equipmentAccess',
+      rawEquipment
+    );
+  }
+  const equipmentAccess: EquipmentAccess = rawEquipment;
+
+  const rawInjuryTags = Array.isArray(profile.injuryTags)
+    ? profile.injuryTags
+    : Array.isArray(profile.injuries)
+    ? profile.injuries
+    : [];
 
   const excludedMuscles = new Set<string>();
   const excludedTypes = new Set<string>();
 
   for (const tag of rawInjuryTags) {
-    const cleanTag = tag.toLowerCase().trim();
+    const cleanTag = String(tag).toLowerCase().trim();
     const mapping = INJURY_EXCLUSION_MAP[cleanTag];
     if (mapping) {
       mapping.excludeMuscleGroups.forEach(m => excludedMuscles.add(m.toLowerCase()));
@@ -223,7 +241,7 @@ export function classifyUser(profile: HealthProfile): PlanProfile {
     fitnessLevel,
     daysPerWeek,
     equipmentAccess,
-    injuryTags: rawInjuryTags,
+    injuryTags: rawInjuryTags as string[],
     goalRule: GOAL_RULES[goal],
     levelScale: LEVEL_SCALING[fitnessLevel],
     excludedMuscles,

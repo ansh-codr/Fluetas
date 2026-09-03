@@ -14,6 +14,7 @@ import MobileBottomNav from '@/components/layout/MobileBottomNav';
 import DevRoleSwitcher from '@/components/auth/DevRoleSwitcher';
 import { useAuth } from '@/context/AuthContext';
 import { db } from '@/lib/firebase/config';
+import { isHealthEngineReady, UserProfile, HealthProfile } from '@/lib/services/userService';
 import { ShieldAlert } from 'lucide-react';
 
 function ZeroFlashLoadingScreen() {
@@ -41,6 +42,7 @@ function ZeroFlashLoadingScreen() {
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [onboardingChecked, setOnboardingChecked] = useState(false);
   const { user, role, status, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -90,23 +92,45 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // 3. Customer onboarding check (only for verified customers on customer paths)
-    if (isCustomer && isCustomerRoute && pathname !== '/onboarding') {
+    // 3. Customer Onboarding Gate (Zero-Flash protection)
+    if (isCustomer && isCustomerRoute) {
+      if (pathname === '/onboarding') {
+        setOnboardingChecked(true);
+        return;
+      }
+
       if (db) {
-        getDoc(doc(db, 'users', user.uid))
-          .then((snap) => {
-            if (snap.exists() && snap.data()?.onboardingComplete === false) {
+        Promise.all([
+          getDoc(doc(db, 'users', user.uid)),
+          getDoc(doc(db, 'users', user.uid, 'healthProfile', 'main')),
+        ])
+          .then(([userSnap, healthSnap]) => {
+            const uData = userSnap.exists() ? (userSnap.data() as UserProfile) : null;
+            const hData = healthSnap.exists() ? (healthSnap.data() as HealthProfile) : null;
+
+            const isComplete = uData?.onboardingComplete === true;
+            const healthReady = isHealthEngineReady(uData, hData).ready;
+
+            if (!isComplete || !healthReady) {
               router.replace('/onboarding');
+            } else {
+              setOnboardingChecked(true);
             }
           })
-          .catch(() => {});
+          .catch(() => {
+            setOnboardingChecked(true);
+          });
+      } else {
+        setOnboardingChecked(true);
       }
+    } else {
+      setOnboardingChecked(true);
     }
   }, [user, role, loading, router, pathname, isDoctorRoute, isAdminRoute, isCustomerRoute, isCustomer, isPractitioner, isAdmin]);
 
-  // ── GATE 1: Session & Role Resolution ─────────────────────────────────────
-  // Mandatory Zero-Flash: NEVER render children or dashboard before auth & role are fully known
-  if (loading || !user || !role) {
+  // ── GATE 1: Session, Role & Onboarding Resolution ──────────────────────────
+  // Mandatory Zero-Flash: NEVER render children or dashboard before auth, role & onboarding are fully resolved
+  if (loading || !user || !role || !onboardingChecked) {
     return <ZeroFlashLoadingScreen />;
   }
 

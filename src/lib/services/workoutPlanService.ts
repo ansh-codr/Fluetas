@@ -22,7 +22,7 @@ import {
 import { db } from '@/lib/firebase/config';
 import { getExerciseProvider } from '@/lib/exercises/provider';
 import { Exercise } from '@/lib/exercises/types';
-import { HealthProfile } from './userService';
+import { HealthProfile, isWorkoutPlanReady } from './userService';
 import { ExerciseSet, WorkoutExercise, WorkoutSession } from './workoutService';
 import { logAuditEvent } from './auditService';
 import { createNotification } from './notificationService';
@@ -39,6 +39,7 @@ import {
   buildDayTemplates,
   filterExercisesForDay,
   PlanGenerationError,
+  PlanClassificationError,
 } from './planEngine';
 
 export interface PlanExerciseItem {
@@ -79,6 +80,16 @@ export interface WorkoutPlan {
   createdAt: Timestamp;
   updatedAt: Timestamp;
   days: PlanDay[];
+  personalizationInputs?: {
+    goal: string;
+    fitnessLevel: string;
+    experienceLevel?: string;
+    daysPerWeek: number;
+    sessionDuration?: number;
+    equipment: string;
+    workoutLocation?: string;
+    restrictions: string[];
+  };
 }
 
 export interface PlanVersionSnapshot {
@@ -101,6 +112,16 @@ export async function generateWorkoutPlan(
 ): Promise<WorkoutPlan> {
   if (!db) throw new Error('Firebase database not configured');
   if (!userId) throw new Error('User ID is required to generate workout plan');
+
+  // 0. Explicit Profile Readiness Check (Never generate from missing data)
+  const readiness = isWorkoutPlanReady(null, profile);
+  if (!readiness.ready) {
+    throw new PlanClassificationError(
+      `Cannot generate workout plan. Incomplete customer profile: Missing [${readiness.missingFields.join(', ')}].`,
+      'profile',
+      readiness.missingFields
+    );
+  }
 
   // 1. Pure classification
   const planProfile: PlanProfile = classifyUser(profile);
@@ -167,7 +188,7 @@ export async function generateWorkoutPlan(
     });
   }
 
-  // 5. Build WorkoutPlan document
+  // 5. Build WorkoutPlan document with explainable personalization inputs
   const now = Timestamp.now();
   const planRef = doc(collection(db, 'workoutPlans', userId, 'plans'));
   const planId = planRef.id;
@@ -198,6 +219,16 @@ export async function generateWorkoutPlan(
     createdAt: now,
     updatedAt: now,
     days: generatedDays,
+    personalizationInputs: {
+      goal: planProfile.goal,
+      fitnessLevel: planProfile.fitnessLevel,
+      experienceLevel: String(profile.experienceLevel || planProfile.fitnessLevel),
+      daysPerWeek: planProfile.daysPerWeek,
+      sessionDuration: profile.preferredSessionDuration || 45,
+      equipment: planProfile.equipmentAccess,
+      workoutLocation: String(profile.workoutLocation || 'commercial_gym'),
+      restrictions: planProfile.injuryTags,
+    },
   };
 
   // 6. Archive previous active plans before setting new active plan
