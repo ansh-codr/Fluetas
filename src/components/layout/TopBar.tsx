@@ -160,13 +160,15 @@ export default function TopBar({ onMenuToggle }: TopBarProps) {
         </div>
 
         {/* Calendar */}
-        <button
+        <Link
+          href="/consultations"
           id="topbar-calendar-btn"
-          className="w-9 h-9 rounded-xl bg-[#FFFFFF] border border-[rgba(18,22,15,0.12)] flex items-center justify-center text-[#586151] hover:text-[#12160F] hover:border-[rgba(18,22,15,0.22)] transition-colors cursor-pointer shrink-0 hidden xs:flex shadow-xs"
-          aria-label="Calendar"
+          className="w-9 h-9 rounded-xl bg-[#FFFFFF] border border-[rgba(18,22,15,0.12)] flex items-center justify-center text-[#586151] hover:text-[#12160F] hover:border-[rgba(18,22,15,0.22)] transition-colors cursor-pointer shrink-0 hidden xs:flex shadow-xs no-underline"
+          aria-label="View appointments"
+          title="View appointments"
         >
           <Calendar size={16} />
-        </button>
+        </Link>
 
         {/* Profile Card */}
         <Link

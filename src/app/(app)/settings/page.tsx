@@ -18,6 +18,18 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<'privacy' | 'notifications' | 'devices' | 'account'>('privacy');
   const [consents, setConsents] = useState<ConsentRecord[]>([]);
   const [revokeToast, setRevokeToast] = useState<string | null>(null);
+  const [notifSettings, setNotifSettings] = useState([
+    { label: 'Workout & Training Volume Pacing', desc: 'Daily alerts when ready for next scheduled session', checked: true },
+    { label: 'Hydration Hourly Reminders', desc: 'Contextual reminders based on workout intensity and weather', checked: true },
+    { label: 'Clinical Report Upload & Doctor Notes', desc: 'Instant notification when doctor publishes a consultation report', checked: true },
+    { label: 'Upcoming Product Launch VIP Alerts', desc: 'Early access notifications for pre-launch formulas', checked: true },
+  ]);
+  const [devices, setDevices] = useState([
+    { name: 'Apple HealthKit', icon: '🍎', connected: true, syncTime: 'Synced 2m ago' },
+    { name: 'Garmin Connect', icon: '⌚', connected: true, syncTime: 'Synced 15m ago' },
+    { name: 'Whoop Strap 4.0', icon: '⚡', connected: false, syncTime: 'Pair via Bluetooth' },
+    { name: 'Oura Ring Gen 3', icon: '💍', connected: false, syncTime: 'Connect Cloud API' },
+  ]);
 
   useEffect(() => {
     if (!user) return;
@@ -35,6 +47,15 @@ export default function SettingsPage() {
       setTimeout(() => setRevokeToast(null), 3500);
     } catch {
       alert('Failed to revoke consent.');
+    }
+  };
+
+  const toggleDevice = (name: string) => {
+    setDevices(prev => prev.map(d => d.name === name ? { ...d, connected: !d.connected, syncTime: !d.connected ? 'Just connected' : 'Disconnected' } : d));
+    const dev = devices.find(d => d.name === name);
+    if (dev) {
+      setRevokeToast(dev.connected ? `${name} disconnected.` : `${name} connected successfully!`);
+      setTimeout(() => setRevokeToast(null), 3000);
     }
   };
 
@@ -171,12 +192,7 @@ export default function SettingsPage() {
         <div className="fluetas-card p-5 space-y-4 text-xs">
           <span className="section-title">NOTIFICATION & TELEMETRY ALERTS</span>
 
-          {[
-            { label: 'Workout & Training Volume Pacing', desc: 'Daily alerts when ready for next scheduled session', checked: true },
-            { label: 'Hydration Hourly Reminders', desc: 'Contextual reminders based on workout intensity and weather', checked: true },
-            { label: 'Clinical Report Upload & Doctor Notes', desc: 'Instant notification when doctor publishes a consultation report', checked: true },
-            { label: 'Upcoming Product Launch VIP Alerts', desc: 'Early access notifications for pre-launch formulas', checked: true },
-          ].map((item, idx) => (
+          {notifSettings.map((item, idx) => (
             <label
               key={idx}
               className="p-3.5 bg-[#F2F4EE] border border-[rgba(18,22,15,0.06)] rounded-xl flex items-center justify-between cursor-pointer"
@@ -185,7 +201,12 @@ export default function SettingsPage() {
                 <p className="font-bold text-sm text-[#12160F] m-0">{item.label}</p>
                 <p className="text-[#586151] text-xs m-0 mt-0.5">{item.desc}</p>
               </div>
-              <input type="checkbox" defaultChecked={item.checked} className="accent-[#2E7D32] w-4 h-4 cursor-pointer" />
+              <input
+                type="checkbox"
+                checked={item.checked}
+                onChange={() => setNotifSettings(prev => prev.map((n, i) => i === idx ? { ...n, checked: !n.checked } : n))}
+                className="accent-[#2E7D32] w-4 h-4 cursor-pointer"
+              />
             </label>
           ))}
         </div>
@@ -194,12 +215,7 @@ export default function SettingsPage() {
       {/* ─── TAB 3: CONNECTED WEARABLES ──────────────────────────────────── */}
       {activeTab === 'devices' && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {[
-            { name: 'Apple HealthKit', icon: '🍎', status: 'Connected', syncTime: 'Synced 2m ago' },
-            { name: 'Garmin Connect', icon: '⌚', status: 'Connected', syncTime: 'Synced 15m ago' },
-            { name: 'Whoop Strap 4.0', icon: '⚡', status: 'Not Connected', syncTime: 'Pair via Bluetooth' },
-            { name: 'Oura Ring Gen 3', icon: '💍', status: 'Not Connected', syncTime: 'Connect Cloud API' },
-          ].map(device => (
+          {devices.map(device => (
             <div
               key={device.name}
               className="fluetas-card p-4 flex items-center justify-between"
@@ -211,13 +227,16 @@ export default function SettingsPage() {
                   <p className="text-[0.68rem] text-[#586151] m-0">{device.syncTime}</p>
                 </div>
               </div>
-              <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
-                device.status === 'Connected'
-                  ? 'bg-[#2E7D32]/10 text-[#2E7D32] border border-[#2E7D32]/20'
-                  : 'bg-[#F2F4EE] text-[#586151]'
-              }`}>
-                {device.status}
-              </span>
+              <button
+                onClick={() => toggleDevice(device.name)}
+                className={`text-xs font-bold px-3 py-1.5 rounded-full cursor-pointer transition-colors ${
+                  device.connected
+                    ? 'bg-[#EF4444]/10 border border-[#EF4444]/20 text-[#EF4444] hover:bg-[#EF4444]/20'
+                    : 'bg-[#2E7D32]/10 border border-[#2E7D32]/20 text-[#2E7D32] hover:bg-[#2E7D32]/20'
+                }`}
+              >
+                {device.connected ? 'Disconnect' : 'Connect'}
+              </button>
             </div>
           ))}
         </div>
@@ -243,9 +262,13 @@ export default function SettingsPage() {
               <p className="font-bold text-sm text-[#12160F] m-0">End-to-End Encryption Key</p>
               <p className="text-[#586151] text-xs m-0 mt-0.5">AES-256 client encryption for medical uploads</p>
             </div>
-            <span className="font-mono text-xs text-[#2E6DA4] bg-white px-2.5 py-1 rounded-lg border border-[rgba(18,22,15,0.10)] font-bold">
+            <button
+              onClick={() => { navigator.clipboard.writeText('KEY-9824-OK'); setRevokeToast('Encryption key copied to clipboard.'); setTimeout(() => setRevokeToast(null), 3000); }}
+              className="font-mono text-xs text-[#2E6DA4] bg-white px-2.5 py-1 rounded-lg border border-[rgba(18,22,15,0.10)] font-bold hover:bg-[#F2F4EE] cursor-pointer transition-colors"
+              title="Click to copy"
+            >
               KEY-9824-OK
-            </span>
+            </button>
           </div>
         </div>
       )}

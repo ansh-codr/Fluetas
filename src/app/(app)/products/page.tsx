@@ -19,6 +19,7 @@ export default function ProductsOrdersPage() {
   const [shopFilter, setShopFilter] = useState<'all' | 'live' | 'upcoming'>('all');
   const [selectedUpcoming, setSelectedUpcoming] = useState<ProductItem | null>(null);
   const [optinSuccess, setOptinSuccess] = useState(false);
+  const [cartToast, setCartToast] = useState<string | null>(null);
 
   const filteredProducts = mockProducts.filter(p => {
     if (shopFilter === 'live') return !p.isUpcoming;
@@ -31,8 +32,25 @@ export default function ProductsOrdersPage() {
     setOptinSuccess(false);
   };
 
+  const handleAddToCart = (productName: string) => {
+    setCartToast(`${productName} added to cart!`);
+    setTimeout(() => setCartToast(null), 3000);
+  };
+
+  const handleViewTracking = (trackingId: string) => {
+    setCartToast(`Tracking ID: ${trackingId} — courier portal integration coming soon.`);
+    setTimeout(() => setCartToast(null), 4000);
+  };
+
   return (
     <div className="flex flex-col gap-5 max-w-6xl mx-auto w-full">
+      {/* Cart / Action Toast */}
+      {cartToast && (
+        <div className="fixed top-20 right-6 z-50 bg-[#2E7D32] text-white font-bold text-xs py-2.5 px-4 rounded-xl shadow-2xl flex items-center gap-2 animate-slide-up">
+          <CheckCircle2 size={16} />
+          {cartToast}
+        </div>
+      )}
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
@@ -170,7 +188,7 @@ export default function ProductsOrdersPage() {
                       </button>
                     ) : (
                       <button
-                        onClick={() => alert(`Added ${product.name} to cart!`)}
+                        onClick={() => handleAddToCart(product.name)}
                         className="btn-primary py-1.5 px-4 text-xs font-bold cursor-pointer"
                       >
                         Add to Cart
@@ -233,7 +251,7 @@ export default function ProductsOrdersPage() {
               <div className="flex items-center justify-between text-xs text-[#586151] pt-1">
                 <span>Delivered to registered home address on {order.deliveryDate}</span>
                 <button
-                  onClick={() => alert(`Tracking info for ${order.trackingId}`)}
+                  onClick={() => handleViewTracking(order.trackingId)}
                   className="text-[#2E7D32] hover:underline font-semibold flex items-center gap-1 cursor-pointer"
                 >
                   View Invoice & Tracking <ExternalLink size={12} />
