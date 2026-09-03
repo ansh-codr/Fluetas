@@ -16,6 +16,7 @@ export type NotificationType =
   | 'consent_revoked'
   | 'followup_scheduled'
   | 'workout_completed'
+  | 'trainer_updated_your_plan'
   | 'hydration_target_reached'
   | 'general';
 

@@ -56,10 +56,10 @@ export default function SleepPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="font-['Outfit'] text-xl sm:text-2xl font-black text-[#E8EAF6] m-0">
+          <h1 className="font-['Outfit'] text-xl sm:text-2xl font-black text-[#12160F] m-0">
             SLEEP ARCHITECTURE &amp; RECOVERY
           </h1>
-          <p className="text-[#8B91B0] text-xs sm:text-sm m-0">
+          <p className="text-[#586151] text-xs sm:text-sm m-0">
             Biometric sleep tracking, HRV recovery, and stage analysis.
           </p>
         </div>
@@ -74,21 +74,21 @@ export default function SleepPage() {
 
       {/* Error */}
       {error && (
-        <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-xs">{error}</div>
+        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-600 text-xs">{error}</div>
       )}
 
       {/* Main Sleep Score Card */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Score Ring */}
-        <div className="fluetas-card p-6 flex flex-col items-center justify-center text-center bg-gradient-to-br from-[#13161F] to-[#1E1136] border-[#A78BFA]/30">
+        <div className="fluetas-card p-6 flex flex-col items-center justify-center text-center bg-white border border-[rgba(18,22,15,0.10)]">
           {loading ? (
-            <div className="w-36 h-36 rounded-full bg-[#1E2133] animate-pulse" />
+            <div className="w-36 h-36 rounded-full bg-[#F2F4EE] animate-pulse" />
           ) : !todaySleep ? (
             <div className="flex flex-col items-center gap-3">
               <p className="text-4xl">🌙</p>
-              <p className="font-['Outfit'] font-bold text-[#E8EAF6] text-sm m-0">No sleep logged</p>
-              <p className="text-[#8B91B0] text-xs m-0">Tap "Log Sleep" to record last night's rest</p>
-              <button onClick={() => setLogOpen(true)} className="mt-1 px-4 py-2 rounded-xl bg-[#A78BFA]/20 border border-[#A78BFA]/40 text-[#A78BFA] text-xs font-bold cursor-pointer hover:opacity-90 transition-all">
+              <p className="font-['Outfit'] font-bold text-[#12160F] text-sm m-0">No sleep logged</p>
+              <p className="text-[#586151] text-xs m-0">Tap &quot;Log Sleep&quot; to record last night&apos;s rest</p>
+              <button onClick={() => setLogOpen(true)} className="mt-1 px-4 py-2 rounded-xl bg-[#7A4E9E]/10 border border-[#7A4E9E]/20 text-[#7A4E9E] text-xs font-bold cursor-pointer hover:bg-[#7A4E9E]/20 transition-all">
                 Log Now
               </button>
             </div>
@@ -99,15 +99,16 @@ export default function SleepPage() {
                 max={100}
                 size={140}
                 strokeWidth={10}
-                color="#A78BFA"
-                trackColor="#3B0764"
-                label={`${sleepPct}`}
+                color="#7A4E9E"
+                trackColor="rgba(122,78,158,0.12)"
+                label={`${sleepPct}%`}
+                labelColor="#12160F"
               />
               <div className="mt-3">
-                <p className="font-['Outfit'] text-base font-bold text-[#E8EAF6] m-0">
+                <p className="font-['Outfit'] text-base font-bold text-[#12160F] m-0">
                   {todaySleep.durationHrs}h of {targetHrs}h
                 </p>
-                <p className="text-xs text-[#8B91B0] m-0 mt-0.5">
+                <p className="text-xs text-[#586151] m-0 mt-0.5">
                   {todaySleep.sleepTime} → {todaySleep.wakeTime}
                   {todaySleep.quality && <> · Quality: {todaySleep.quality}/10</>}
                 </p>
@@ -116,32 +117,32 @@ export default function SleepPage() {
           )}
         </div>
 
-        {/* Biometric Matrix (placeholder — connect to wearable in future) */}
+        {/* Biometric Matrix */}
         <div className="fluetas-card p-5 md:col-span-2 flex flex-col justify-between gap-4">
-          <span className="section-title">LAST NIGHT'S VITALS</span>
+          <span className="section-title">LAST NIGHT&apos;S VITALS</span>
           {!todaySleep ? (
             <div className="flex-1 flex items-center justify-center">
-              <p className="text-[#3A3F58] text-sm text-center">Log sleep to see vitals breakdown</p>
+              <p className="text-[#8A9482] text-sm text-center">Log sleep to see vitals breakdown</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
-                { label: 'Duration', value: `${todaySleep.durationHrs}h`, sub: `Goal: ${targetHrs}h`, color: '#A78BFA' },
-                { label: 'Quality', value: todaySleep.quality ? `${todaySleep.quality}/10` : 'Not rated', sub: todaySleep.quality && todaySleep.quality >= 7 ? 'Good' : 'Fair', color: '#38BDF8' },
-                { label: 'Bedtime', value: todaySleep.sleepTime, sub: 'Sleep onset', color: '#10B981' },
-                { label: 'Wake Time', value: todaySleep.wakeTime, sub: 'Rise time', color: '#FBBF24' },
+                { label: 'Duration', value: `${todaySleep.durationHrs}h`, sub: `Goal: ${targetHrs}h`, color: '#7A4E9E' },
+                { label: 'Quality', value: todaySleep.quality ? `${todaySleep.quality}/10` : 'Not rated', sub: todaySleep.quality && todaySleep.quality >= 7 ? 'Good' : 'Fair', color: '#2E6DA4' },
+                { label: 'Bedtime', value: todaySleep.sleepTime, sub: 'Sleep onset', color: '#2E7D32' },
+                { label: 'Wake Time', value: todaySleep.wakeTime, sub: 'Rise time', color: '#D97706' },
               ].map(item => (
-                <div key={item.label} className="p-3 bg-[#0B0D14] border border-[#1E2133] rounded-xl">
-                  <span className="text-[0.65rem] text-[#8B91B0] block mb-1">{item.label}</span>
+                <div key={item.label} className="p-3 bg-[#F2F4EE] border border-[rgba(18,22,15,0.06)] rounded-xl">
+                  <span className="text-[0.65rem] text-[#586151] block mb-1">{item.label}</span>
                   <p className="font-['Outfit'] font-bold text-base m-0" style={{ color: item.color }}>{item.value}</p>
-                  <span className="text-[0.65rem] text-[#8B91B0]">{item.sub}</span>
+                  <span className="text-[0.65rem] text-[#586151]">{item.sub}</span>
                 </div>
               ))}
             </div>
           )}
 
           {/* Connect wearable CTA */}
-          <div className="p-3 bg-[#A78BFA]/10 border border-[#A78BFA]/30 rounded-xl text-xs text-[#A78BFA] flex items-center justify-between gap-2">
+          <div className="p-3 bg-[#7A4E9E]/10 border border-[#7A4E9E]/20 rounded-xl text-xs text-[#7A4E9E] flex items-center justify-between gap-2">
             <span>📡 Connect a wearable for automatic HRV, RHR &amp; sleep stage tracking.</span>
             <span className="text-[0.65rem] opacity-60 shrink-0">Coming soon</span>
           </div>
@@ -152,24 +153,24 @@ export default function SleepPage() {
       <div className="fluetas-card p-4 sm:p-5">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <TrendingUp size={16} className="text-[#A78BFA]" />
+            <TrendingUp size={16} className="text-[#7A4E9E]" />
             <span className="section-title">7-DAY SLEEP DURATION TREND</span>
           </div>
           {weeklyAvg > 0 && (
-            <span className="text-xs text-[#A78BFA] font-bold">Average: {weeklyAvg}h / night</span>
+            <span className="text-xs text-[#7A4E9E] font-bold">Average: {weeklyAvg}h / night</span>
           )}
         </div>
         <div className="h-44 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={weeklyChartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1E2133" vertical={false} />
-              <XAxis dataKey="day" stroke="#8B91B0" fontSize={11} tickLine={false} axisLine={false} />
-              <YAxis stroke="#8B91B0" fontSize={11} tickLine={false} axisLine={false} unit="h" domain={[0, 10]} />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(18,22,15,0.08)" vertical={false} />
+              <XAxis dataKey="day" stroke="#8A9482" fontSize={11} tickLine={false} axisLine={false} />
+              <YAxis stroke="#8A9482" fontSize={11} tickLine={false} axisLine={false} unit="h" domain={[0, 10]} />
               <Tooltip
-                contentStyle={{ backgroundColor: '#13161F', borderColor: '#1E2133', borderRadius: '8px', color: '#fff', fontSize: '12px' }}
+                contentStyle={{ backgroundColor: '#FFFFFF', borderColor: 'rgba(18,22,15,0.15)', borderRadius: '12px', color: '#12160F', fontSize: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
                 formatter={(val: any) => [`${val || 0}h`, 'Duration']}
               />
-              <Bar dataKey="duration" name="Sleep (hrs)" fill="#A78BFA" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="duration" name="Sleep (hrs)" fill="#7A4E9E" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -177,53 +178,53 @@ export default function SleepPage() {
 
       {/* Log Sleep Modal */}
       {logOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-[#13161F] border border-[#1E2133] rounded-2xl p-6 max-w-sm w-full shadow-2xl relative animate-slide-up">
-            <button onClick={() => setLogOpen(false)} className="absolute top-4 right-4 text-[#8B91B0] hover:text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+          <div className="bg-white border border-[rgba(18,22,15,0.15)] rounded-2xl p-6 max-w-sm w-full shadow-2xl relative animate-slide-up">
+            <button onClick={() => setLogOpen(false)} className="absolute top-4 right-4 text-[#586151] hover:text-[#12160F]">
               <X size={18} />
             </button>
-            <h3 className="text-lg font-bold text-[#E8EAF6] mb-4 font-['Outfit'] flex items-center gap-2">
-              <Moon size={18} className="text-[#A78BFA]" />
-              Log Last Night's Sleep
+            <h3 className="text-lg font-bold text-[#12160F] mb-4 font-['Outfit'] flex items-center gap-2">
+              <Moon size={18} className="text-[#7A4E9E]" />
+              Log Last Night&apos;s Sleep
             </h3>
             <div className="flex flex-col gap-3 text-xs">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[#8B91B0] font-semibold mb-1.5">I slept at</label>
+                  <label className="block text-[#586151] font-semibold mb-1.5">I slept at</label>
                   <input
                     type="time"
                     value={sleepTime}
                     onChange={e => setSleepTime(e.target.value)}
-                    className="w-full bg-[#0B0D14] border border-[#1E2133] rounded-xl p-2.5 text-[#E8EAF6] focus:border-[#A78BFA] focus:outline-none transition-colors"
+                    className="w-full bg-[#F2F4EE] border border-[rgba(18,22,15,0.15)] rounded-xl p-2.5 text-[#12160F] focus:border-[#7A4E9E] focus:outline-none transition-colors"
                   />
                 </div>
                 <div>
-                  <label className="block text-[#8B91B0] font-semibold mb-1.5">I woke up at</label>
+                  <label className="block text-[#586151] font-semibold mb-1.5">I woke up at</label>
                   <input
                     type="time"
                     value={wakeTime}
                     onChange={e => setWakeTime(e.target.value)}
-                    className="w-full bg-[#0B0D14] border border-[#1E2133] rounded-xl p-2.5 text-[#E8EAF6] focus:border-[#A78BFA] focus:outline-none transition-colors"
+                    className="w-full bg-[#F2F4EE] border border-[rgba(18,22,15,0.15)] rounded-xl p-2.5 text-[#12160F] focus:border-[#7A4E9E] focus:outline-none transition-colors"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[#8B91B0] font-semibold mb-2">
-                  Sleep Quality: <span className="text-[#A78BFA] font-bold">{quality}/10</span>
+                <label className="block text-[#586151] font-semibold mb-2">
+                  Sleep Quality: <span className="text-[#7A4E9E] font-bold">{quality}/10</span>
                 </label>
                 <input
                   type="range" min={1} max={10} value={quality}
                   onChange={e => setQuality(Number(e.target.value))}
-                  className="w-full accent-[#A78BFA]"
+                  className="w-full accent-[#7A4E9E]"
                 />
-                <div className="flex justify-between text-[#3A3F58] text-[0.6rem] mt-0.5">
+                <div className="flex justify-between text-[#8A9482] text-[0.6rem] mt-0.5">
                   <span>Poor</span>
                   <span>Excellent</span>
                 </div>
               </div>
 
-              {error && <p className="text-red-400 text-[0.7rem]">{error}</p>}
+              {error && <p className="text-red-500 text-[0.7rem]">{error}</p>}
 
               <button
                 onClick={handleLog}

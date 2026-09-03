@@ -95,9 +95,9 @@ export default function NutritionPage() {
   }));
 
   const macros = [
-    { name: 'Protein', current: totals.protein, target: proteinTarget, unit: 'g', color: '#3B82F6' },
-    { name: 'Carbohydrates', current: totals.carbs, target: carbsTarget, unit: 'g', color: '#22C55E' },
-    { name: 'Fats', current: totals.fat, target: fatTarget, unit: 'g', color: '#F59E0B' },
+    { name: 'Protein', current: totals.protein, target: proteinTarget, unit: 'g', color: '#2E6DA4' },
+    { name: 'Carbohydrates', current: totals.carbs, target: carbsTarget, unit: 'g', color: '#2E7D32' },
+    { name: 'Fats', current: totals.fat, target: fatTarget, unit: 'g', color: '#D97706' },
   ];
 
   return (
@@ -105,10 +105,10 @@ export default function NutritionPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="font-['Outfit'] text-xl sm:text-2xl font-black text-[#E8EAF6] m-0">
+          <h1 className="font-['Outfit'] text-xl sm:text-2xl font-black text-[#12160F] m-0">
             DAILY NUTRITION &amp; MACRONUTRIENTS
           </h1>
-          <p className="text-[#8B91B0] text-xs sm:text-sm m-0">
+          <p className="text-[#586151] text-xs sm:text-sm m-0">
             Real-time calorie balancing, protein pacing, and micronutrient density.
           </p>
         </div>
@@ -123,14 +123,14 @@ export default function NutritionPage() {
 
       {/* Error */}
       {error && (
-        <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-xs">{error}</div>
+        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-600 text-xs">{error}</div>
       )}
 
       {/* Macro Rings */}
       <div className="fluetas-card p-5">
         <div className="flex items-center justify-between mb-4">
-          <span className="section-title">TODAY'S MACRO BREAKDOWN</span>
-          <span className="text-xs text-[#10B981] font-semibold">
+          <span className="section-title">TODAY&apos;S MACRO BREAKDOWN</span>
+          <span className="text-xs text-[#2E7D32] font-semibold">
             {totals.calories} / {calorieTarget} kcal ({caloriePct}%)
           </span>
         </div>
@@ -138,33 +138,34 @@ export default function NutritionPage() {
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="h-24 bg-[#1E2133] rounded-xl animate-pulse" />
+              <div key={i} className="h-24 bg-[#F2F4EE] rounded-xl animate-pulse" />
             ))}
           </div>
         ) : totals.calories === 0 ? (
           <div className="py-8 text-center">
             <p className="text-4xl mb-2">🥗</p>
-            <p className="font-semibold text-[#E8EAF6] text-sm m-0">No meals logged yet today</p>
-            <p className="text-[#8B91B0] text-xs m-0 mt-1">Tap "Log Meal" to start tracking your nutrition.</p>
+            <p className="font-semibold text-[#12160F] text-sm m-0">No meals logged yet today</p>
+            <p className="text-[#586151] text-xs m-0 mt-1">Tap &quot;Log Meal&quot; to start tracking your nutrition.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {macros.map(macro => {
               const pct = Math.round((macro.current / Math.max(1, macro.target)) * 100);
               return (
-                <div key={macro.name} className="p-4 rounded-xl bg-[#0B0D14] border border-[#1E2133] flex items-center gap-4">
+                <div key={macro.name} className="p-4 rounded-xl bg-[#F2F4EE] border border-[rgba(18,22,15,0.06)] flex items-center gap-4">
                   <CircleProgress
                     score={macro.current}
                     max={macro.target}
                     size={70}
                     strokeWidth={6}
                     color={macro.color}
-                    trackColor={`${macro.color}20`}
+                    trackColor="rgba(18,22,15,0.08)"
                     label={`${pct}%`}
+                    labelColor="#12160F"
                   />
                   <div className="flex-1 min-w-0">
-                    <p className="font-['Outfit'] font-bold text-sm text-[#E8EAF6] m-0">{macro.name}</p>
-                    <p className="text-xs text-[#8B91B0] m-0 mt-0.5">
+                    <p className="font-['Outfit'] font-bold text-sm text-[#12160F] m-0">{macro.name}</p>
+                    <p className="text-xs text-[#586151] m-0 mt-0.5">
                       {macro.current}{macro.unit} of {macro.target}{macro.unit}
                     </p>
                     <div className="mt-2">
@@ -182,19 +183,21 @@ export default function NutritionPage() {
       <div className="fluetas-card p-4 sm:p-5">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <TrendingUp size={16} className="text-[#10B981]" />
+            <TrendingUp size={16} className="text-[#2E7D32]" />
             <span className="section-title">7-DAY INTAKE TREND</span>
           </div>
-          <span className="text-xs text-[#8B91B0]">Target: {calorieTarget} kcal / day</span>
+          <span className="text-xs text-[#586151]">Target: {calorieTarget} kcal / day</span>
         </div>
         <div className="h-48 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={weeklyChartData} barGap={4}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1E2133" vertical={false} />
-              <XAxis dataKey="day" stroke="#8B91B0" fontSize={11} tickLine={false} axisLine={false} />
-              <YAxis stroke="#8B91B0" fontSize={11} tickLine={false} axisLine={false} />
-              <Tooltip contentStyle={{ backgroundColor: '#13161F', borderColor: '#1E2133', borderRadius: '8px', color: '#fff', fontSize: '12px' }} />
-              <Bar dataKey="calories" name="Calories (kcal)" fill="#10B981" radius={[4, 4, 0, 0]} />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(18,22,15,0.08)" vertical={false} />
+              <XAxis dataKey="day" stroke="#8A9482" fontSize={11} tickLine={false} axisLine={false} />
+              <YAxis stroke="#8A9482" fontSize={11} tickLine={false} axisLine={false} />
+              <Tooltip
+                contentStyle={{ backgroundColor: '#FFFFFF', borderColor: 'rgba(18,22,15,0.15)', borderRadius: '12px', color: '#12160F', fontSize: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
+              />
+              <Bar dataKey="calories" name="Calories (kcal)" fill="#2E7D32" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -202,39 +205,39 @@ export default function NutritionPage() {
 
       {/* Meal Timeline */}
       <div className="flex flex-col gap-3">
-        <span className="section-title">TODAY'S MEAL TIMELINE ({meals.length})</span>
+        <span className="section-title">TODAY&apos;S MEAL TIMELINE ({meals.length})</span>
 
         {meals.length === 0 && !loading && (
           <div className="fluetas-card p-6 text-center">
-            <p className="text-[#3A3F58] text-sm">No meals logged today. Tap "Log Meal" to start.</p>
+            <p className="text-[#8A9482] text-sm">No meals logged today. Tap &quot;Log Meal&quot; to start.</p>
           </div>
         )}
 
         {meals.map(m => (
           <div
             key={m.id}
-            className="fluetas-card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-[#2A3050] transition-colors"
+            className="fluetas-card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:shadow-md transition-shadow"
           >
             <div className="flex items-center gap-3.5">
-              <div className="w-10 h-10 rounded-xl bg-[#22C55E]/15 border border-[#22C55E]/30 flex items-center justify-center text-lg text-[#22C55E] shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-[#2E7D32]/10 border border-[#2E7D32]/20 flex items-center justify-center text-lg text-[#2E7D32] shrink-0">
                 <Utensils size={18} />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="font-['Outfit'] text-sm sm:text-base font-bold text-[#E8EAF6] m-0">
+                  <h3 className="font-['Outfit'] text-sm sm:text-base font-bold text-[#12160F] m-0">
                     {m.mealType}
                   </h3>
                 </div>
-                <p className="text-xs text-[#8B91B0] m-0 mt-1">
+                <p className="text-xs text-[#586151] m-0 mt-1">
                   {m.foodItems.join(' · ')}
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-4 text-xs font-semibold self-end sm:self-auto">
-              {m.calories != null && <span className="text-[#E8EAF6]">{m.calories} kcal</span>}
-              {m.macros?.protein != null && <span className="text-[#3B82F6]">P: {m.macros.protein}g</span>}
-              {m.macros?.carbs != null && <span className="text-[#22C55E]">C: {m.macros.carbs}g</span>}
-              {m.macros?.fat != null && <span className="text-[#F59E0B]">F: {m.macros.fat}g</span>}
+              {m.calories != null && <span className="text-[#12160F] font-bold">{m.calories} kcal</span>}
+              {m.macros?.protein != null && <span className="text-[#2E6DA4]">P: {m.macros.protein}g</span>}
+              {m.macros?.carbs != null && <span className="text-[#2E7D32]">C: {m.macros.carbs}g</span>}
+              {m.macros?.fat != null && <span className="text-[#D97706]">F: {m.macros.fat}g</span>}
             </div>
           </div>
         ))}
@@ -242,34 +245,34 @@ export default function NutritionPage() {
 
       {/* Log Meal Modal */}
       {logMealOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-[#13161F] border border-[#1E2133] rounded-2xl p-6 max-w-md w-full shadow-2xl relative animate-slide-up max-h-[90vh] overflow-y-auto">
-            <button onClick={() => setLogMealOpen(false)} className="absolute top-4 right-4 text-[#8B91B0] hover:text-white cursor-pointer">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+          <div className="bg-white border border-[rgba(18,22,15,0.15)] rounded-2xl p-6 max-w-md w-full shadow-2xl relative animate-slide-up max-h-[90vh] overflow-y-auto">
+            <button onClick={() => setLogMealOpen(false)} className="absolute top-4 right-4 text-[#586151] hover:text-[#12160F] cursor-pointer">
               <X size={18} />
             </button>
-            <h3 className="text-lg font-bold text-[#E8EAF6] mb-4 font-['Outfit'] flex items-center gap-2">
-              <Utensils size={18} className="text-[#22C55E]" />
+            <h3 className="text-lg font-bold text-[#12160F] mb-4 font-['Outfit'] flex items-center gap-2">
+              <Utensils size={18} className="text-[#2E7D32]" />
               Log Meal &amp; Macros
             </h3>
             <form onSubmit={handleAddMeal} className="flex flex-col gap-3 text-xs">
               <div>
-                <label className="block text-[#8B91B0] font-semibold mb-1">Meal Type</label>
+                <label className="block text-[#586151] font-semibold mb-1">Meal Type</label>
                 <select
                   value={mealType}
                   onChange={e => setMealType(e.target.value as MealType)}
-                  className="w-full bg-[#0B0D14] border border-[#1E2133] rounded-lg p-2.5 text-[#E8EAF6] focus:border-[#22C55E] focus:outline-none"
+                  className="w-full bg-[#F2F4EE] border border-[rgba(18,22,15,0.15)] rounded-lg p-2.5 text-[#12160F] focus:border-[#2E7D32] focus:outline-none"
                 >
                   {MEAL_TYPES.map(t => <option key={t}>{t}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-[#8B91B0] font-semibold mb-1">Food Items <span className="text-[#3A3F58]">(comma separated)</span></label>
+                <label className="block text-[#586151] font-semibold mb-1">Food Items <span className="text-[#8A9482]">(comma separated)</span></label>
                 <input
                   required
                   placeholder="e.g. Grilled salmon, Steamed quinoa, Asparagus"
                   value={foodItems}
                   onChange={e => setFoodItems(e.target.value)}
-                  className="w-full bg-[#0B0D14] border border-[#1E2133] rounded-lg p-2.5 text-[#E8EAF6] focus:border-[#22C55E] focus:outline-none"
+                  className="w-full bg-[#F2F4EE] border border-[rgba(18,22,15,0.15)] rounded-lg p-2.5 text-[#12160F] focus:border-[#2E7D32] focus:outline-none"
                 />
               </div>
               <div className="grid grid-cols-4 gap-2">
@@ -280,20 +283,20 @@ export default function NutritionPage() {
                   { label: 'Fats (g)', value: fats, setter: setFats, placeholder: 'g' },
                 ].map(f => (
                   <div key={f.label}>
-                    <label className="block text-[#8B91B0] font-semibold mb-1">{f.label}</label>
+                    <label className="block text-[#586151] font-semibold mb-1">{f.label}</label>
                     <input
                       type="number"
                       min={0}
                       value={f.value}
                       onChange={e => f.setter(e.target.value)}
                       placeholder={f.placeholder}
-                      className="w-full bg-[#0B0D14] border border-[#1E2133] rounded-lg p-2 text-[#E8EAF6] focus:border-[#22C55E] focus:outline-none"
+                      className="w-full bg-[#F2F4EE] border border-[rgba(18,22,15,0.15)] rounded-lg p-2 text-[#12160F] focus:border-[#2E7D32] focus:outline-none"
                     />
                   </div>
                 ))}
               </div>
               {(formError || error) && (
-                <p className="text-red-400 text-[0.7rem]">{formError || error}</p>
+                <p className="text-red-500 text-[0.7rem]">{formError || error}</p>
               )}
               <button
                 type="submit"

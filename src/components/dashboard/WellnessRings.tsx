@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import CircleProgress from '@/components/ui/CircleProgress';
 import { useWellnessScore } from '@/hooks/useWellnessScore';
-import { AnimatedNumber, Skeleton } from '@/components/motion/MotionUtils';
+import { AnimatedNumber, Skeleton, StaggerContainer, StaggerItem } from '@/components/motion/MotionUtils';
 import {
   Activity,
   Dumbbell,
@@ -13,16 +14,25 @@ import {
   Info,
   RefreshCw,
   TrendingUp,
-  Sparkles,
+  ArrowRight,
 } from 'lucide-react';
 
 const componentIcons: Record<string, React.ReactNode> = {
-  'Overall Wellness': <Activity size={16} className="text-[#2E7D32]" />,
-  'Training': <Dumbbell size={16} className="text-[#2E7D32]" />,
-  'Hydration': <Droplets size={16} className="text-[#2E6DA4]" />,
-  'Sleep': <Moon size={16} className="text-[#7A4E9E]" />,
-  'Cycle & Recovery': <Zap size={16} className="text-[#D9622B]" />,
-  'Recovery': <Zap size={16} className="text-[#D9622B]" />,
+  'Overall Wellness': <Activity size={15} className="text-[#2E7D32]" />,
+  'Training': <Dumbbell size={15} className="text-[#2E7D32]" />,
+  'Hydration': <Droplets size={15} className="text-[#2E6DA4]" />,
+  'Sleep': <Moon size={15} className="text-[#7A4E9E]" />,
+  'Cycle & Recovery': <Zap size={15} className="text-[#D9622B]" />,
+  'Recovery': <Zap size={15} className="text-[#D9622B]" />,
+};
+
+const drillDownRoutes: Record<string, string> = {
+  'Overall Wellness': '/timeline',
+  'Training': '/workouts',
+  'Hydration': '/hydration',
+  'Sleep': '/sleep',
+  'Cycle & Recovery': '/cycle-tracker',
+  'Recovery': '/cycle-tracker',
 };
 
 export default function WellnessRings() {
@@ -38,7 +48,7 @@ export default function WellnessRings() {
           {result && !result.insufficientData && (
             <span className="flex items-center gap-1 text-[0.65rem] font-bold text-[#2E7D32] bg-[#2E7D32]/10 px-2 py-0.5 rounded-full border border-[#2E7D32]/20">
               <TrendingUp size={11} />
-              +6% vs last week
+              Telemetry Live
             </span>
           )}
         </div>
@@ -80,7 +90,7 @@ export default function WellnessRings() {
                   <p className="font-bold m-0 text-xs" style={{ color: c.color }}>
                     {c.score !== null ? (
                       <>
-                        <AnimatedNumber value={c.score} duration={700} />/100
+                        <AnimatedNumber value={c.score} duration={500} />/100
                       </>
                     ) : (
                       'No data'
@@ -138,51 +148,61 @@ export default function WellnessRings() {
         </div>
       )}
 
-      {/* Real Wellness Snapshot Grid */}
+      {/* Real Interactive Wellness Snapshot Grid with Drill-Down Navigation */}
       {!loading && !error && result && !result.insufficientData && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-          {result.components.map((item, i) => (
-            <div
-              key={item.label}
-              id={`wellness-ring-${item.label.toLowerCase().replace(/\s/g, '-')}`}
-              className="fluetas-card-interactive p-3.5 sm:p-4 flex flex-col items-center gap-2 bg-[#FFFFFF] animate-slide-up"
-              style={{ animationDelay: `${i * 50}ms`, animationFillMode: 'both' }}
-            >
-              <div className="flex items-center justify-between w-full">
-                <div className="p-1 rounded-md bg-[#FAFAF6]">
-                  {componentIcons[item.label] || <Activity size={14} className="text-[#2E7D32]" />}
-                </div>
-                <span className="text-[#586151] text-[0.6875rem] font-semibold truncate max-w-[85px]">
-                  {item.label}
-                </span>
-                <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: item.color }} />
-              </div>
+        <StaggerContainer className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          {result.components.map((item, i) => {
+            const route = drillDownRoutes[item.label] || '/dashboard';
+            const tooltipLabel = item.score !== null ? `${item.label}: ${item.score}/100` : `${item.label}: No logs yet`;
 
-              <CircleProgress
-                score={item.score ?? 0}
-                max={100}
-                size={72}
-                strokeWidth={6}
-                color={item.color}
-                trackColor={`${item.color}18`}
-                label={item.score !== null ? `${item.score}` : '—'}
-              />
+            return (
+              <StaggerItem key={item.label} index={i}>
+                <Link
+                  href={route}
+                  id={`wellness-ring-${item.label.toLowerCase().replace(/\s/g, '-')}`}
+                  className="fluetas-card-interactive p-3.5 sm:p-4 flex flex-col items-center gap-2 bg-[#FFFFFF] group no-underline transition-all hover:border-[#2E7D32]/40 hover:shadow-md block h-full"
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <div className="p-1 rounded-md bg-[#FAFAF6] group-hover:bg-[#F2F4EE] transition-colors">
+                      {componentIcons[item.label] || <Activity size={14} className="text-[#2E7D32]" />}
+                    </div>
+                    <span className="text-[#586151] text-[0.6875rem] font-semibold truncate max-w-[85px] group-hover:text-[#12160F]">
+                      {item.label}
+                    </span>
+                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: item.color }} />
+                  </div>
 
-              <div className="text-center -mt-0.5">
-                <p className="text-[#8A9482] text-[0.62rem] m-0 tracking-wider font-mono">
-                  <AnimatedNumber value={item.score ?? 0} duration={800} />/100
-                </p>
-              </div>
+                  <CircleProgress
+                    score={item.score ?? 0}
+                    max={100}
+                    size={72}
+                    strokeWidth={6}
+                    color={item.color}
+                    trackColor={`${item.color}18`}
+                    label={item.score !== null ? `${item.score}` : '—'}
+                    tooltipText={tooltipLabel}
+                  />
 
-              <div className="text-center w-full">
-                <p className="text-xs font-bold m-0 leading-tight font-['Outfit'] truncate" style={{ color: item.color }}>
-                  {item.status}
-                </p>
-                <p className="text-[#586151] text-[0.62rem] m-0 mt-0.5 truncate">{item.subtext}</p>
-              </div>
-            </div>
-          ))}
-        </div>
+                  <div className="text-center -mt-0.5">
+                    <p className="text-[#8A9482] text-[0.62rem] m-0 tracking-wider font-mono">
+                      <AnimatedNumber value={item.score ?? 0} duration={500} />/100
+                    </p>
+                  </div>
+
+                  <div className="text-center w-full mt-auto">
+                    <p className="text-xs font-bold m-0 leading-tight font-['Outfit'] truncate" style={{ color: item.color }}>
+                      {item.status}
+                    </p>
+                    <p className="text-[#586151] text-[0.62rem] m-0 mt-0.5 truncate flex items-center justify-center gap-0.5">
+                      {item.subtext}
+                      <ArrowRight size={10} className="opacity-0 group-hover:opacity-100 transition-opacity text-[#2E7D32]" />
+                    </p>
+                  </div>
+                </Link>
+              </StaggerItem>
+            );
+          })}
+        </StaggerContainer>
       )}
     </section>
   );

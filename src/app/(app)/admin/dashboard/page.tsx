@@ -23,6 +23,8 @@ import {
   Clock,
 } from 'lucide-react';
 
+import { AnimatedNumber } from '@/components/motion/MotionUtils';
+
 export default function AdminDashboardPage() {
   const { user } = useAuth();
   const [metrics, setMetrics] = useState<AdminPlatformMetrics | null>(null);
@@ -81,10 +83,10 @@ export default function AdminDashboardPage() {
       {/* Metrics Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: 'Total Registered Users', value: metrics?.totalCustomers.toString() || '128', color: '#10B981', icon: Users, sub: `${metrics?.activeCustomers || 94} active members` },
-          { label: 'Verified Doctors', value: metrics?.verifiedDoctors.toString() || '6', color: '#38BDF8', icon: Stethoscope, sub: `${metrics?.pendingDoctorVerifications || 2} pending approval` },
-          { label: 'Platform Consultations', value: metrics?.totalConsultations.toString() || '42', color: '#FBBF24', icon: Calendar, sub: 'Total telehealth sessions' },
-          { label: 'Audit Trail Events', value: metrics?.auditLogsCount.toString() || '312', color: '#A78BFA', icon: Activity, sub: 'Immutable compliance log' },
+          { label: 'Total Registered Users', num: metrics?.totalCustomers || 128, color: '#10B981', icon: Users, sub: `${metrics?.activeCustomers || 94} active members` },
+          { label: 'Verified Doctors', num: metrics?.verifiedDoctors || 6, color: '#38BDF8', icon: Stethoscope, sub: `${metrics?.pendingDoctorVerifications || 2} pending approval` },
+          { label: 'Platform Consultations', num: metrics?.totalConsultations || 42, color: '#FBBF24', icon: Calendar, sub: 'Total telehealth sessions' },
+          { label: 'Audit Trail Events', num: metrics?.auditLogsCount || 312, color: '#A78BFA', icon: Activity, sub: 'Immutable compliance log' },
         ].map(stat => {
           const Icon = stat.icon;
           return (
@@ -100,7 +102,7 @@ export default function AdminDashboardPage() {
               </div>
               <div>
                 <p className="font-['Outfit'] text-2xl font-black m-0" style={{ color: stat.color }}>
-                  {stat.value}
+                  <AnimatedNumber value={stat.num} duration={500} />
                 </p>
                 <p className="text-[0.65rem] text-[#8B91B0] m-0 mt-0.5">{stat.sub}</p>
               </div>

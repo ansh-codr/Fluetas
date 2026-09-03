@@ -9,6 +9,7 @@ import {
   collection,
   getDocs,
   query,
+  where,
   orderBy,
   limit,
   Timestamp,
@@ -79,4 +80,115 @@ export async function getRecentCycleEntries(
 export async function deleteCycleEntry(userId: string, entryId: string): Promise<void> {
   if (!db) throw new Error('Firebase not configured');
   await deleteDoc(doc(db, 'cycleLogs', userId, 'entries', entryId));
+}
+
+export interface CycleDayTrend {
+  date: string;
+  dayLabel: string;
+  flow?: FlowLevel;
+  mood?: MoodLevel;
+  energy?: EnergyLevel;
+  symptomCount: number;
+  isPeriodDay: boolean;
+  isLogged: boolean;
+}
+
+export interface CycleTrendSummary {
+  days: CycleDayTrend[];
+  totalLoggedDays: number;
+  periodDaysCount: number;
+  flowCounts: Record<string, number>;
+  moodCounts: Record<string, number>;
+  topSymptoms: { symptom: string; count: number }[];
+}
+
+export async function getCycleTrend(
+  userId: string,
+  days = 30
+): Promise<CycleTrendSummary> {
+  if (!db) {
+    return {
+      days: [],
+      totalLoggedDays: 0,
+      periodDaysCount: 0,
+      flowCounts: {},
+      moodCounts: {},
+      topSymptoms: [],
+    };
+  }
+
+  const numDays = Math.min(Math.max(days, 1), 60);
+  const dates: string[] = [];
+  const dateObjs: Date[] = [];
+
+  for (let i = numDays - 1; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    dates.push(d.toISOString().split('T')[0]);
+    dateObjs.push(d);
+  }
+
+  const entries = await getRecentCycleEntries(userId, numDays * 2);
+  const byDate: Record<string, CycleEntry> = {};
+  entries.forEach(e => {
+    byDate[e.date] = e;
+  });
+
+  const flowCounts: Record<string, number> = {};
+  const moodCounts: Record<string, number> = {};
+  const symptomFrequency: Record<string, number> = {};
+
+  const dayTrends: CycleDayTrend[] = dates.map((date, idx) => {
+    const entry = byDate[date];
+    const dObj = dateObjs[idx];
+    const dayLabel = dObj.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+
+    if (entry) {
+      if (entry.flow && entry.flow !== 'None') {
+        flowCounts[entry.flow] = (flowCounts[entry.flow] || 0) + 1;
+      }
+      if (entry.mood) {
+        moodCounts[entry.mood] = (moodCounts[entry.mood] || 0) + 1;
+      }
+      entry.symptoms?.forEach(sym => {
+        symptomFrequency[sym] = (symptomFrequency[sym] || 0) + 1;
+      });
+    }
+
+    const hasFlow = entry?.flow && entry.flow !== 'None';
+    const isPeriodDay = Boolean(entry?.isPeriodStart || (hasFlow && entry?.flow !== 'Spotting'));
+
+    return {
+      date,
+      dayLabel,
+      flow: entry?.flow,
+      mood: entry?.mood,
+      energy: entry?.energy,
+      symptomCount: entry?.symptoms?.length ?? 0,
+      isPeriodDay,
+      isLogged: Boolean(entry),
+    };
+  });
+
+  const totalLoggedDays = dayTrends.filter(d => d.isLogged).length;
+  const periodDaysCount = dayTrends.filter(d => d.isPeriodDay).length;
+
+  const topSymptoms = Object.entries(symptomFrequency)
+    .map(([symptom, count]) => ({ symptom, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+
+  return {
+    days: dayTrends,
+    totalLoggedDays,
+    periodDaysCount,
+    flowCounts,
+    moodCounts,
+    topSymptoms,
+  };
+}
+
+/** Generic trend function matching standard prompt interface */
+export async function getTrend(userId: string, metric = 'cycle', days = 30) {
+  return getCycleTrend(userId, days);
 }

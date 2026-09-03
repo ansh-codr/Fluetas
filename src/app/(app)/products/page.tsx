@@ -36,22 +36,22 @@ export default function ProductsOrdersPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="font-['Outfit'] text-xl sm:text-2xl font-black text-[#E8EAF6] m-0">
+          <h1 className="font-['Outfit'] text-xl sm:text-2xl font-black text-[#12160F] m-0">
             FLUETAS STORE & ORDERS
           </h1>
-          <p className="text-[#8B91B0] text-xs sm:text-sm m-0">
+          <p className="text-[#586151] text-xs sm:text-sm m-0">
             Superfruit-infused functional formulas for cellular recovery, gut vitality, and athletic output.
           </p>
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex items-center bg-[#13161F] p-1 rounded-xl border border-[#1E2133] self-start sm:self-auto">
+        <div className="flex items-center bg-[#F2F4EE] p-1 rounded-xl border border-[rgba(18,22,15,0.10)] self-start sm:self-auto">
           <button
             onClick={() => setTab('shop')}
             className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               tab === 'shop'
-                ? 'bg-gradient-to-r from-[#10B981] to-[#059669] text-white shadow-[0_0_10px_rgba(16,185,129,0.3)]'
-                : 'text-[#8B91B0] hover:text-white'
+                ? 'bg-[#2E7D32] text-white shadow-sm'
+                : 'text-[#586151] hover:text-[#12160F]'
             }`}
           >
             <ShoppingBag size={14} />
@@ -61,8 +61,8 @@ export default function ProductsOrdersPage() {
             onClick={() => setTab('orders')}
             className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               tab === 'orders'
-                ? 'bg-gradient-to-r from-[#10B981] to-[#059669] text-white shadow-[0_0_10px_rgba(16,185,129,0.3)]'
-                : 'text-[#8B91B0] hover:text-white'
+                ? 'bg-[#2E7D32] text-white shadow-sm'
+                : 'text-[#586151] hover:text-[#12160F]'
             }`}
           >
             <Package size={14} />
@@ -76,7 +76,7 @@ export default function ProductsOrdersPage() {
         <div className="flex flex-col gap-4">
           {/* Filter Sub-row */}
           <div className="flex items-center justify-between gap-3 flex-wrap">
-            <div className="flex items-center gap-1.5 bg-[#13161F] p-1 rounded-xl border border-[#1E2133]">
+            <div className="flex items-center gap-1.5 bg-[#F2F4EE] p-1 rounded-xl border border-[rgba(18,22,15,0.10)]">
               {[
                 { id: 'all', label: 'All Catalog' },
                 { id: 'live', label: 'In Stock & Available' },
@@ -87,8 +87,8 @@ export default function ProductsOrdersPage() {
                   onClick={() => setShopFilter(f.id as any)}
                   className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                     shopFilter === f.id
-                      ? 'bg-[#10B981] text-black font-bold'
-                      : 'text-[#8B91B0] hover:text-white'
+                      ? 'bg-white text-[#12160F] font-bold shadow-sm'
+                      : 'text-[#586151] hover:text-[#12160F]'
                   }`}
                 >
                   {f.label}
@@ -96,7 +96,7 @@ export default function ProductsOrdersPage() {
               ))}
             </div>
 
-            <span className="text-xs text-[#8B91B0]">
+            <span className="text-xs text-[#586151]">
               Showing {filteredProducts.length} Formulations
             </span>
           </div>
@@ -111,19 +111,10 @@ export default function ProductsOrdersPage() {
                   key={product.id}
                   className={`fluetas-card p-5 flex flex-col justify-between gap-4 transition-all relative overflow-hidden ${
                     isUpcoming
-                      ? 'border-[#38BDF8]/30 bg-[#111420]/90'
-                      : 'hover:border-[#2A3050]'
+                      ? 'border-[#2E6DA4]/30 bg-[#F4F8FC]'
+                      : 'hover:shadow-md hover:border-[#2E7D32]/40'
                   }`}
-                  style={{
-                    backgroundColor: product.bgColor,
-                  }}
                 >
-                  {/* Card Glow */}
-                  <div
-                    className="absolute -bottom-10 -right-10 w-32 h-32 rounded-full pointer-events-none blur-2xl opacity-30"
-                    style={{ background: product.color }}
-                  />
-
                   <div>
                     {/* Header */}
                     <div className="flex items-center justify-between gap-2 mb-3">
@@ -132,47 +123,47 @@ export default function ProductsOrdersPage() {
                         <div>
                           <h3
                             className="font-['Outfit'] font-black text-lg m-0"
-                            style={{ color: product.accentColor }}
+                            style={{ color: product.color || '#2E7D32' }}
                           >
                             {product.name}
                           </h3>
                           {product.rating && (
-                            <span className="flex items-center gap-1 text-[0.68rem] text-[#FBBF24] font-bold">
-                              <Star size={11} fill="#FBBF24" /> {product.rating} (500+ Reviews)
+                            <span className="flex items-center gap-1 text-[0.68rem] text-[#D97706] font-bold">
+                              <Star size={11} fill="#D97706" /> {product.rating} (500+ Reviews)
                             </span>
                           )}
                         </div>
                       </div>
 
                       {isUpcoming ? (
-                        <span className="px-2.5 py-0.5 rounded-full text-[0.65rem] font-bold bg-[#38BDF8]/20 text-[#38BDF8] border border-[#38BDF8]/40 shadow-[0_0_8px_rgba(56,189,248,0.2)]">
+                        <span className="px-2.5 py-0.5 rounded-full text-[0.65rem] font-bold bg-[#2E6DA4]/10 text-[#2E6DA4] border border-[#2E6DA4]/30">
                           Upcoming
                         </span>
                       ) : (
-                        <span className="px-2 py-0.5 rounded-full text-[0.65rem] font-bold bg-[#10B981]/20 text-[#10B981] border border-[#10B981]/30">
+                        <span className="px-2 py-0.5 rounded-full text-[0.65rem] font-bold bg-[#2E7D32]/10 text-[#2E7D32] border border-[#2E7D32]/20">
                           In Stock
                         </span>
                       )}
                     </div>
 
-                    <p className="font-semibold text-xs text-[#E8EAF6] m-0 mb-1 leading-snug">
+                    <p className="font-semibold text-xs text-[#12160F] m-0 mb-1 leading-snug">
                       {product.tagline}
                     </p>
-                    <p className="text-xs text-[#8B91B0] m-0 leading-relaxed">
+                    <p className="text-xs text-[#586151] m-0 leading-relaxed">
                       {product.subtext}
                     </p>
                   </div>
 
                   {/* Pricing & CTA */}
-                  <div className="pt-3 border-t border-white/5 flex items-center justify-between gap-2">
-                    <span className="text-sm font-black text-[#E8EAF6]">
+                  <div className="pt-3 border-t border-[rgba(18,22,15,0.08)] flex items-center justify-between gap-2">
+                    <span className="text-sm font-black text-[#12160F]">
                       {product.price}
                     </span>
 
                     {isUpcoming ? (
                       <button
                         onClick={() => handleNotifyMe(product)}
-                        className="px-3 py-1.5 rounded-lg bg-[#38BDF8]/20 hover:bg-[#38BDF8]/30 text-[#38BDF8] border border-[#38BDF8]/40 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+                        className="px-3 py-1.5 rounded-lg bg-[#2E6DA4]/10 hover:bg-[#2E6DA4]/20 text-[#2E6DA4] border border-[#2E6DA4]/30 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
                       >
                         <Bell size={12} />
                         Notify Me
@@ -199,29 +190,29 @@ export default function ProductsOrdersPage() {
           {mockOrders.map(order => (
             <div
               key={order.id}
-              className="fluetas-card p-5 flex flex-col gap-4 hover:border-[#2A3050] transition-colors"
+              className="fluetas-card p-5 flex flex-col gap-4 hover:shadow-md transition-shadow"
             >
               {/* Order Header */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#1E2133]">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[rgba(18,22,15,0.08)]">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[#10B981]/15 text-[#10B981] flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-xl bg-[#2E7D32]/10 text-[#2E7D32] flex items-center justify-center">
                     <Truck size={18} />
                   </div>
                   <div>
-                    <h3 className="font-['Outfit'] text-sm sm:text-base font-bold text-[#E8EAF6] m-0">
+                    <h3 className="font-['Outfit'] text-sm sm:text-base font-bold text-[#12160F] m-0">
                       Order #{order.id}
                     </h3>
-                    <p className="text-xs text-[#8B91B0] m-0 mt-0.5">
+                    <p className="text-xs text-[#586151] m-0 mt-0.5">
                       Placed on {order.date} · Tracking: {order.trackingId}
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3 self-end sm:self-auto">
-                  <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/30">
+                  <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-[#2E7D32]/10 text-[#2E7D32] border border-[#2E7D32]/20">
                     {order.status}
                   </span>
-                  <span className="font-['Outfit'] text-sm font-bold text-[#E8EAF6]">
+                  <span className="font-['Outfit'] text-sm font-bold text-[#12160F]">
                     {order.total}
                   </span>
                 </div>
@@ -230,20 +221,20 @@ export default function ProductsOrdersPage() {
               {/* Items List */}
               <div className="space-y-2 text-xs">
                 {order.items.map((item, idx) => (
-                  <div key={idx} className="flex items-center justify-between bg-[#0B0D14] p-3 rounded-xl border border-[#1E2133]">
-                    <span className="font-medium text-[#E8EAF6]">
-                      {item.name} <span className="text-[#8B91B0]">× {item.qty}</span>
+                  <div key={idx} className="flex items-center justify-between bg-[#F2F4EE] p-3 rounded-xl border border-[rgba(18,22,15,0.06)]">
+                    <span className="font-medium text-[#12160F]">
+                      {item.name} <span className="text-[#586151]">× {item.qty}</span>
                     </span>
-                    <strong className="text-[#E8EAF6]">{item.price}</strong>
+                    <strong className="text-[#12160F]">{item.price}</strong>
                   </div>
                 ))}
               </div>
 
-              <div className="flex items-center justify-between text-xs text-[#8B91B0] pt-1">
+              <div className="flex items-center justify-between text-xs text-[#586151] pt-1">
                 <span>Delivered to registered home address on {order.deliveryDate}</span>
                 <button
                   onClick={() => alert(`Tracking info for ${order.trackingId}`)}
-                  className="text-[#10B981] hover:underline font-semibold flex items-center gap-1 cursor-pointer"
+                  className="text-[#2E7D32] hover:underline font-semibold flex items-center gap-1 cursor-pointer"
                 >
                   View Invoice & Tracking <ExternalLink size={12} />
                 </button>
@@ -255,11 +246,11 @@ export default function ProductsOrdersPage() {
 
       {/* Upcoming Waitlist Modal */}
       {selectedUpcoming && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
-          <div className="bg-[#13161F] border border-[#1E2133] rounded-2xl p-6 max-w-md w-full shadow-2xl relative animate-slide-up">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white border border-[rgba(18,22,15,0.12)] rounded-2xl p-6 max-w-md w-full shadow-2xl relative animate-slide-up">
             <button
               onClick={() => setSelectedUpcoming(null)}
-              className="absolute top-4 right-4 text-[#8B91B0] hover:text-white"
+              className="absolute top-4 right-4 text-[#586151] hover:text-[#12160F]"
             >
               <X size={18} />
             </button>
@@ -267,26 +258,26 @@ export default function ProductsOrdersPage() {
             <div className="flex items-center gap-3 mb-4">
               <span className="text-3xl">{selectedUpcoming.emoji}</span>
               <div>
-                <h3 className="text-lg font-bold text-[#E8EAF6] m-0 font-['Outfit']">
+                <h3 className="text-lg font-bold text-[#12160F] m-0 font-['Outfit']">
                   {selectedUpcoming.name}
                 </h3>
-                <p className="text-xs text-[#8B91B0] m-0">{selectedUpcoming.tagline}</p>
+                <p className="text-xs text-[#586151] m-0">{selectedUpcoming.tagline}</p>
               </div>
             </div>
 
-            <p className="text-xs text-[#E8EAF6] leading-relaxed mb-4 bg-[#0B0D14] p-3 rounded-lg border border-[#1E2133]">
+            <p className="text-xs text-[#12160F] leading-relaxed mb-4 bg-[#F2F4EE] p-3 rounded-lg border border-[rgba(18,22,15,0.08)]">
               {selectedUpcoming.subtext}
             </p>
 
             {optinSuccess ? (
-              <div className="bg-[#10B981]/15 border border-[#10B981]/30 rounded-xl p-3.5 flex items-center gap-2.5 text-[#10B981] text-xs font-semibold">
+              <div className="bg-[#2E7D32]/10 border border-[#2E7D32]/30 rounded-xl p-3.5 flex items-center gap-2.5 text-[#2E7D32] text-xs font-semibold">
                 <CheckCircle2 size={18} />
                 <span>You&apos;re on the VIP waitlist for {selectedUpcoming.name}!</span>
               </div>
             ) : (
               <button
                 onClick={() => setOptinSuccess(true)}
-                className="btn-primary w-full py-2.5 justify-center font-bold text-xs bg-gradient-to-r from-[#38BDF8] to-[#0284C7]"
+                className="btn-primary w-full py-2.5 justify-center font-bold text-xs"
               >
                 Join VIP Early Batch Waitlist
               </button>

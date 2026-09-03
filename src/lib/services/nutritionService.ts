@@ -133,28 +133,127 @@ export interface DayNutrition {
 }
 
 export async function getWeeklyNutrition(userId: string): Promise<DayNutrition[]> {
-  if (!db) return [];
+  const trend = await getNutritionTrend(userId, 7);
+  return trend.days.map(d => ({
+    date: d.date,
+    calories: d.calories,
+    protein: d.protein,
+  }));
+}
 
+export interface NutritionDayTrend {
+  date: string;
+  dayLabel: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  mealCount: number;
+  isLogged: boolean;
+}
+
+export interface NutritionTrendSummary {
+  days: NutritionDayTrend[];
+  avgCalories: number;
+  avgProtein: number;
+  calorieDelta: number;
+  totalCalories: number;
+  loggedDaysCount: number;
+}
+
+export async function getNutritionTrend(
+  userId: string,
+  days = 7
+): Promise<NutritionTrendSummary> {
+  if (!db) {
+    return {
+      days: [],
+      avgCalories: 0,
+      avgProtein: 0,
+      calorieDelta: 0,
+      totalCalories: 0,
+      loggedDaysCount: 0,
+    };
+  }
+
+  const numDays = Math.min(Math.max(days, 1), 30);
   const dates: string[] = [];
-  for (let i = 6; i >= 0; i--) {
+  const dateObjs: Date[] = [];
+
+  for (let i = numDays - 1; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
     dates.push(d.toISOString().split('T')[0]);
+    dateObjs.push(d);
   }
 
   const q = query(
     collection(db, 'nutritionLogs', userId, 'entries'),
-    where('date', 'in', dates)
+    where('date', 'in', dates.slice(0, 30))
   );
   const snap = await getDocs(q);
 
-  const totals: Record<string, DayNutrition> = {};
+  const dayMap: Record<string, { calories: number; protein: number; carbs: number; fat: number; mealCount: number }> = {};
   snap.docs.forEach(d => {
     const entry = d.data() as NutritionEntry;
-    if (!totals[entry.date]) totals[entry.date] = { date: entry.date, calories: 0, protein: 0 };
-    totals[entry.date].calories += entry.calories ?? 0;
-    totals[entry.date].protein += entry.macros?.protein ?? 0;
+    if (!dayMap[entry.date]) {
+      dayMap[entry.date] = { calories: 0, protein: 0, carbs: 0, fat: 0, mealCount: 0 };
+    }
+    dayMap[entry.date].calories += entry.calories ?? 0;
+    dayMap[entry.date].protein += entry.macros?.protein ?? 0;
+    dayMap[entry.date].carbs += entry.macros?.carbs ?? 0;
+    dayMap[entry.date].fat += entry.macros?.fat ?? 0;
+    dayMap[entry.date].mealCount += 1;
   });
 
-  return dates.map(date => totals[date] ?? { date, calories: 0, protein: 0 });
+  const dayTrends: NutritionDayTrend[] = dates.map((date, idx) => {
+    const d = dayMap[date];
+    const dObj = dateObjs[idx];
+    const dayLabel = dObj.toLocaleDateString('en-US', { weekday: 'short' });
+    return {
+      date,
+      dayLabel,
+      calories: d?.calories ?? 0,
+      protein: Math.round(d?.protein ?? 0),
+      carbs: Math.round(d?.carbs ?? 0),
+      fat: Math.round(d?.fat ?? 0),
+      mealCount: d?.mealCount ?? 0,
+      isLogged: Boolean(d && d.mealCount > 0),
+    };
+  });
+
+  const loggedDays = dayTrends.filter(d => d.isLogged);
+  const loggedDaysCount = loggedDays.length;
+  const totalCalories = dayTrends.reduce((sum, d) => sum + d.calories, 0);
+  const totalProtein = dayTrends.reduce((sum, d) => sum + d.protein, 0);
+
+  const avgCalories = loggedDaysCount > 0 ? Math.round(totalCalories / loggedDaysCount) : 0;
+  const avgProtein = loggedDaysCount > 0 ? Math.round(totalProtein / loggedDaysCount) : 0;
+
+  // Delta: compare recent half vs prior half
+  const half = Math.floor(numDays / 2);
+  let calorieDelta = 0;
+  if (half > 0) {
+    const recentLogged = dayTrends.slice(half).filter(d => d.isLogged);
+    const priorLogged = dayTrends.slice(0, half).filter(d => d.isLogged);
+    if (recentLogged.length > 0 && priorLogged.length > 0) {
+      const recentAvg = recentLogged.reduce((s, d) => s + d.calories, 0) / recentLogged.length;
+      const priorAvg = priorLogged.reduce((s, d) => s + d.calories, 0) / priorLogged.length;
+      calorieDelta = Math.round(recentAvg - priorAvg);
+    }
+  }
+
+  return {
+    days: dayTrends,
+    avgCalories,
+    avgProtein,
+    calorieDelta,
+    totalCalories,
+    loggedDaysCount,
+  };
+}
+
+/** Generic trend function matching standard prompt interface */
+export async function getTrend(userId: string, metric = 'calories', days = 7) {
+  return getNutritionTrend(userId, days);
 }

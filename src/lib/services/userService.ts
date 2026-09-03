@@ -27,6 +27,9 @@ export interface UserProfile {
   updatedAt?: unknown;
 }
 
+export type EquipmentAccess = 'none' | 'basic' | 'full_gym';
+export type InjuryTag = 'knee' | 'shoulder' | 'back' | 'wrist' | 'ankle' | 'neck' | 'elbow' | 'hip';
+
 export interface HealthProfile {
   primaryGoal?: string;
   fitnessLevel?: string;
@@ -34,6 +37,10 @@ export interface HealthProfile {
   dietaryPreference?: string;
   sleepTargetHrs?: number;
   hydrationTargetL?: number;
+  equipmentAccess?: EquipmentAccess;
+  daysPerWeek?: number;
+  injuryTags?: (InjuryTag | string)[];
+  injuryNotes?: string;
   allergies?: string[];
   chronicConditions?: string[];
   currentMedications?: string[];

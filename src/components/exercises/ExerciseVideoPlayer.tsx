@@ -79,7 +79,7 @@ export default function ExerciseVideoPlayer({
 
   if (!videoUrl || hasError) {
     return (
-      <div className="relative w-full aspect-video rounded-2xl bg-[#0B0D14] border border-[#1E2133] overflow-hidden flex flex-col items-center justify-center p-6 text-center">
+      <div className="relative w-full aspect-video rounded-2xl bg-[#12160F] text-white overflow-hidden flex flex-col items-center justify-center p-6 text-center">
         {thumbnailUrl && (
           <img
             src={thumbnailUrl}
@@ -88,25 +88,23 @@ export default function ExerciseVideoPlayer({
           />
         )}
         <div className="relative z-10 flex flex-col items-center max-w-sm">
-          <div className="w-12 h-12 rounded-2xl bg-[#38BDF8]/10 border border-[#38BDF8]/30 flex items-center justify-center text-[#38BDF8] mb-3 shadow-[0_0_16px_rgba(56,189,248,0.2)]">
+          <div className="w-12 h-12 rounded-2xl bg-[#2E6DA4]/20 border border-[#2E6DA4]/40 flex items-center justify-center text-[#38BDF8] mb-3">
             <AlertTriangle size={22} />
           </div>
-          <h4 className="font-['Outfit'] text-sm font-bold text-[#E8EAF6] m-0">
+          <h4 className="font-['Outfit'] text-sm font-bold text-white m-0">
             {hasError ? 'Stream Expired or Unavailable' : 'Demonstration Instructions Active'}
           </h4>
-          <p className="text-xs text-[#8B91B0] m-0 mt-1.5 leading-relaxed">
+          <p className="text-xs text-neutral-300 m-0 mt-1.5 leading-relaxed">
             {hasError
               ? 'The temporary signed CDN video link expired or encountered a network interruption.'
               : 'Detailed biomechanical cues, steps, and breathing patterns are available below.'}
           </p>
-
           {onRefreshUrl && (
             <button
               onClick={onRefreshUrl}
-              className="btn-primary mt-3.5 px-4 py-2 text-xs font-bold flex items-center gap-1.5 shadow-[0_0_12px_rgba(16,185,129,0.3)] cursor-pointer"
+              className="mt-3.5 px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
             >
-              <RotateCcw size={13} />
-              Fetch Fresh Stream
+              <RotateCcw size={13} /> Refresh Stream
             </button>
           )}
         </div>
@@ -115,14 +113,14 @@ export default function ExerciseVideoPlayer({
   }
 
   return (
-    <div className="relative w-full aspect-video rounded-2xl bg-[#0B0D14] border border-[#1E2133] overflow-hidden group shadow-2xl">
-      {/* Video element streaming directly from provider CDN */}
+    <div className="relative w-full aspect-video rounded-2xl bg-black overflow-hidden group shadow-lg">
+      {/* Video Element */}
       <video
         ref={videoRef}
         src={videoUrl}
         poster={thumbnailUrl}
-        loop
         playsInline
+        loop
         muted={isMuted}
         onWaiting={() => setIsLoading(true)}
         onPlaying={() => {
@@ -135,55 +133,58 @@ export default function ExerciseVideoPlayer({
         className="w-full h-full object-contain cursor-pointer"
       />
 
-      {/* Loading Spinner */}
+      {/* Loading Overlay */}
       {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-xs pointer-events-none">
-          <div className="flex flex-col items-center gap-2">
-            <Loader2 size={28} className="text-[#10B981] animate-spin" />
-            <span className="text-[0.65rem] text-[#E8EAF6] font-semibold tracking-wider uppercase">
-              Streaming Video...
-            </span>
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center pointer-events-none">
+          <Loader2 size={32} className="text-[#2E7D32] animate-spin" />
+        </div>
+      )}
+
+      {/* Center Play/Pause Indicator (when paused) */}
+      {!isPlaying && !isLoading && (
+        <div
+          onClick={togglePlay}
+          className="absolute inset-0 flex items-center justify-center bg-black/40 cursor-pointer"
+        >
+          <div className="w-14 h-14 rounded-full bg-[#2E7D32] text-white flex items-center justify-center shadow-lg transform transition-transform group-hover:scale-110 pl-0.5">
+            <Play size={24} fill="currentColor" />
           </div>
         </div>
       )}
 
-      {/* Center Play Overlay when paused */}
-      {!isPlaying && !isLoading && (
-        <button
-          onClick={togglePlay}
-          className="absolute inset-0 m-auto w-14 h-14 rounded-2xl bg-[#10B981]/90 text-black flex items-center justify-center shadow-[0_0_20px_rgba(16,185,129,0.5)] hover:scale-105 transition-transform cursor-pointer"
-          aria-label="Play video"
-        >
-          <Play size={22} fill="currentColor" className="ml-1" />
-        </button>
-      )}
-
-      {/* Bottom Control Bar on Hover */}
-      <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+      {/* Floating Mini Controls Bar (Visible on Hover) */}
+      <div className="absolute bottom-0 inset-x-0 p-3 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity">
         <div className="flex items-center gap-2">
           <button
             onClick={togglePlay}
-            className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs cursor-pointer"
+            className="p-1.5 rounded-lg bg-white/20 text-white hover:bg-white/30 transition-colors cursor-pointer"
+            aria-label={isPlaying ? 'Pause' : 'Play'}
           >
-            {isPlaying ? 'Pause' : 'Play'}
+            {isPlaying ? (
+              <span className="font-mono text-xs font-bold px-1">❚❚</span>
+            ) : (
+              <Play size={14} fill="currentColor" />
+            )}
           </button>
+
           <button
             onClick={toggleMute}
-            className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white cursor-pointer"
-            title={isMuted ? 'Unmute' : 'Mute'}
+            className="p-1.5 rounded-lg bg-white/20 text-white hover:bg-white/30 transition-colors cursor-pointer"
+            aria-label={isMuted ? 'Unmute' : 'Mute'}
           >
             {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
           </button>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-[0.65rem] text-[#8B91B0] font-medium hidden sm:inline">
-            Direct CDN Stream
+          <span className="text-[0.65rem] text-white/90 font-semibold tracking-wider uppercase">
+            HD Technique Loop
           </span>
+
           <button
             onClick={toggleFullscreen}
-            className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white cursor-pointer"
-            title="Fullscreen"
+            className="p-1.5 rounded-lg bg-white/20 text-white hover:bg-white/30 transition-colors cursor-pointer"
+            aria-label="Fullscreen"
           >
             <Maximize2 size={14} />
           </button>

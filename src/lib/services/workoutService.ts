@@ -172,3 +172,126 @@ export async function getWeeklyWorkoutCount(userId: string): Promise<number> {
   const snap = await getDocs(q);
   return snap.size;
 }
+
+export interface WorkoutDayTrend {
+  date: string;
+  dayLabel: string;
+  sessionCount: number;
+  totalSets: number;
+  completedSets: number;
+  estimatedVolumeKg: number;
+  isLogged: boolean;
+}
+
+export interface WorkoutTrendSummary {
+  days: WorkoutDayTrend[];
+  totalSessions: number;
+  totalCompletedSets: number;
+  totalVolumeKg: number;
+  sessionDelta: number;
+  completionRate: number;
+}
+
+export async function getWorkoutTrend(
+  userId: string,
+  days = 7
+): Promise<WorkoutTrendSummary> {
+  if (!db) {
+    return {
+      days: [],
+      totalSessions: 0,
+      totalCompletedSets: 0,
+      totalVolumeKg: 0,
+      sessionDelta: 0,
+      completionRate: 0,
+    };
+  }
+
+  const numDays = Math.min(Math.max(days, 1), 30);
+  const dates: string[] = [];
+  const dateObjs: Date[] = [];
+
+  for (let i = numDays - 1; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    dates.push(d.toISOString().split('T')[0]);
+    dateObjs.push(d);
+  }
+
+  const q = query(
+    collection(db, 'workoutLogs', userId, 'entries'),
+    where('date', 'in', dates.slice(0, 30))
+  );
+  const snap = await getDocs(q);
+
+  const dayMap: Record<string, { sessionCount: number; totalSets: number; completedSets: number; volumeKg: number }> = {};
+  snap.docs.forEach(d => {
+    const session = d.data() as WorkoutSession;
+    if (!dayMap[session.date]) {
+      dayMap[session.date] = { sessionCount: 0, totalSets: 0, completedSets: 0, volumeKg: 0 };
+    }
+    dayMap[session.date].sessionCount += 1;
+    dayMap[session.date].totalSets += session.totalSets ?? 0;
+    dayMap[session.date].completedSets += session.completedSets ?? 0;
+
+    // Estimate volume (weight * reps for done sets)
+    if (session.exercises) {
+      session.exercises.forEach(ex => {
+        ex.sets?.forEach(set => {
+          if (set.done) {
+            const w = parseFloat(set.weight) || 0;
+            const r = parseFloat(set.reps) || 0;
+            dayMap[session.date].volumeKg += Math.round(w * r);
+          }
+        });
+      });
+    }
+  });
+
+  const dayTrends: WorkoutDayTrend[] = dates.map((date, idx) => {
+    const d = dayMap[date];
+    const dObj = dateObjs[idx];
+    const dayLabel = dObj.toLocaleDateString('en-US', { weekday: 'short' });
+    return {
+      date,
+      dayLabel,
+      sessionCount: d?.sessionCount ?? 0,
+      totalSets: d?.totalSets ?? 0,
+      completedSets: d?.completedSets ?? 0,
+      estimatedVolumeKg: d?.volumeKg ?? 0,
+      isLogged: Boolean(d && d.sessionCount > 0),
+    };
+  });
+
+  const totalSessions = dayTrends.reduce((sum, d) => sum + d.sessionCount, 0);
+  const totalCompletedSets = dayTrends.reduce((sum, d) => sum + d.completedSets, 0);
+  const totalPlannedSets = dayTrends.reduce((sum, d) => sum + d.totalSets, 0);
+  const totalVolumeKg = dayTrends.reduce((sum, d) => sum + d.estimatedVolumeKg, 0);
+
+  const completionRate = totalPlannedSets > 0
+    ? Math.round((totalCompletedSets / totalPlannedSets) * 100)
+    : 100;
+
+  // Delta: compare recent half vs prior half
+  const half = Math.floor(numDays / 2);
+  let sessionDelta = 0;
+  if (half > 0) {
+    const recentSessions = dayTrends.slice(half).reduce((sum, d) => sum + d.sessionCount, 0);
+    const priorSessions = dayTrends.slice(0, half).reduce((sum, d) => sum + d.sessionCount, 0);
+    sessionDelta = recentSessions - priorSessions;
+  }
+
+  return {
+    days: dayTrends,
+    totalSessions,
+    totalCompletedSets,
+    totalVolumeKg,
+    sessionDelta,
+    completionRate,
+  };
+}
+
+/** Generic trend function matching standard prompt interface */
+export async function getTrend(userId: string, metric = 'sessions', days = 7) {
+  return getWorkoutTrend(userId, days);
+}

@@ -14,10 +14,11 @@ import {
   Sparkles,
   ArrowRight,
   History,
+  LucideIcon,
 } from 'lucide-react';
 import { Skeleton } from '@/components/motion/MotionUtils';
 
-const EVENT_ICONS: Record<string, { icon: React.ElementType; color: string; bg: string }> = {
+const EVENT_ICONS: Record<string, { icon: LucideIcon; color: string; bg: string }> = {
   hydration_logged: { icon: Droplets, color: '#2E6DA4', bg: 'bg-[#2E6DA4]/10' },
   sleep_logged: { icon: Moon, color: '#7A4E9E', bg: 'bg-[#7A4E9E]/10' },
   meal_logged: { icon: Utensils, color: '#D9622B', bg: 'bg-[#D9622B]/10' },

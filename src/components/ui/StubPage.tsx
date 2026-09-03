@@ -20,8 +20,8 @@ export default function StubPage({ title, emoji, description, phase = 'Phase 2' 
       <div
         style={{
           width: 72, height: 72, borderRadius: 20,
-          background: 'linear-gradient(135deg, rgba(16,185,129,0.15), rgba(16,185,129,0.05))',
-          border: '1px solid rgba(16,185,129,0.2)',
+          background: 'rgba(46,125,50,0.10)',
+          border: '1px solid rgba(46,125,50,0.20)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 32, marginBottom: 20,
         }}
@@ -32,21 +32,21 @@ export default function StubPage({ title, emoji, description, phase = 'Phase 2' 
       <h1
         style={{
           fontFamily: 'Outfit, sans-serif', fontWeight: 800, fontSize: '1.8rem',
-          color: '#E8EAF6', margin: '0 0 8px',
+          color: '#12160F', margin: '0 0 8px',
         }}
       >
         {title}
       </h1>
-      <p style={{ color: '#8B91B0', fontSize: '0.9rem', margin: '0 0 24px', maxWidth: 400, lineHeight: 1.6 }}>
+      <p style={{ color: '#586151', fontSize: '0.9rem', margin: '0 0 24px', maxWidth: 400, lineHeight: 1.6 }}>
         {description}
       </p>
 
       <div
         style={{
           padding: '8px 16px', borderRadius: 999,
-          background: 'rgba(16, 185, 129, 0.1)',
-          border: '1px solid rgba(16, 185, 129, 0.2)',
-          color: '#10B981', fontSize: '0.8rem', fontWeight: 600,
+          background: 'rgba(46, 125, 50, 0.10)',
+          border: '1px solid rgba(46, 125, 50, 0.20)',
+          color: '#2E7D32', fontSize: '0.8rem', fontWeight: 600,
           marginBottom: 24,
         }}
       >

@@ -101,32 +101,116 @@ export interface DaySleep {
 }
 
 export async function getWeeklySleep(userId: string): Promise<DaySleep[]> {
-  if (!db) return [];
+  const trend = await getSleepTrend(userId, 7);
+  return trend.days.map(d => ({
+    date: d.date,
+    durationHrs: d.durationHrs,
+    quality: d.quality,
+  }));
+}
 
+export interface SleepDayTrend {
+  date: string;
+  dayLabel: string;
+  durationHrs: number;
+  quality?: number;
+  targetHrs: number;
+  isLogged: boolean;
+}
+
+export interface SleepTrendSummary {
+  days: SleepDayTrend[];
+  avgDurationHrs: number;
+  avgQuality: number | null;
+  durationDelta: number;
+  loggedDaysCount: number;
+}
+
+export async function getSleepTrend(
+  userId: string,
+  days = 7,
+  targetHrs = 8
+): Promise<SleepTrendSummary> {
+  if (!db) {
+    return {
+      days: [],
+      avgDurationHrs: 0,
+      avgQuality: null,
+      durationDelta: 0,
+      loggedDaysCount: 0,
+    };
+  }
+
+  const numDays = Math.min(Math.max(days, 1), 30);
   const dates: string[] = [];
-  for (let i = 6; i >= 0; i--) {
+  const dateObjs: Date[] = [];
+
+  for (let i = numDays - 1; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
     dates.push(d.toISOString().split('T')[0]);
+    dateObjs.push(d);
   }
 
   const q = query(
     collection(db, 'sleepLogs', userId, 'entries'),
-    where('date', 'in', dates),
-    orderBy('timestamp', 'asc')
+    where('date', 'in', dates.slice(0, 30))
   );
   const snap = await getDocs(q);
 
-  // Keep one entry per day (most recent)
   const byDate: Record<string, SleepEntry> = {};
   snap.docs.forEach(d => {
     const entry = d.data() as SleepEntry;
     byDate[entry.date] = entry;
   });
 
-  return dates.map(date => ({
-    date,
-    durationHrs: byDate[date]?.durationHrs ?? 0,
-    quality: byDate[date]?.quality,
-  }));
+  const dayTrends: SleepDayTrend[] = dates.map((date, idx) => {
+    const entry = byDate[date];
+    const dObj = dateObjs[idx];
+    const dayLabel = dObj.toLocaleDateString('en-US', { weekday: 'short' });
+    return {
+      date,
+      dayLabel,
+      durationHrs: entry?.durationHrs ?? 0,
+      quality: entry?.quality,
+      targetHrs,
+      isLogged: Boolean(entry),
+    };
+  });
+
+  const loggedDays = dayTrends.filter(d => d.isLogged);
+  const loggedDaysCount = loggedDays.length;
+  const totalDuration = loggedDays.reduce((sum, d) => sum + d.durationHrs, 0);
+  const avgDurationHrs = loggedDaysCount > 0 ? Math.round((totalDuration / loggedDaysCount) * 10) / 10 : 0;
+
+  const qualityEntries = loggedDays.filter(d => d.quality !== undefined);
+  const avgQuality = qualityEntries.length > 0
+    ? Math.round((qualityEntries.reduce((sum, d) => sum + (d.quality ?? 0), 0) / qualityEntries.length) * 10) / 10
+    : null;
+
+  // Delta calculation: recent half vs prior half
+  const half = Math.floor(numDays / 2);
+  let durationDelta = 0;
+  if (half > 0) {
+    const recentLogged = dayTrends.slice(half).filter(d => d.isLogged);
+    const priorLogged = dayTrends.slice(0, half).filter(d => d.isLogged);
+    if (recentLogged.length > 0 && priorLogged.length > 0) {
+      const recentAvg = recentLogged.reduce((s, d) => s + d.durationHrs, 0) / recentLogged.length;
+      const priorAvg = priorLogged.reduce((s, d) => s + d.durationHrs, 0) / priorLogged.length;
+      durationDelta = Math.round((recentAvg - priorAvg) * 10) / 10;
+    }
+  }
+
+  return {
+    days: dayTrends,
+    avgDurationHrs,
+    avgQuality,
+    durationDelta,
+    loggedDaysCount,
+  };
+}
+
+/** Generic trend function matching standard prompt interface */
+export async function getTrend(userId: string, metric = 'duration', days = 7) {
+  return getSleepTrend(userId, days);
 }

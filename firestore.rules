@@ -172,6 +172,23 @@ service cloud.firestore {
     }
 
     // ──────────────────────────────────────────────────────────────────────
+    // /workoutPlans/{userId}/plans/{planId} (Versioned Structured Training)
+    // ──────────────────────────────────────────────────────────────────────
+    match /workoutPlans/{userId}/plans/{planId} {
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin() || hasActiveDoctorConsent(userId));
+      allow create: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      allow update: if isAuthenticated() && (isOwner(userId) || isAdmin() || hasActiveDoctorConsent(userId));
+      allow delete: if isAuthenticated() && (isOwner(userId) || isAdmin());
+
+      // Version snapshots are append-only / immutable
+      match /versions/{versionId} {
+        allow read: if isAuthenticated() && (isOwner(userId) || isAdmin() || hasActiveDoctorConsent(userId));
+        allow create: if isAuthenticated() && (isOwner(userId) || isAdmin() || hasActiveDoctorConsent(userId));
+        allow update, delete: if false;
+      }
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
     // Top-level Clinical, Consent & Operational Collections
     // ──────────────────────────────────────────────────────────────────────
     match /consents/{consentId} {

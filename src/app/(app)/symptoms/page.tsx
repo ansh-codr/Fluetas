@@ -3,18 +3,17 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import {
-  logSymptom,
   getRecentSymptoms,
+  logSymptom,
   SymptomEntry,
   SymptomCategory,
   SeverityLevel,
-  SYMPTOM_CATEGORIES,
 } from '@/lib/services/symptomService';
 import {
   Activity,
   Plus,
-  X,
   TrendingUp,
+  X,
   Loader2,
 } from 'lucide-react';
 import {
@@ -27,11 +26,28 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 
+const SYMPTOM_CATEGORIES: SymptomCategory[] = [
+  'Musculoskeletal',
+  'Digestive',
+  'Energy & Focus',
+  'Respiratory',
+  'Cardiovascular',
+  'Neurological',
+  'Skin',
+  'Other',
+];
+
+const severityColorMap: Record<string, string> = {
+  Mild: '#2E7D32',
+  Moderate: '#D97706',
+  Severe: '#DC2626',
+};
+
 export default function SymptomsPage() {
   const { user } = useAuth();
+  const [modalOpen, setModalOpen] = useState(false);
   const [logs, setLogs] = useState<SymptomEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [modalOpen, setModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   // Form State
@@ -41,15 +57,13 @@ export default function SymptomsPage() {
   const [notes, setNotes] = useState('');
 
   const loadData = async () => {
-    if (!user) {
-      setLoading(false);
-      return;
-    }
+    if (!user) return;
+    setLoading(true);
     try {
-      const res = await getRecentSymptoms(user.uid, 50);
-      setLogs(res);
-    } catch {
-      // ignore
+      const data = await getRecentSymptoms(user.uid, 50);
+      setLogs(data);
+    } catch (err) {
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -59,22 +73,16 @@ export default function SymptomsPage() {
     loadData();
   }, [user]);
 
-  const severityColorMap: Record<SeverityLevel, string> = {
-    Mild: '#10B981',
-    Moderate: '#F59E0B',
-    Severe: '#EF4444',
-  };
-
   const handleAddSymptom = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !symptomName.trim()) return;
     setSubmitting(true);
     try {
       await logSymptom(user.uid, {
-        symptom: symptomName,
+        symptom: symptomName.trim(),
         category,
         severity,
-        notes: notes || undefined,
+        notes: notes.trim() || undefined,
       });
       setModalOpen(false);
       setSymptomName('');
@@ -103,10 +111,10 @@ export default function SymptomsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="font-['Outfit'] text-xl sm:text-2xl font-black text-[#E8EAF6] m-0">
+          <h1 className="font-['Outfit'] text-xl sm:text-2xl font-black text-[#12160F] m-0">
             SYMPTOM LOG &amp; BIOMETRIC PHENOTYPES
           </h1>
-          <p className="text-[#8B91B0] text-xs sm:text-sm m-0">
+          <p className="text-[#586151] text-xs sm:text-sm m-0">
             Correlate aches, energy shifts, and digestive flare-ups with workout and nutrition data.
           </p>
         </div>
@@ -125,22 +133,22 @@ export default function SymptomsPage() {
         <div className="fluetas-card p-4 sm:p-5">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <TrendingUp size={16} className="text-[#38BDF8]" />
+              <TrendingUp size={16} className="text-[#2E6DA4]" />
               <span className="section-title">SYMPTOMS BY CATEGORY</span>
             </div>
-            <span className="text-xs text-[#8B91B0]">{logs.length} total entries</span>
+            <span className="text-xs text-[#586151]">{logs.length} total entries</span>
           </div>
 
           <div className="h-44 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke="#1E2133" horizontal={false} />
-                <XAxis type="number" stroke="#8B91B0" fontSize={11} tickLine={false} axisLine={false} />
-                <YAxis dataKey="category" type="category" stroke="#8B91B0" fontSize={11} tickLine={false} axisLine={false} width={120} />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(18,22,15,0.08)" horizontal={false} />
+                <XAxis type="number" stroke="#8A9482" fontSize={11} tickLine={false} axisLine={false} />
+                <YAxis dataKey="category" type="category" stroke="#586151" fontSize={11} tickLine={false} axisLine={false} width={130} />
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#13161F', borderColor: '#1E2133', borderRadius: '8px', color: '#fff', fontSize: '12px' }}
+                  contentStyle={{ backgroundColor: '#FFFFFF', borderColor: 'rgba(18,22,15,0.15)', borderRadius: '12px', color: '#12160F', fontSize: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
                 />
-                <Bar dataKey="count" name="Count" fill="#38BDF8" radius={[0, 4, 4, 0]} />
+                <Bar dataKey="count" name="Count" fill="#2E6DA4" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -154,16 +162,16 @@ export default function SymptomsPage() {
         {loading ? (
           <div className="flex flex-col gap-2.5">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="h-20 bg-[#1E2133]/40 rounded-xl animate-pulse" />
+              <div key={i} className="h-20 bg-[#F2F4EE] rounded-xl animate-pulse" />
             ))}
           </div>
         ) : logs.length === 0 ? (
           <div className="fluetas-card p-8 text-center flex flex-col items-center justify-center">
-            <div className="w-12 h-12 rounded-2xl bg-[#38BDF8]/15 text-[#38BDF8] flex items-center justify-center mb-2">
+            <div className="w-12 h-12 rounded-2xl bg-[#2E6DA4]/10 text-[#2E6DA4] flex items-center justify-center mb-2">
               <Activity size={22} />
             </div>
-            <p className="text-sm font-bold text-[#E8EAF6] m-0">No symptoms logged yet</p>
-            <p className="text-xs text-[#8B91B0] m-0 mt-1 max-w-sm">
+            <p className="text-sm font-bold text-[#12160F] m-0">No symptoms logged yet</p>
+            <p className="text-xs text-[#586151] m-0 mt-1 max-w-sm">
               Track joint fatigue, digestive discomfort, or energy dips to build a longitudinal clinical history.
             </p>
             <button
@@ -175,18 +183,18 @@ export default function SymptomsPage() {
           </div>
         ) : (
           logs.map(log => {
-            const color = severityColorMap[log.severity] || '#10B981';
+            const color = severityColorMap[log.severity] || '#2E7D32';
             return (
               <div
                 key={log.id}
-                className="fluetas-card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-[#2A3050] transition-colors"
+                className="fluetas-card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:shadow-md transition-shadow"
               >
                 <div className="flex items-center gap-3.5">
                   <div
                     className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0 border"
                     style={{
-                      backgroundColor: `${color}18`,
-                      borderColor: `${color}40`,
+                      backgroundColor: `${color}15`,
+                      borderColor: `${color}30`,
                       color: color,
                     }}
                   >
@@ -195,21 +203,21 @@ export default function SymptomsPage() {
 
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="font-['Outfit'] text-sm sm:text-base font-bold text-[#E8EAF6] m-0">
+                      <h3 className="font-['Outfit'] text-sm sm:text-base font-bold text-[#12160F] m-0">
                         {log.symptom}
                       </h3>
                       <span
                         className="text-[0.65rem] font-bold px-2 py-0.5 rounded"
-                        style={{ backgroundColor: `${color}20`, color: color }}
+                        style={{ backgroundColor: `${color}15`, color: color }}
                       >
                         {log.severity}
                       </span>
                     </div>
-                    <p className="text-xs text-[#8B91B0] m-0 mt-0.5">
+                    <p className="text-xs text-[#586151] m-0 mt-0.5">
                       Category: {log.category} · {log.date}
                     </p>
                     {log.notes && (
-                      <p className="text-xs text-[#E8EAF6] m-0 mt-1.5 italic bg-[#0B0D14] p-2 rounded border border-[#1E2133]">
+                      <p className="text-xs text-[#12160F] m-0 mt-1.5 italic bg-[#F2F4EE] p-2 rounded border border-[rgba(18,22,15,0.06)]">
                         &quot;{log.notes}&quot;
                       </p>
                     )}
@@ -223,39 +231,39 @@ export default function SymptomsPage() {
 
       {/* Log Symptom Modal */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-[#13161F] border border-[#1E2133] rounded-2xl p-6 max-w-md w-full shadow-2xl relative animate-slide-up">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white border border-[rgba(18,22,15,0.12)] rounded-2xl p-6 max-w-md w-full shadow-2xl relative animate-slide-up">
             <button
               onClick={() => setModalOpen(false)}
-              className="absolute top-4 right-4 text-[#8B91B0] hover:text-white"
+              className="absolute top-4 right-4 text-[#586151] hover:text-[#12160F]"
             >
               <X size={18} />
             </button>
 
-            <h3 className="text-lg font-bold text-[#E8EAF6] mb-4 font-['Outfit'] flex items-center gap-2">
-              <Activity size={18} className="text-[#38BDF8]" />
+            <h3 className="text-lg font-bold text-[#12160F] mb-4 font-['Outfit'] flex items-center gap-2">
+              <Activity size={18} className="text-[#2E6DA4]" />
               Log Current Symptom
             </h3>
 
             <form onSubmit={handleAddSymptom} className="flex flex-col gap-3 text-xs">
               <div>
-                <label className="block text-[#8B91B0] font-semibold mb-1">Symptom Description</label>
+                <label className="block text-[#586151] font-semibold mb-1">Symptom Description</label>
                 <input
                   required
                   placeholder="e.g. Right shoulder impingement pinch"
                   value={symptomName}
                   onChange={e => setSymptomName(e.target.value)}
-                  className="w-full bg-[#0B0D14] border border-[#1E2133] rounded-lg p-2.5 text-[#E8EAF6] focus:border-[#38BDF8] focus:outline-none"
+                  className="w-full bg-white border border-[rgba(18,22,15,0.15)] rounded-lg p-2.5 text-[#12160F] focus:border-[#2E6DA4] focus:outline-none"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[#8B91B0] font-semibold mb-1">Category</label>
+                  <label className="block text-[#586151] font-semibold mb-1">Category</label>
                   <select
                     value={category}
                     onChange={e => setCategory(e.target.value as SymptomCategory)}
-                    className="w-full bg-[#0B0D14] border border-[#1E2133] rounded-lg p-2.5 text-[#E8EAF6] focus:border-[#38BDF8] focus:outline-none"
+                    className="w-full bg-white border border-[rgba(18,22,15,0.15)] rounded-lg p-2.5 text-[#12160F] focus:border-[#2E6DA4] focus:outline-none"
                   >
                     {SYMPTOM_CATEGORIES.map(c => (
                       <option key={c}>{c}</option>
@@ -263,11 +271,11 @@ export default function SymptomsPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[#8B91B0] font-semibold mb-1">Severity</label>
+                  <label className="block text-[#586151] font-semibold mb-1">Severity</label>
                   <select
                     value={severity}
                     onChange={e => setSeverity(e.target.value as SeverityLevel)}
-                    className="w-full bg-[#0B0D14] border border-[#1E2133] rounded-lg p-2.5 text-[#E8EAF6] focus:border-[#38BDF8] focus:outline-none"
+                    className="w-full bg-white border border-[rgba(18,22,15,0.15)] rounded-lg p-2.5 text-[#12160F] focus:border-[#2E6DA4] focus:outline-none"
                   >
                     <option>Mild</option>
                     <option>Moderate</option>
@@ -277,13 +285,13 @@ export default function SymptomsPage() {
               </div>
 
               <div>
-                <label className="block text-[#8B91B0] font-semibold mb-1">Trigger Context / Notes</label>
+                <label className="block text-[#586151] font-semibold mb-1">Trigger Context / Notes</label>
                 <textarea
                   rows={3}
                   placeholder="What were you doing when this started? What relieved it?"
                   value={notes}
                   onChange={e => setNotes(e.target.value)}
-                  className="w-full bg-[#0B0D14] border border-[#1E2133] rounded-lg p-2.5 text-[#E8EAF6] focus:border-[#38BDF8] focus:outline-none"
+                  className="w-full bg-white border border-[rgba(18,22,15,0.15)] rounded-lg p-2.5 text-[#12160F] focus:border-[#2E6DA4] focus:outline-none"
                 />
               </div>
 

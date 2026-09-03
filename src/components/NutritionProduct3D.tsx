@@ -88,8 +88,7 @@ export default function NutritionProduct3D({ color }: ProductProps) {
         
         <PresentationControls
           global
-          config={{ mass: 1, tension: 170, friction: 26 }}
-          snap={{ mass: 4, tension: 1500 }}
+          snap
           rotation={[0.1, 0, 0]}
           polar={[-Math.PI / 6, Math.PI / 6]}
           azimuth={[-Math.PI / 3, Math.PI / 3]}

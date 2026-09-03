@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useUserProfile } from '@/context/UserProfileContext';
 import { useAuth } from '@/context/AuthContext';
 import { updateUserProfile, updateHealthProfile } from '@/lib/services/userService';
-import { User, Heart, Shield, Edit3, Save, Plus, Trash2, CheckCircle2, Loader2, ChevronRight } from 'lucide-react';
+import { User, Heart, Shield, Edit3, Save, Plus, Trash2, CheckCircle2, Loader2 } from 'lucide-react';
 import ProgressBar from '@/components/ui/ProgressBar';
 
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
@@ -109,14 +109,13 @@ export default function ProfilePage() {
   };
 
   const displayName = name || profile?.name || user?.displayName || 'User';
-  const firstName = displayName.split(' ')[0];
 
   if (profileLoading) {
     return (
       <div className="flex flex-col gap-4 max-w-5xl mx-auto w-full">
-        <div className="h-32 bg-[#13161F] rounded-2xl animate-pulse" />
-        <div className="h-12 bg-[#13161F] rounded-2xl animate-pulse" />
-        <div className="h-64 bg-[#13161F] rounded-2xl animate-pulse" />
+        <div className="h-32 bg-[#F2F4EE] rounded-2xl animate-pulse" />
+        <div className="h-12 bg-[#F2F4EE] rounded-2xl animate-pulse" />
+        <div className="h-64 bg-[#F2F4EE] rounded-2xl animate-pulse" />
       </div>
     );
   }
@@ -125,33 +124,32 @@ export default function ProfilePage() {
     <div className="flex flex-col gap-5 max-w-5xl mx-auto w-full">
       {/* Save Success Toast */}
       {saveToast && (
-        <div className="fixed top-20 right-6 z-50 bg-[#10B981] text-black font-bold text-xs py-2.5 px-4 rounded-xl shadow-2xl flex items-center gap-2 animate-slide-up">
+        <div className="fixed top-20 right-6 z-50 bg-[#2E7D32] text-white font-bold text-xs py-2.5 px-4 rounded-xl shadow-2xl flex items-center gap-2 animate-slide-up">
           <CheckCircle2 size={16} />
           Profile saved successfully!
         </div>
       )}
 
       {/* Profile Header */}
-      <div className="fluetas-card p-5 sm:p-6 bg-gradient-to-r from-[#13161F] to-[#171B2A] relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-bl from-[#10B981]/15 to-transparent rounded-full pointer-events-none blur-2xl" />
+      <div className="fluetas-card p-5 sm:p-6 bg-white border border-[rgba(18,22,15,0.10)] relative overflow-hidden">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative z-10">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-[#10B981] to-[#059669] flex items-center justify-center text-2xl sm:text-3xl font-extrabold text-white shadow-[0_0_20px_rgba(16,185,129,0.4)] shrink-0">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-[#2E7D32] flex items-center justify-center text-2xl sm:text-3xl font-extrabold text-white shadow-sm shrink-0">
               {displayName[0]?.toUpperCase()}
             </div>
             <div>
               <div className="flex items-center gap-2.5 flex-wrap">
-                <h1 className="font-['Outfit'] text-lg sm:text-2xl font-black text-[#E8EAF6] m-0">
+                <h1 className="font-['Outfit'] text-lg sm:text-2xl font-black text-[#12160F] m-0">
                   {displayName}
                 </h1>
                 {profile?.premiumMember && (
-                  <span className="px-2 py-0.5 rounded-full text-[0.65rem] font-bold bg-[#FBBF24]/15 text-[#FBBF24] border border-[#FBBF24]/30">
+                  <span className="px-2 py-0.5 rounded-full text-[0.65rem] font-bold bg-[#D97706]/10 text-[#D97706] border border-[#D97706]/20">
                     ⭐ Premium
                   </span>
                 )}
               </div>
-              <p className="text-[#8B91B0] text-xs m-0 mt-0.5">{user?.email}</p>
-              <p className="text-[#10B981] text-[0.65rem] font-semibold m-0 mt-1">
+              <p className="text-[#586151] text-xs m-0 mt-0.5">{user?.email}</p>
+              <p className="text-[#2E7D32] text-[0.65rem] font-semibold m-0 mt-1">
                 {healthProfile?.primaryGoal ?? 'Goal not set'} · {profile?.gender ?? 'Gender not set'}
               </p>
             </div>
@@ -161,21 +159,21 @@ export default function ProfilePage() {
             {/* Profile Completeness */}
             <div className="min-w-[160px]">
               <div className="flex items-center justify-between text-[0.65rem] mb-1">
-                <span className="text-[#8B91B0]">Profile Completeness</span>
-                <span className="font-bold" style={{ color: completeness.pct >= 70 ? '#10B981' : completeness.pct >= 40 ? '#FBBF24' : '#FB923C' }}>
+                <span className="text-[#586151]">Profile Completeness</span>
+                <span className="font-bold text-[#2E7D32]">
                   {completeness.pct}%
                 </span>
               </div>
-              <ProgressBar value={completeness.pct} color={completeness.pct >= 70 ? '#10B981' : completeness.pct >= 40 ? '#FBBF24' : '#FB923C'} height={5} />
+              <ProgressBar value={completeness.pct} color={completeness.pct >= 70 ? '#2E7D32' : completeness.pct >= 40 ? '#D97706' : '#DC2626'} height={5} />
               {completeness.remaining.length > 0 && (
-                <p className="text-[0.6rem] text-[#3A3F58] mt-1">Missing: {completeness.remaining.slice(0, 2).join(', ')}{completeness.remaining.length > 2 ? `...` : ''}</p>
+                <p className="text-[0.6rem] text-[#8A9482] mt-1">Missing: {completeness.remaining.slice(0, 2).join(', ')}{completeness.remaining.length > 2 ? `...` : ''}</p>
               )}
             </div>
 
             <button
               onClick={() => isEditing ? handleSave() : setIsEditing(true)}
               disabled={saving}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#10B981] to-[#059669] text-white text-xs font-bold shadow-[0_0_12px_rgba(16,185,129,0.25)] hover:opacity-90 transition-all cursor-pointer disabled:opacity-60"
+              className="btn-primary flex items-center gap-2 px-4 py-2 text-xs font-bold shadow-sm hover:opacity-90 transition-all cursor-pointer disabled:opacity-60"
             >
               {saving ? <Loader2 size={13} className="animate-spin" /> : isEditing ? <Save size={13} /> : <Edit3 size={13} />}
               {saving ? 'Saving...' : isEditing ? 'Save Changes' : 'Edit Profile'}
@@ -186,26 +184,26 @@ export default function ProfilePage() {
 
       {/* Error */}
       {error && (
-        <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-xs">{error}</div>
+        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-600 text-xs">{error}</div>
       )}
 
       {/* Stats Bar */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Height', value: profile?.heightCm ? `${profile.heightCm} cm` : '—', color: '#10B981' },
-          { label: 'Weight', value: profile?.weightKg ? `${profile.weightKg} kg` : '—', color: '#38BDF8' },
-          { label: 'Blood Group', value: profile?.bloodGroup || '—', color: '#F472B6' },
-          { label: 'Fitness Level', value: healthProfile?.fitnessLevel || '—', color: '#FBBF24' },
+          { label: 'Height', value: profile?.heightCm ? `${profile.heightCm} cm` : '—', color: '#2E7D32' },
+          { label: 'Weight', value: profile?.weightKg ? `${profile.weightKg} kg` : '—', color: '#2E6DA4' },
+          { label: 'Blood Group', value: profile?.bloodGroup || '—', color: '#C23B6B' },
+          { label: 'Fitness Level', value: healthProfile?.fitnessLevel || '—', color: '#D97706' },
         ].map(stat => (
           <div key={stat.label} className="fluetas-card p-3.5 text-center">
             <p className="font-['Outfit'] text-base font-black m-0" style={{ color: stat.color }}>{stat.value}</p>
-            <p className="text-[0.65rem] text-[#8B91B0] m-0 mt-0.5">{stat.label}</p>
+            <p className="text-[0.65rem] text-[#586151] m-0 mt-0.5">{stat.label}</p>
           </div>
         ))}
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-[#1E2133] gap-2">
+      <div className="flex border-b border-[rgba(18,22,15,0.10)] gap-2">
         {[
           { id: 'basic', label: 'Basic Info', icon: User },
           { id: 'health', label: 'Health Details', icon: Heart },
@@ -217,7 +215,7 @@ export default function ProfilePage() {
               key={t.id}
               onClick={() => setActiveTab(t.id as typeof activeTab)}
               className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold border-b-2 -mb-[2px] transition-all cursor-pointer ${
-                activeTab === t.id ? 'text-[#10B981] border-[#10B981]' : 'text-[#8B91B0] border-transparent hover:text-[#E8EAF6]'
+                activeTab === t.id ? 'text-[#2E7D32] border-[#2E7D32]' : 'text-[#586151] border-transparent hover:text-[#12160F]'
               }`}
             >
               <Icon size={13} />
@@ -237,37 +235,37 @@ export default function ProfilePage() {
               { label: 'Email Address', value: user?.email ?? '', setter: () => {}, placeholder: '', type: 'email', readonly: true },
             ].map(f => (
               <div key={f.label}>
-                <label className="block text-[#8B91B0] font-medium mb-1.5">{f.label}</label>
+                <label className="block text-[#586151] font-medium mb-1.5">{f.label}</label>
                 <input
                   type={f.type}
                   value={f.value}
                   onChange={e => !f.readonly && f.setter(e.target.value)}
                   placeholder={f.placeholder}
                   disabled={!isEditing || f.readonly}
-                  className="w-full bg-[#0B0D14] border border-[#1E2133] rounded-xl p-2.5 text-[#E8EAF6] disabled:opacity-60 disabled:cursor-default focus:border-[#10B981] focus:outline-none transition-colors"
+                  className="w-full bg-white border border-[rgba(18,22,15,0.15)] rounded-xl p-2.5 text-[#12160F] disabled:bg-[#F2F4EE] disabled:cursor-default focus:border-[#2E7D32] focus:outline-none transition-colors"
                 />
-                {f.readonly && <p className="text-[0.6rem] text-[#3A3F58] mt-1">Email is set by your authentication provider.</p>}
+                {f.readonly && <p className="text-[0.6rem] text-[#8A9482] mt-1">Email is set by your authentication provider.</p>}
               </div>
             ))}
 
             <div>
-              <label className="block text-[#8B91B0] font-medium mb-1.5">Date of Birth</label>
+              <label className="block text-[#586151] font-medium mb-1.5">Date of Birth</label>
               <input
                 type="date"
                 value={dob}
                 onChange={e => setDob(e.target.value)}
                 disabled={!isEditing}
-                className="w-full bg-[#0B0D14] border border-[#1E2133] rounded-xl p-2.5 text-[#E8EAF6] disabled:opacity-60 disabled:cursor-default focus:border-[#10B981] focus:outline-none transition-colors"
+                className="w-full bg-white border border-[rgba(18,22,15,0.15)] rounded-xl p-2.5 text-[#12160F] disabled:bg-[#F2F4EE] disabled:cursor-default focus:border-[#2E7D32] focus:outline-none transition-colors"
               />
             </div>
 
             <div>
-              <label className="block text-[#8B91B0] font-medium mb-1.5">Gender</label>
+              <label className="block text-[#586151] font-medium mb-1.5">Gender</label>
               <select
                 value={gender}
                 onChange={e => setGender(e.target.value)}
                 disabled={!isEditing}
-                className="w-full bg-[#0B0D14] border border-[#1E2133] rounded-xl p-2.5 text-[#E8EAF6] disabled:opacity-60 disabled:cursor-default focus:border-[#10B981] focus:outline-none transition-colors"
+                className="w-full bg-white border border-[rgba(18,22,15,0.15)] rounded-xl p-2.5 text-[#12160F] disabled:bg-[#F2F4EE] disabled:cursor-default focus:border-[#2E7D32] focus:outline-none transition-colors"
               >
                 <option value="">Select...</option>
                 {GENDERS.map(g => <option key={g}>{g}</option>)}
@@ -275,36 +273,36 @@ export default function ProfilePage() {
             </div>
 
             <div>
-              <label className="block text-[#8B91B0] font-medium mb-1.5">Height (cm)</label>
+              <label className="block text-[#586151] font-medium mb-1.5">Height (cm)</label>
               <input
                 type="number" min={50} max={300}
                 value={heightCm}
                 onChange={e => setHeightCm(e.target.value)}
                 disabled={!isEditing}
                 placeholder="e.g. 175"
-                className="w-full bg-[#0B0D14] border border-[#1E2133] rounded-xl p-2.5 text-[#E8EAF6] disabled:opacity-60 disabled:cursor-default focus:border-[#10B981] focus:outline-none transition-colors"
+                className="w-full bg-white border border-[rgba(18,22,15,0.15)] rounded-xl p-2.5 text-[#12160F] disabled:bg-[#F2F4EE] disabled:cursor-default focus:border-[#2E7D32] focus:outline-none transition-colors"
               />
             </div>
 
             <div>
-              <label className="block text-[#8B91B0] font-medium mb-1.5">Weight (kg)</label>
+              <label className="block text-[#586151] font-medium mb-1.5">Weight (kg)</label>
               <input
                 type="number" min={20} max={500}
                 value={weightKg}
                 onChange={e => setWeightKg(e.target.value)}
                 disabled={!isEditing}
                 placeholder="e.g. 70"
-                className="w-full bg-[#0B0D14] border border-[#1E2133] rounded-xl p-2.5 text-[#E8EAF6] disabled:opacity-60 disabled:cursor-default focus:border-[#10B981] focus:outline-none transition-colors"
+                className="w-full bg-white border border-[rgba(18,22,15,0.15)] rounded-xl p-2.5 text-[#12160F] disabled:bg-[#F2F4EE] disabled:cursor-default focus:border-[#2E7D32] focus:outline-none transition-colors"
               />
             </div>
 
             <div>
-              <label className="block text-[#8B91B0] font-medium mb-1.5">Blood Group</label>
+              <label className="block text-[#586151] font-medium mb-1.5">Blood Group</label>
               <select
                 value={bloodGroup}
                 onChange={e => setBloodGroup(e.target.value)}
                 disabled={!isEditing}
-                className="w-full bg-[#0B0D14] border border-[#1E2133] rounded-xl p-2.5 text-[#E8EAF6] disabled:opacity-60 disabled:cursor-default focus:border-[#10B981] focus:outline-none transition-colors"
+                className="w-full bg-white border border-[rgba(18,22,15,0.15)] rounded-xl p-2.5 text-[#12160F] disabled:bg-[#F2F4EE] disabled:cursor-default focus:border-[#2E7D32] focus:outline-none transition-colors"
               >
                 <option value="">Unknown</option>
                 {BLOOD_GROUPS.map(b => <option key={b}>{b}</option>)}
@@ -313,7 +311,7 @@ export default function ProfilePage() {
           </div>
 
           {/* Emergency Contact */}
-          <div className="pt-3 border-t border-[#1E2133]">
+          <div className="pt-3 border-t border-[rgba(18,22,15,0.08)]">
             <p className="section-title mb-3">EMERGENCY CONTACT</p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
               {[
@@ -322,13 +320,13 @@ export default function ProfilePage() {
                 { label: 'Relationship', value: emergencyRel, setter: setEmergencyRel, placeholder: 'e.g. Spouse' },
               ].map(f => (
                 <div key={f.label}>
-                  <label className="block text-[#8B91B0] font-medium mb-1.5">{f.label}</label>
+                  <label className="block text-[#586151] font-medium mb-1.5">{f.label}</label>
                   <input
                     value={f.value}
                     onChange={e => f.setter(e.target.value)}
                     disabled={!isEditing}
                     placeholder={f.placeholder}
-                    className="w-full bg-[#0B0D14] border border-[#1E2133] rounded-xl p-2.5 text-[#E8EAF6] disabled:opacity-60 disabled:cursor-default focus:border-[#10B981] focus:outline-none transition-colors"
+                    className="w-full bg-white border border-[rgba(18,22,15,0.15)] rounded-xl p-2.5 text-[#12160F] disabled:bg-[#F2F4EE] disabled:cursor-default focus:border-[#2E7D32] focus:outline-none transition-colors"
                   />
                 </div>
               ))}
@@ -344,9 +342,9 @@ export default function ProfilePage() {
           <div className="fluetas-card p-5">
             <p className="section-title mb-3">ALLERGIES</p>
             <div className="flex flex-wrap gap-2 mb-3">
-              {allergies.length === 0 && <p className="text-[#3A3F58] text-xs">No allergies recorded.</p>}
+              {allergies.length === 0 && <p className="text-[#8A9482] text-xs">No allergies recorded.</p>}
               {allergies.map((a, i) => (
-                <span key={i} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#F87171]/15 border border-[#F87171]/30 text-[#F87171] text-xs font-semibold">
+                <span key={i} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#EF4444]/10 border border-[#EF4444]/20 text-[#EF4444] text-xs font-semibold">
                   {a}
                   {isEditing && (
                     <button onClick={() => setAllergies(allergies.filter((_, j) => j !== i))} className="hover:opacity-70 cursor-pointer">
@@ -363,11 +361,11 @@ export default function ProfilePage() {
                   onChange={e => setNewAllergy(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (newAllergy.trim()) { setAllergies([...allergies, newAllergy.trim()]); setNewAllergy(''); } } }}
                   placeholder="Add allergy..."
-                  className="flex-1 bg-[#0B0D14] border border-[#1E2133] rounded-xl p-2.5 text-xs text-[#E8EAF6] focus:border-[#10B981] focus:outline-none"
+                  className="flex-1 bg-white border border-[rgba(18,22,15,0.15)] rounded-xl p-2.5 text-xs text-[#12160F] focus:border-[#2E7D32] focus:outline-none"
                 />
                 <button
                   onClick={() => { if (newAllergy.trim()) { setAllergies([...allergies, newAllergy.trim()]); setNewAllergy(''); } }}
-                  className="px-3 py-2 rounded-xl bg-[#10B981]/15 border border-[#10B981]/30 text-[#10B981] text-xs font-semibold cursor-pointer hover:opacity-90 transition-all"
+                  className="px-3 py-2 rounded-xl bg-[#2E7D32]/10 border border-[#2E7D32]/20 text-[#2E7D32] text-xs font-semibold cursor-pointer hover:bg-[#2E7D32]/20 transition-all"
                 >
                   <Plus size={14} />
                 </button>
@@ -379,9 +377,9 @@ export default function ProfilePage() {
           <div className="fluetas-card p-5">
             <p className="section-title mb-3">CHRONIC CONDITIONS</p>
             <div className="flex flex-wrap gap-2 mb-3">
-              {conditions.length === 0 && <p className="text-[#3A3F58] text-xs">No conditions recorded.</p>}
+              {conditions.length === 0 && <p className="text-[#8A9482] text-xs">No conditions recorded.</p>}
               {conditions.map((c, i) => (
-                <span key={i} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#FBBF24]/15 border border-[#FBBF24]/30 text-[#FBBF24] text-xs font-semibold">
+                <span key={i} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#D97706]/10 border border-[#D97706]/20 text-[#D97706] text-xs font-semibold">
                   {c}
                   {isEditing && (
                     <button onClick={() => setConditions(conditions.filter((_, j) => j !== i))} className="hover:opacity-70 cursor-pointer">
@@ -398,11 +396,11 @@ export default function ProfilePage() {
                   onChange={e => setNewCondition(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (newCondition.trim()) { setConditions([...conditions, newCondition.trim()]); setNewCondition(''); } } }}
                   placeholder="Add condition..."
-                  className="flex-1 bg-[#0B0D14] border border-[#1E2133] rounded-xl p-2.5 text-xs text-[#E8EAF6] focus:border-[#10B981] focus:outline-none"
+                  className="flex-1 bg-white border border-[rgba(18,22,15,0.15)] rounded-xl p-2.5 text-xs text-[#12160F] focus:border-[#2E7D32] focus:outline-none"
                 />
                 <button
                   onClick={() => { if (newCondition.trim()) { setConditions([...conditions, newCondition.trim()]); setNewCondition(''); } }}
-                  className="px-3 py-2 rounded-xl bg-[#10B981]/15 border border-[#10B981]/30 text-[#10B981] text-xs font-semibold cursor-pointer hover:opacity-90 transition-all"
+                  className="px-3 py-2 rounded-xl bg-[#2E7D32]/10 border border-[#2E7D32]/20 text-[#2E7D32] text-xs font-semibold cursor-pointer hover:bg-[#2E7D32]/20 transition-all"
                 >
                   <Plus size={14} />
                 </button>
@@ -414,12 +412,12 @@ export default function ProfilePage() {
           <div className="fluetas-card p-5">
             <p className="section-title mb-3">CURRENT MEDICATIONS</p>
             <div className="flex flex-col gap-2 mb-3">
-              {medications.length === 0 && <p className="text-[#3A3F58] text-xs">No medications recorded.</p>}
+              {medications.length === 0 && <p className="text-[#8A9482] text-xs">No medications recorded.</p>}
               {medications.map((m, i) => (
-                <div key={i} className="flex items-center justify-between p-2.5 rounded-xl bg-[#0B0D14] border border-[#1E2133]">
-                  <span className="text-xs text-[#E8EAF6] font-semibold">{typeof m === 'string' ? m : (m as { name: string }).name}</span>
+                <div key={i} className="flex items-center justify-between p-2.5 rounded-xl bg-[#F2F4EE] border border-[rgba(18,22,15,0.06)]">
+                  <span className="text-xs text-[#12160F] font-semibold">{typeof m === 'string' ? m : (m as { name: string }).name}</span>
                   {isEditing && (
-                    <button onClick={() => setMedications(medications.filter((_, j) => j !== i))} className="text-[#F87171] hover:opacity-70 cursor-pointer">
+                    <button onClick={() => setMedications(medications.filter((_, j) => j !== i))} className="text-[#EF4444] hover:opacity-70 cursor-pointer">
                       <Trash2 size={13} />
                     </button>
                   )}
@@ -433,11 +431,11 @@ export default function ProfilePage() {
                   onChange={e => setNewMed(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (newMed.trim()) { setMedications([...medications, newMed.trim()]); setNewMed(''); } } }}
                   placeholder="e.g. Vitamin D 2000IU"
-                  className="flex-1 bg-[#0B0D14] border border-[#1E2133] rounded-xl p-2.5 text-xs text-[#E8EAF6] focus:border-[#10B981] focus:outline-none"
+                  className="flex-1 bg-white border border-[rgba(18,22,15,0.15)] rounded-xl p-2.5 text-xs text-[#12160F] focus:border-[#2E7D32] focus:outline-none"
                 />
                 <button
                   onClick={() => { if (newMed.trim()) { setMedications([...medications, newMed.trim()]); setNewMed(''); } }}
-                  className="px-3 py-2 rounded-xl bg-[#10B981]/15 border border-[#10B981]/30 text-[#10B981] text-xs font-semibold cursor-pointer hover:opacity-90 transition-all"
+                  className="px-3 py-2 rounded-xl bg-[#2E7D32]/10 border border-[#2E7D32]/20 text-[#2E7D32] text-xs font-semibold cursor-pointer hover:bg-[#2E7D32]/20 transition-all"
                 >
                   <Plus size={14} />
                 </button>
@@ -453,12 +451,12 @@ export default function ProfilePage() {
           <span className="section-title">LIFESTYLE &amp; WELLNESS GOALS</span>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
             <div>
-              <label className="block text-[#8B91B0] font-medium mb-2">Fitness Level</label>
+              <label className="block text-[#586151] font-medium mb-2">Fitness Level</label>
               <div className="grid grid-cols-2 gap-2">
                 {FITNESS_LEVELS.map(f => (
                   <button key={f} type="button" onClick={() => isEditing && setFitnessLevel(f)}
                     disabled={!isEditing}
-                    className={`p-2.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer disabled:cursor-default ${fitnessLevel === f ? 'bg-[#38BDF8]/20 border-[#38BDF8] text-[#38BDF8]' : 'bg-[#0B0D14] border-[#1E2133] text-[#8B91B0]'}`}>
+                    className={`p-2.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer disabled:cursor-default ${fitnessLevel === f ? 'bg-[#2E6DA4]/15 border-[#2E6DA4] text-[#2E6DA4]' : 'bg-[#F2F4EE] border-[rgba(18,22,15,0.08)] text-[#586151]'}`}>
                     {f}
                   </button>
                 ))}
@@ -466,21 +464,21 @@ export default function ProfilePage() {
             </div>
 
             <div>
-              <label className="block text-[#8B91B0] font-medium mb-1.5">Activity Level</label>
+              <label className="block text-[#586151] font-medium mb-1.5">Activity Level</label>
               <select value={activityLevel} onChange={e => setActivityLevel(e.target.value)} disabled={!isEditing}
-                className="w-full bg-[#0B0D14] border border-[#1E2133] rounded-xl p-2.5 text-[#E8EAF6] disabled:opacity-60 disabled:cursor-default focus:border-[#10B981] focus:outline-none transition-colors">
+                className="w-full bg-white border border-[rgba(18,22,15,0.15)] rounded-xl p-2.5 text-[#12160F] disabled:bg-[#F2F4EE] disabled:cursor-default focus:border-[#2E7D32] focus:outline-none transition-colors">
                 <option value="">Select...</option>
                 {ACTIVITY_LEVELS.map(a => <option key={a}>{a}</option>)}
               </select>
             </div>
 
             <div>
-              <label className="block text-[#8B91B0] font-medium mb-2">Dietary Preference</label>
+              <label className="block text-[#586151] font-medium mb-2">Dietary Preference</label>
               <div className="grid grid-cols-2 gap-2">
                 {DIETARY_PREFS.map(d => (
                   <button key={d} type="button" onClick={() => isEditing && setDietaryPref(d)}
                     disabled={!isEditing}
-                    className={`p-2 rounded-lg text-[0.7rem] font-semibold border transition-all cursor-pointer disabled:cursor-default ${dietaryPref === d ? 'bg-[#A78BFA]/20 border-[#A78BFA] text-[#A78BFA]' : 'bg-[#0B0D14] border-[#1E2133] text-[#8B91B0]'}`}>
+                    className={`p-2 rounded-lg text-[0.7rem] font-semibold border transition-all cursor-pointer disabled:cursor-default ${dietaryPref === d ? 'bg-[#7A4E9E]/15 border-[#7A4E9E] text-[#7A4E9E]' : 'bg-[#F2F4EE] border-[rgba(18,22,15,0.08)] text-[#586151]'}`}>
                     {d}
                   </button>
                 ))}
@@ -489,14 +487,14 @@ export default function ProfilePage() {
 
             <div className="flex flex-col gap-3">
               <div>
-                <label className="block text-[#8B91B0] font-medium mb-1.5">Sleep Target (hrs/night)</label>
+                <label className="block text-[#586151] font-medium mb-1.5">Sleep Target (hrs/night)</label>
                 <input type="number" min={4} max={12} step={0.5} value={sleepTarget} onChange={e => setSleepTarget(e.target.value)} disabled={!isEditing}
-                  className="w-full bg-[#0B0D14] border border-[#1E2133] rounded-xl p-2.5 text-[#E8EAF6] disabled:opacity-60 disabled:cursor-default focus:border-[#10B981] focus:outline-none transition-colors" />
+                  className="w-full bg-white border border-[rgba(18,22,15,0.15)] rounded-xl p-2.5 text-[#12160F] disabled:bg-[#F2F4EE] disabled:cursor-default focus:border-[#2E7D32] focus:outline-none transition-colors" />
               </div>
               <div>
-                <label className="block text-[#8B91B0] font-medium mb-1.5">Hydration Target (L/day)</label>
+                <label className="block text-[#586151] font-medium mb-1.5">Hydration Target (L/day)</label>
                 <input type="number" min={1} max={6} step={0.5} value={hydrationTarget} onChange={e => setHydrationTarget(e.target.value)} disabled={!isEditing}
-                  className="w-full bg-[#0B0D14] border border-[#1E2133] rounded-xl p-2.5 text-[#E8EAF6] disabled:opacity-60 disabled:cursor-default focus:border-[#10B981] focus:outline-none transition-colors" />
+                  className="w-full bg-white border border-[rgba(18,22,15,0.15)] rounded-xl p-2.5 text-[#12160F] disabled:bg-[#F2F4EE] disabled:cursor-default focus:border-[#2E7D32] focus:outline-none transition-colors" />
               </div>
             </div>
           </div>
@@ -505,12 +503,12 @@ export default function ProfilePage() {
 
       {/* Save Footer (visible when editing) */}
       {isEditing && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 px-5 py-3 bg-[#13161F] border border-[#10B981]/40 rounded-2xl shadow-2xl z-40 animate-slide-up">
-          <button onClick={() => setIsEditing(false)} className="px-4 py-2 rounded-xl text-[#8B91B0] text-xs font-semibold border border-[#1E2133] hover:text-white cursor-pointer transition-all">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 px-5 py-3 bg-white border border-[rgba(18,22,15,0.15)] rounded-2xl shadow-2xl z-40 animate-slide-up">
+          <button onClick={() => setIsEditing(false)} className="px-4 py-2 rounded-xl text-[#586151] text-xs font-semibold border border-[rgba(18,22,15,0.10)] hover:text-[#12160F] cursor-pointer transition-all">
             Cancel
           </button>
           <button onClick={handleSave} disabled={saving}
-            className="flex items-center gap-2 px-5 py-2 rounded-xl bg-gradient-to-r from-[#10B981] to-[#059669] text-white text-xs font-bold shadow-[0_0_12px_rgba(16,185,129,0.3)] hover:opacity-90 cursor-pointer disabled:opacity-60 transition-all">
+            className="btn-primary flex items-center gap-2 px-5 py-2 text-xs font-bold shadow-sm hover:opacity-90 cursor-pointer disabled:opacity-60 transition-all">
             {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
             {saving ? 'Saving...' : 'Save All Changes'}
           </button>
