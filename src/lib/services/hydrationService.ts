@@ -57,14 +57,19 @@ export async function logHydration(
 
 export async function getTodayHydrationEntries(userId: string): Promise<HydrationEntry[]> {
   if (!db) return [];
-  const today = todayDateStr();
-  const q = query(
-    collection(db, 'hydrationLogs', userId, 'entries'),
-    where('date', '==', today),
-    orderBy('timestamp', 'desc')
-  );
-  const snap = await getDocs(q);
-  return snap.docs.map(d => ({ id: d.id, ...d.data() } as HydrationEntry));
+  try {
+    const today = todayDateStr();
+    const q = query(
+      collection(db, 'hydrationLogs', userId, 'entries'),
+      where('date', '==', today)
+    );
+    const snap = await getDocs(q);
+    const entries = snap.docs.map(d => ({ id: d.id, ...d.data() } as HydrationEntry));
+    return entries.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+  } catch (err) {
+    console.warn('[HydrationService] getTodayHydrationEntries failed:', err);
+    return [];
+  }
 }
 
 export interface DayHydration {

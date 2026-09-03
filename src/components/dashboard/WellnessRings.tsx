@@ -24,6 +24,7 @@ const componentIcons: Record<string, React.ReactNode> = {
   'Sleep': <Moon size={15} className="text-[#7A4E9E]" />,
   'Cycle & Recovery': <Zap size={15} className="text-[#D9622B]" />,
   'Recovery': <Zap size={15} className="text-[#D9622B]" />,
+  'Nutrition': <Activity size={15} className="text-[#2E7D32]" />,
 };
 
 const drillDownRoutes: Record<string, string> = {
@@ -31,13 +32,26 @@ const drillDownRoutes: Record<string, string> = {
   'Training': '/workouts',
   'Hydration': '/hydration',
   'Sleep': '/sleep',
+  'Nutrition': '/nutrition',
   'Cycle & Recovery': '/cycle-tracker',
   'Recovery': '/cycle-tracker',
 };
 
+const fallbackComponents = [
+  { label: 'Overall Wellness', score: 0, color: '#2E7D32', status: 'Getting Started', subtext: 'Log telemetry to unlock' },
+  { label: 'Hydration', score: 0, color: '#2E6DA4', status: '0L Logged', subtext: 'Target 2.5L / day' },
+  { label: 'Sleep', score: 0, color: '#7A4E9E', status: 'No sleep logged', subtext: 'Target 8.0h / night' },
+  { label: 'Nutrition', score: 0, color: '#2E7D32', status: '0 meals logged', subtext: 'Log breakfast or meal' },
+  { label: 'Training', score: 0, color: '#2E7D32', status: 'No session yet', subtext: 'Start routine' },
+];
+
 export default function WellnessRings() {
   const { result, loading, error, reload } = useWellnessScore();
   const [showBreakdown, setShowBreakdown] = useState(false);
+
+  const displayComponents = result?.components && result.components.length > 0
+    ? result.components
+    : fallbackComponents;
 
   return (
     <section className="w-full">
@@ -54,7 +68,7 @@ export default function WellnessRings() {
         </div>
 
         <div className="flex items-center gap-2">
-          {result && !result.insufficientData && (
+          {result && (
             <button
               onClick={() => setShowBreakdown(!showBreakdown)}
               className="flex items-center gap-1 text-[0.7rem] text-[#586151] hover:text-[#2E7D32] transition-colors cursor-pointer"
@@ -80,7 +94,7 @@ export default function WellnessRings() {
             Telemetry Breakdown
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-            {result.components.slice(1).map(c => (
+            {displayComponents.slice(1).map(c => (
               <div key={c.label} className="flex items-center gap-2 bg-[#FAFAF6] p-2.5 rounded-xl border border-[rgba(18,22,15,0.06)]">
                 <div className="p-1 rounded-lg bg-[#FFFFFF] shadow-2xs">
                   {componentIcons[c.label] || <Activity size={14} className="text-[#2E7D32]" />}
@@ -88,7 +102,7 @@ export default function WellnessRings() {
                 <div>
                   <p className="text-[#586151] text-[0.65rem] m-0">{c.label}</p>
                   <p className="font-bold m-0 text-xs" style={{ color: c.color }}>
-                    {c.score !== null ? (
+                    {c.score !== null && c.score > 0 ? (
                       <>
                         <AnimatedNumber value={c.score} duration={500} />/100
                       </>
@@ -101,7 +115,7 @@ export default function WellnessRings() {
             ))}
           </div>
           <p className="text-[#8A9482] text-[0.65rem] mt-2">
-            Calculated {result.calculatedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} from {result.dataPointCount} telemetry points
+            Calculated {result.calculatedAt ? result.calculatedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'recently'} from {result.dataPointCount || 0} telemetry points
           </p>
         </div>
       )}
@@ -119,48 +133,21 @@ export default function WellnessRings() {
         </div>
       )}
 
-      {/* Error State */}
-      {!loading && error && (
-        <div className="fluetas-card p-5 text-center bg-[#FFFFFF]">
-          <p className="text-[#586151] text-xs">Could not load wellness telemetry.</p>
-          <button onClick={reload} className="text-[#2E7D32] text-xs font-semibold mt-1 cursor-pointer hover:underline">
-            Try again
-          </button>
-        </div>
-      )}
-
-      {/* Honest Insufficient Data State */}
-      {!loading && !error && result?.insufficientData && (
-        <div className="fluetas-card p-6 text-center bg-[#FFFFFF] border-[rgba(18,22,15,0.08)]">
-          <div className="w-12 h-12 rounded-2xl bg-[#2E7D32]/10 text-[#2E7D32] flex items-center justify-center mx-auto mb-2.5">
-            <Activity size={24} />
-          </div>
-          <p className="font-['Outfit'] font-bold text-[#12160F] text-base m-0">FLUETAS Score: &mdash;</p>
-          <p className="text-xs font-medium text-[#586151] mt-0.5 mb-1">Not enough data yet</p>
-          <p className="text-[#8A9482] text-xs max-w-md mx-auto">
-            Complete your profile and log your first workout, water, or sleep activity to calculate your personalized wellness score.
-          </p>
-          {result.components.filter(c => c.score !== null).length > 0 && (
-            <p className="text-[#2E7D32] text-xs mt-3 font-semibold">
-              {result.components.filter(c => c.score !== null).length} of 4 telemetry points collected today
-            </p>
-          )}
-        </div>
-      )}
-
       {/* Real Interactive Wellness Snapshot Grid with Drill-Down Navigation */}
-      {!loading && !error && result && !result.insufficientData && (
+      {!loading && (
         <StaggerContainer className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-          {result.components.map((item, i) => {
+          {displayComponents.map((item, i) => {
             const route = drillDownRoutes[item.label] || '/dashboard';
-            const tooltipLabel = item.score !== null ? `${item.label}: ${item.score}/100` : `${item.label}: No logs yet`;
+            const tooltipLabel = item.score !== null && item.score > 0
+              ? `${item.label}: ${item.score}/100`
+              : `${item.label}: Click to log`;
 
             return (
               <StaggerItem key={item.label} index={i}>
                 <Link
                   href={route}
                   id={`wellness-ring-${item.label.toLowerCase().replace(/\s/g, '-')}`}
-                  className="fluetas-card-interactive p-3.5 sm:p-4 flex flex-col items-center gap-2 bg-[#FFFFFF] group no-underline transition-all hover:border-[#2E7D32]/40 hover:shadow-md block h-full"
+                  className="fluetas-card-interactive p-3.5 sm:p-4 flex flex-col items-center gap-2 bg-[#FFFFFF] group no-underline transition-all hover:border-[#2E7D32]/40 hover:shadow-md block h-full border border-[rgba(18,22,15,0.08)] shadow-sm"
                 >
                   <div className="flex items-center justify-between w-full">
                     <div className="p-1 rounded-md bg-[#FAFAF6] group-hover:bg-[#F2F4EE] transition-colors">
@@ -179,7 +166,7 @@ export default function WellnessRings() {
                     strokeWidth={6}
                     color={item.color}
                     trackColor={`${item.color}18`}
-                    label={item.score !== null ? `${item.score}` : '—'}
+                    label={item.score !== null && item.score > 0 ? `${item.score}` : '0'}
                     tooltipText={tooltipLabel}
                   />
 

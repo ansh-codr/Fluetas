@@ -103,14 +103,19 @@ export async function logMeal(
 
 export async function getTodayMeals(userId: string): Promise<NutritionEntry[]> {
   if (!db) return [];
-  const today = todayDateStr();
-  const q = query(
-    collection(db, 'nutritionLogs', userId, 'entries'),
-    where('date', '==', today),
-    orderBy('timestamp', 'asc')
-  );
-  const snap = await getDocs(q);
-  return snap.docs.map(d => ({ id: d.id, ...d.data() } as NutritionEntry));
+  try {
+    const today = todayDateStr();
+    const q = query(
+      collection(db, 'nutritionLogs', userId, 'entries'),
+      where('date', '==', today)
+    );
+    const snap = await getDocs(q);
+    const entries = snap.docs.map(d => ({ id: d.id, ...d.data() } as NutritionEntry));
+    return entries.sort((a, b) => (a.timestamp?.seconds || 0) - (b.timestamp?.seconds || 0));
+  } catch (err) {
+    console.warn('[NutritionService] getTodayMeals failed:', err);
+    return [];
+  }
 }
 
 export function computeTotals(meals: NutritionEntry[]): NutritionTotals {

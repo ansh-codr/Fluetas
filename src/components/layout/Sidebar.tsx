@@ -101,7 +101,6 @@ const navSections: NavSection[] = [
     title: 'EXTRAS',
     items: [
       { href: '/products', label: 'Products', icon: ShoppingBag },
-      { href: '/scan-qr', label: 'Scan QR', icon: QrCode },
     ],
   },
 ];

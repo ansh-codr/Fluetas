@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
-import { mockConsentsList } from '@/lib/mock/dashboardData';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import { getPatientConsents, revokeConsent, ConsentRecord } from '@/lib/services/consentService';
 import {
   Shield,
   Bell,
@@ -9,17 +10,32 @@ import {
   Lock,
   Trash2,
   AlertTriangle,
+  CheckCircle2,
 } from 'lucide-react';
 
 export default function SettingsPage() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'privacy' | 'notifications' | 'devices' | 'account'>('privacy');
-  const [consents, setConsents] = useState(mockConsentsList);
+  const [consents, setConsents] = useState<ConsentRecord[]>([]);
   const [revokeToast, setRevokeToast] = useState<string | null>(null);
 
-  const handleRevokeConsent = (consentId: string, doctorName: string) => {
-    setConsents(consents.filter(c => c.id !== consentId));
-    setRevokeToast(`Consent access revoked for ${doctorName}. Logged to audit trail.`);
-    setTimeout(() => setRevokeToast(null), 3500);
+  useEffect(() => {
+    if (!user) return;
+    getPatientConsents(user.uid)
+      .then(res => setConsents(res.filter(c => c.status === 'active')))
+      .catch(() => setConsents([]));
+  }, [user]);
+
+  const handleRevokeConsent = async (consentId: string, doctorName: string) => {
+    if (!user) return;
+    try {
+      await revokeConsent(user.uid, consentId, doctorName);
+      setConsents(prev => prev.filter(c => c.consentId !== consentId && c.id !== consentId));
+      setRevokeToast(`Consent access revoked for ${doctorName}. Logged to audit trail.`);
+      setTimeout(() => setRevokeToast(null), 3500);
+    } catch {
+      alert('Failed to revoke consent.');
+    }
   };
 
   return (
@@ -92,54 +108,59 @@ export default function SettingsPage() {
                 <p className="text-xs m-0 mt-1">All your medical data is currently locked in private storage.</p>
               </div>
             ) : (
-              consents.map(consent => (
-                <div
-                  key={consent.id}
-                  className="fluetas-card p-5 flex flex-col gap-3.5 hover:shadow-md transition-shadow"
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-['Outfit'] text-base font-bold text-[#12160F] m-0">
-                          {consent.doctorName}
-                        </h3>
-                        <span className="text-xs text-[#586151]">({consent.specialization})</span>
+              consents.map(consent => {
+                const expiresStr = consent.expiresAt?.seconds
+                  ? new Date(consent.expiresAt.seconds * 1000).toLocaleDateString()
+                  : 'Active Consent';
+
+                return (
+                  <div
+                    key={consent.consentId || consent.id}
+                    className="fluetas-card p-5 flex flex-col gap-3.5 hover:shadow-md transition-shadow bg-white"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-['Outfit'] text-base font-bold text-[#12160F] m-0">
+                            {consent.doctorName}
+                          </h3>
+                        </div>
+                        <p className="text-xs text-[#2E7D32] font-semibold m-0 mt-0.5">
+                          Status: Active · {expiresStr}
+                        </p>
                       </div>
-                      <p className="text-xs text-[#2E7D32] font-semibold m-0 mt-0.5">
-                        Status: {consent.status} · Expires {new Date(consent.expiresAt).toLocaleDateString()}
-                      </p>
+
+                      <button
+                        onClick={() => handleRevokeConsent(consent.consentId || consent.id || '', consent.doctorName)}
+                        className="px-3 py-1.5 rounded-lg bg-[#EF4444]/10 border border-[#EF4444]/20 hover:bg-[#EF4444]/20 text-[#EF4444] text-xs font-bold flex items-center gap-1.5 self-start sm:self-auto cursor-pointer transition-colors"
+                      >
+                        <Trash2 size={13} /> Revoke Access Now
+                      </button>
                     </div>
 
-                    <button
-                      onClick={() => handleRevokeConsent(consent.id, consent.doctorName)}
-                      className="px-3 py-1.5 rounded-lg bg-[#EF4444]/10 border border-[#EF4444]/20 hover:bg-[#EF4444]/20 text-[#EF4444] text-xs font-bold flex items-center gap-1.5 self-start sm:self-auto cursor-pointer transition-colors"
-                    >
-                      <Trash2 size={13} /> Revoke Access Now
-                    </button>
-                  </div>
-
-                  {/* Granted Scope Badges */}
-                  <div>
-                    <span className="text-[0.65rem] font-bold text-[#586151] uppercase block mb-1.5">
-                      Authorized Data Scopes:
-                    </span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {Object.entries(consent.grantedScopes).map(([scope, granted]) => (
-                        <span
-                          key={scope}
-                          className={`px-2 py-0.5 rounded text-[0.68rem] font-semibold flex items-center gap-1 ${
-                            granted
-                              ? 'bg-[#2E7D32]/10 text-[#2E7D32] border border-[#2E7D32]/20'
-                              : 'bg-[#F2F4EE] text-[#8A9482] line-through opacity-60'
-                          }`}
-                        >
-                          {granted ? '✓' : '✗'} {scope.replace(/([A-Z])/g, ' $1')}
-                        </span>
-                      ))}
+                    {/* Granted Scope Badges */}
+                    <div>
+                      <span className="text-[0.65rem] font-bold text-[#586151] uppercase block mb-1.5">
+                        Authorized Data Scopes:
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {Object.entries(consent.permissions || {}).map(([scope, granted]) => (
+                          <span
+                            key={scope}
+                            className={`px-2 py-0.5 rounded text-[0.68rem] font-semibold flex items-center gap-1 ${
+                              granted
+                                ? 'bg-[#2E7D32]/10 text-[#2E7D32] border border-[#2E7D32]/20'
+                                : 'bg-[#F2F4EE] text-[#8A9482] line-through opacity-60'
+                            }`}
+                          >
+                            {granted ? '✓' : '✗'} {scope.replace(/([A-Z])/g, ' $1')}
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>

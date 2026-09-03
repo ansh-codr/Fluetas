@@ -32,10 +32,10 @@ service cloud.firestore {
         .hasAny(['role', 'status', 'permissions', 'isAdmin', 'isDoctor', 'verificationStatus', 'doctorId', 'admin']);
     }
 
-    // Ensures new user document starts with safe default role ('customer')
+    // Ensures new user document starts with safe default role ('customer' or 'expert')
     function isSafeNewUser() {
       return !request.resource.data.keys().hasAny(['permissions', 'isAdmin', 'isDoctor', 'verificationStatus', 'doctorId'])
-        && (request.resource.data.role == 'customer' || !request.resource.data.keys().hasAny(['role']));
+        && (request.resource.data.role in ['customer', 'expert'] || !request.resource.data.keys().hasAny(['role']));
     }
 
     // ──────────────────────────────────────────────────────────────────────
@@ -246,6 +246,54 @@ service cloud.firestore {
       match /private/{docId} {
         allow read, write: if isAuthenticated() && (request.auth.uid == doctorId || isAdmin());
       }
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // /experts/{expertId} (Verified Clinical Experts & Trainers)
+    // ──────────────────────────────────────────────────────────────────────
+    match /experts/{expertId} {
+      // Public profile readable by authenticated users for discovery
+      allow read: if isAuthenticated();
+      // Expert applicant can create their own profile; Admin can create
+      allow create: if isAuthenticated() && (isAdmin() || request.auth.uid == expertId);
+      // Expert can update bio/schedule; only Admin can update verificationStatus
+      allow update: if isAuthenticated() && (
+        isAdmin() ||
+        (request.auth.uid == expertId && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['verificationStatus', 'verifiedAt', 'verifiedBy', 'adminNotes']))
+      );
+      allow delete: if isAuthenticated() && isAdmin();
+
+      match /private/{docId} {
+        allow read, write: if isAuthenticated() && (request.auth.uid == expertId || isAdmin());
+      }
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // /exercises/{exerciseId} (Exercise Catalog)
+    // ──────────────────────────────────────────────────────────────────────
+    match /exercises/{exerciseId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isAdmin();
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // /appointments/{appointmentId} (Top-level booking transactions)
+    // ──────────────────────────────────────────────────────────────────────
+    match /appointments/{appointmentId} {
+      allow read: if isAuthenticated() && (
+        isOwner(resource.data.customerId) ||
+        request.auth.uid == resource.data.expertId ||
+        request.auth.uid == resource.data.doctorId ||
+        isAdmin()
+      );
+      allow create: if isAuthenticated() && (isOwner(request.resource.data.customerId) || isAdmin());
+      allow update: if isAuthenticated() && (
+        isOwner(resource.data.customerId) ||
+        request.auth.uid == resource.data.expertId ||
+        request.auth.uid == resource.data.doctorId ||
+        isAdmin()
+      );
+      allow delete: if isAuthenticated() && (isOwner(resource.data.customerId) || isAdmin());
     }
 
     // ──────────────────────────────────────────────────────────────────────

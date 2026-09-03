@@ -29,6 +29,12 @@ service firebase.storage {
       allow write: if isAuthenticated() && (isOwner(userId) || isAdmin());
     }
 
+    // Expert credentials & verification certificates (Expert applicant & Admin only)
+    match /expertVerification/{expertId}/{docName} {
+      allow read: if isAuthenticated() && (request.auth.uid == expertId || isAdmin());
+      allow write: if isAuthenticated() && (request.auth.uid == expertId || isAdmin());
+    }
+
     // Doctor credentials & verification certificates (Doctor owner & Admin only)
     match /doctorVerification/{doctorId}/{docName} {
       allow read: if isAuthenticated() && (request.auth.uid == doctorId || isAdmin());

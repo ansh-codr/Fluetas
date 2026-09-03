@@ -5,7 +5,7 @@ import { onAuthStateChanged, User, IdTokenResult } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase/config';
 
-export type UserRole = 'customer' | 'doctor' | 'admin' | null;
+export type UserRole = 'customer' | 'doctor' | 'expert' | 'admin' | null;
 export type AccountStatus = 'active' | 'pending' | 'suspended' | 'deactivated';
 
 export interface UserAccountData {
@@ -55,7 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const tokenResult: IdTokenResult = await firebaseUser.getIdTokenResult();
       const claimRole = tokenResult.claims.role as UserRole | undefined;
 
-      if (claimRole && ['customer', 'doctor', 'admin'].includes(claimRole)) {
+      if (claimRole && ['customer', 'doctor', 'expert', 'admin'].includes(claimRole)) {
         setRole(claimRole);
         setStatus((tokenResult.claims.status as AccountStatus) || 'active');
         return;

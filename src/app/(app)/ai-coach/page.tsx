@@ -3,10 +3,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import {
-  mockPastAIInsights,
-  mockAIChatMessages,
-} from '@/lib/mock/dashboardData';
-import {
   Bot,
   Send,
   Sparkles,
@@ -16,8 +12,41 @@ import {
   RefreshCw,
 } from 'lucide-react';
 
+const initialMessages = [
+  {
+    id: 'msg-welcome',
+    sender: 'bot',
+    text: "Hello! I am your FLUETAS Health & Performance Assistant. I can help analyze your recovery, training progression, hydration targets, and wellness metrics. What would you like to review today?",
+    timestamp: 'Now',
+  },
+];
+
+const defaultProtocols = [
+  {
+    id: 'p-1',
+    category: 'Hydration Target',
+    badgeColor: '#2E6DA4',
+    date: 'Daily Target',
+    text: 'Maintaining baseline hydration of 2.5L improves training recovery and cognitive performance.',
+  },
+  {
+    id: 'p-2',
+    category: 'Recovery Pacing',
+    badgeColor: '#7A4E9E',
+    date: 'Sleep Protocol',
+    text: 'Target 7.5 to 8.0 hours of deep rest to support muscular architecture and hormonal balance.',
+  },
+  {
+    id: 'p-3',
+    category: 'Training Split',
+    badgeColor: '#2E7D32',
+    date: 'Active Plan',
+    text: 'Progressive overload across compound lifts ensures steady strength development.',
+  },
+];
+
 export default function AICoachPage() {
-  const [messages, setMessages] = useState(mockAIChatMessages);
+  const [messages, setMessages] = useState(initialMessages);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -115,7 +144,7 @@ export default function AICoachPage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {mockPastAIInsights.map(ins => (
+          {defaultProtocols.map(ins => (
             <div
               key={ins.id}
               className="fluetas-card p-3.5 flex flex-col justify-between gap-2.5 bg-[#FFFFFF] hover:border-[#7A4E9E]/40 hover:shadow-xs transition-all"

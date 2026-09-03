@@ -19,7 +19,6 @@ const actions = [
   { id: 'water', label: 'Log Water', href: '/hydration', icon: Droplet, color: 'text-[#2E6DA4]', bg: 'bg-[#2E6DA4]/10', border: 'hover:border-[#2E6DA4]/40' },
   { id: 'meal', label: 'Log Meal', href: '/nutrition', icon: UtensilsCrossed, color: 'text-[#D9622B]', bg: 'bg-[#D9622B]/10', border: 'hover:border-[#D9622B]/40' },
   { id: 'sleep', label: 'Track Sleep', href: '/sleep', icon: Moon, color: 'text-[#7A4E9E]', bg: 'bg-[#7A4E9E]/10', border: 'hover:border-[#7A4E9E]/40' },
-  { id: 'qr', label: 'Scan QR', href: '/scan-qr', icon: QrCode, color: 'text-[#0F766E]', bg: 'bg-[#0F766E]/10', border: 'hover:border-[#0F766E]/40' },
   { id: 'report', label: 'Upload Report', href: '/reports', icon: FileUp, color: 'text-[#C23B6B]', bg: 'bg-[#C23B6B]/10', border: 'hover:border-[#C23B6B]/40' },
   { id: 'ai', label: 'Talk to AI', href: '/ai-coach', icon: Bot, color: 'text-[#2E7D32]', bg: 'bg-[#2E7D32]/10', border: 'hover:border-[#2E7D32]/40' },
   { id: 'expert', label: 'Book Expert', href: '/experts', icon: UserCheck, color: 'text-[#2E6DA4]', bg: 'bg-[#2E6DA4]/10', border: 'hover:border-[#2E6DA4]/40' },

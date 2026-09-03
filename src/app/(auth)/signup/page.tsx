@@ -180,6 +180,12 @@ export default function SignupPage() {
               Sign in
             </Link>
           </p>
+
+          <div style={{ textAlign: 'center', marginTop: 14, paddingTop: 14, borderTop: '1px solid rgba(18,22,15,0.08)' }}>
+            <Link href="/expert-register" style={{ color: '#2E6DA4', fontSize: '0.75rem', fontWeight: 700, textDecoration: 'none' }}>
+              Are you a doctor or trainer? Register as an Expert →
+            </Link>
+          </div>
         </div>
       </div>
     </div>

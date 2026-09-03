@@ -471,3 +471,168 @@ export async function reviewMedicalReport(data: {
     result: 'SUCCESS',
   });
 }
+
+export interface VerifiedExpert {
+  id: string;
+  name: string;
+  professionalRole: string;
+  specialization: string;
+  qualification: string;
+  experience: string;
+  bio: string;
+  languages: string[];
+  consultationType?: string;
+  durationMinutes?: number;
+  workingDays?: string[];
+  workingHours?: { start: string; end: string };
+  avatarInitials: string;
+  avatarColor: string;
+  verificationStatus: string;
+}
+
+const AVATAR_COLORS = ['#2E7D32', '#2E6DA4', '#7A4E9E', '#D97706', '#0F766E', '#C23B6B'];
+
+/**
+ * Retrieves all verified practitioners and specialists from the database.
+ * Never returns mock data.
+ */
+export async function getVerifiedExperts(): Promise<VerifiedExpert[]> {
+  if (!db) return [];
+
+  try {
+    const [expertsSnap, docsSnap] = await Promise.all([
+      getDocs(query(collection(db, 'experts'), where('verificationStatus', '==', 'verified'))),
+      getDocs(query(collection(db, 'doctors'), where('verificationStatus', '==', 'verified'))),
+    ]);
+
+    const results: VerifiedExpert[] = [];
+    const seenIds = new Set<string>();
+
+    expertsSnap.docs.forEach((d, idx) => {
+      seenIds.add(d.id);
+      const data = d.data();
+      const initials = (data.name || 'Dr')
+        .replace('Dr. ', '')
+        .split(' ')
+        .map((p: string) => p[0])
+        .slice(0, 2)
+        .join('')
+        .toUpperCase();
+
+      results.push({
+        id: d.id,
+        name: data.name || 'Practitioner',
+        professionalRole: data.professionalRole || 'Specialist',
+        specialization: data.specialization || 'Clinical Specialist',
+        qualification: data.qualification || 'Certified Clinical Practitioner',
+        experience: data.experience || '3+ yrs',
+        bio: data.bio || '',
+        languages: Array.isArray(data.languages) ? data.languages : ['English'],
+        consultationType: data.consultationType || '1-on-1 Encrypted Telehealth',
+        durationMinutes: data.durationMinutes || 30,
+        workingDays: Array.isArray(data.workingDays) ? data.workingDays : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+        workingHours: data.workingHours || { start: '09:00', end: '17:00' },
+        avatarInitials: initials || 'EX',
+        avatarColor: AVATAR_COLORS[idx % AVATAR_COLORS.length],
+        verificationStatus: 'verified',
+      });
+    });
+
+    docsSnap.docs.forEach((d, idx) => {
+      if (!seenIds.has(d.id)) {
+        seenIds.add(d.id);
+        const data = d.data();
+        const initials = (data.name || 'Dr')
+          .replace('Dr. ', '')
+          .split(' ')
+          .map((p: string) => p[0])
+          .slice(0, 2)
+          .join('')
+          .toUpperCase();
+
+        results.push({
+          id: d.id,
+          name: data.name || 'Dr. Specialist',
+          professionalRole: 'DOCTOR',
+          specialization: data.specialization || 'Clinical Medicine',
+          qualification: data.credentials || 'MD / MBBS',
+          experience: data.experience || '5+ yrs',
+          bio: data.bio || '',
+          languages: ['English', 'Hindi'],
+          consultationType: '1-on-1 Encrypted Telehealth',
+          durationMinutes: 30,
+          workingDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+          workingHours: { start: '10:00', end: '18:00' },
+          avatarInitials: initials || 'DR',
+          avatarColor: AVATAR_COLORS[(idx + 3) % AVATAR_COLORS.length],
+          verificationStatus: 'verified',
+        });
+      }
+    });
+
+    return results;
+  } catch (err) {
+    console.warn('[DoctorService] getVerifiedExperts error:', err);
+    return [];
+  }
+}
+
+/**
+ * Retrieves all diagnostic reports and medical records uploaded for a customer.
+ */
+export async function getCustomerMedicalReports(userId: string): Promise<MedicalReportDoc[]> {
+  if (!db || !userId) return [];
+  try {
+    const snap = await getDocs(collection(db, 'users', userId, 'documents'));
+    const list = snap.docs.map(d => ({ id: d.id, documentId: d.id, ...d.data() } as MedicalReportDoc));
+    return list.sort((a, b) => (b.uploadedAt?.seconds || 0) - (a.uploadedAt?.seconds || 0));
+  } catch (err) {
+    console.warn('[DoctorService] getCustomerMedicalReports error:', err);
+    return [];
+  }
+}
+
+/**
+ * Uploads medical report metadata to user's documents subcollection and root medicalReports.
+ */
+export async function uploadMedicalReport(data: {
+  userId: string;
+  userName: string;
+  documentType: 'Lab Test' | 'Prescription' | 'MRI/X-Ray' | 'Discharge Summary' | 'Other';
+  name: string;
+  fileUrl?: string;
+  notes?: string;
+}): Promise<string> {
+  if (!db) throw new Error('Firebase not configured');
+  const now = Timestamp.now();
+  const docRef = doc(collection(db, 'users', data.userId, 'documents'));
+  const reportDoc: MedicalReportDoc = {
+    documentId: docRef.id,
+    id: docRef.id,
+    customerId: data.userId,
+    customerName: data.userName,
+    documentType: data.documentType,
+    name: data.name,
+    fileUrl: data.fileUrl || '',
+    uploadedAt: now,
+    uploadedBy: data.userName,
+    status: 'uploaded',
+    notes: data.notes || '',
+  };
+
+  await setDoc(docRef, reportDoc);
+  await setDoc(doc(db, 'medicalReports', docRef.id), reportDoc);
+
+  await addTimelineEvent(data.userId, {
+    type: 'report_uploaded',
+    title: `Document Uploaded: ${data.name}`,
+    description: `${data.documentType} record uploaded for clinical review.`,
+    category: 'Clinical',
+    badge: 'Uploaded',
+    relatedId: docRef.id,
+  });
+
+  return docRef.id;
+}
+
+

@@ -132,14 +132,19 @@ export async function completeWorkoutSession(
 
 export async function getTodayWorkoutSessions(userId: string): Promise<WorkoutSession[]> {
   if (!db) return [];
-  const today = todayDateStr();
-  const q = query(
-    collection(db, 'workoutLogs', userId, 'entries'),
-    where('date', '==', today),
-    orderBy('startTime', 'desc')
-  );
-  const snap = await getDocs(q);
-  return snap.docs.map(d => ({ id: d.id, ...d.data() } as WorkoutSession));
+  try {
+    const today = todayDateStr();
+    const q = query(
+      collection(db, 'workoutLogs', userId, 'entries'),
+      where('date', '==', today)
+    );
+    const snap = await getDocs(q);
+    const entries = snap.docs.map(d => ({ id: d.id, ...d.data() } as WorkoutSession));
+    return entries.sort((a, b) => (b.startTime?.seconds || 0) - (a.startTime?.seconds || 0));
+  } catch (err) {
+    console.warn('[WorkoutService] getTodayWorkoutSessions failed:', err);
+    return [];
+  }
 }
 
 export async function getRecentWorkoutSessions(
@@ -147,30 +152,41 @@ export async function getRecentWorkoutSessions(
   count = 10
 ): Promise<WorkoutSession[]> {
   if (!db) return [];
-  const q = query(
-    collection(db, 'workoutLogs', userId, 'entries'),
-    orderBy('startTime', 'desc'),
-    limit(count)
-  );
-  const snap = await getDocs(q);
-  return snap.docs.map(d => ({ id: d.id, ...d.data() } as WorkoutSession));
+  try {
+    const q = query(
+      collection(db, 'workoutLogs', userId, 'entries'),
+      limit(count * 2)
+    );
+    const snap = await getDocs(q);
+    const entries = snap.docs.map(d => ({ id: d.id, ...d.data() } as WorkoutSession));
+    return entries
+      .sort((a, b) => (b.startTime?.seconds || 0) - (a.startTime?.seconds || 0))
+      .slice(0, count);
+  } catch (err) {
+    console.warn('[WorkoutService] getRecentWorkoutSessions failed:', err);
+    return [];
+  }
 }
 
 export async function getWeeklyWorkoutCount(userId: string): Promise<number> {
   if (!db) return 0;
-  const dates: string[] = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    dates.push(d.toISOString().split('T')[0]);
+  try {
+    const dates: string[] = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      dates.push(d.toISOString().split('T')[0]);
+    }
+    const q = query(
+      collection(db, 'workoutLogs', userId, 'entries'),
+      where('date', 'in', dates)
+    );
+    const snap = await getDocs(q);
+    return snap.docs.filter(d => d.data().status === 'completed').length;
+  } catch (err) {
+    console.warn('[WorkoutService] getWeeklyWorkoutCount failed:', err);
+    return 0;
   }
-  const q = query(
-    collection(db, 'workoutLogs', userId, 'entries'),
-    where('date', 'in', dates),
-    where('status', '==', 'completed')
-  );
-  const snap = await getDocs(q);
-  return snap.size;
 }
 
 export interface WorkoutDayTrend {

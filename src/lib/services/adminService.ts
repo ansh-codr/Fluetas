@@ -16,7 +16,6 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { logAuditEvent } from './auditService';
-import { mockDoctorsList } from '@/lib/mock/dashboardData';
 
 export interface AdminPlatformMetrics {
   totalCustomers: number;
@@ -113,34 +112,57 @@ export async function getAdminPlatformMetrics(): Promise<AdminPlatformMetrics> {
 }
 
 export async function getAdminDoctorsList(): Promise<DoctorApplication[]> {
-  if (!db) return mockDoctorsList.map(d => ({ ...d, verificationStatus: 'verified' as const }));
+  if (!db) return [];
 
   try {
-    const snap = await getDocs(query(collection(db, 'doctors'), limit(50)));
-    if (snap.empty) {
-      return mockDoctorsList.map(d => ({ ...d, verificationStatus: 'verified' as const }));
-    }
-    return snap.docs.map(d => {
+    const [expertsSnap, docsSnap] = await Promise.all([
+      getDocs(query(collection(db, 'experts'), limit(50))),
+      getDocs(query(collection(db, 'doctors'), limit(50))),
+    ]);
+
+    const results: DoctorApplication[] = [];
+    const seenIds = new Set<string>();
+
+    expertsSnap.docs.forEach(d => {
+      seenIds.add(d.id);
       const data = d.data();
-      return {
+      results.push({
         id: d.id,
-        name: data.name || 'Doctor',
+        name: data.name || 'Practitioner',
         email: data.email,
-        specialization: data.specialization || 'General',
-        credentials: data.credentials || 'MD',
-        experience: data.experience || '5+ yrs',
-        rating: data.rating || 4.9,
-        reviews: data.reviews || 20,
-        fee: data.fee || '₹1,500',
+        specialization: data.specialization || data.professionalRole || 'General Practice',
+        credentials: data.qualification || 'Certified',
+        experience: data.experience || '1+ yrs',
         bio: data.bio || '',
-        verificationStatus: data.verificationStatus || 'verified',
-        verificationDocuments: data.verificationDocuments || ['Medical_License_2026.pdf', 'Board_Certification.pdf'],
-        appliedAt: data.createdAt,
-      } as DoctorApplication;
+        verificationStatus: data.verificationStatus || 'pending',
+        verificationDocuments: data.documentNames || [],
+        appliedAt: data.appliedAt || data.createdAt,
+      });
     });
+
+    docsSnap.docs.forEach(d => {
+      if (!seenIds.has(d.id)) {
+        seenIds.add(d.id);
+        const data = d.data();
+        results.push({
+          id: d.id,
+          name: data.name || 'Doctor',
+          email: data.email,
+          specialization: data.specialization || 'Clinical Medicine',
+          credentials: data.credentials || 'MD',
+          experience: data.experience || '5+ yrs',
+          bio: data.bio || '',
+          verificationStatus: data.verificationStatus || 'pending',
+          verificationDocuments: data.verificationDocuments || [],
+          appliedAt: data.createdAt,
+        });
+      }
+    });
+
+    return results;
   } catch (err) {
-    console.warn('[AdminService] getAdminDoctorsList warning:', err);
-    return mockDoctorsList.map(d => ({ ...d, verificationStatus: 'verified' as const }));
+    console.warn('[AdminService] getAdminDoctorsList error:', err);
+    return [];
   }
 }
 
@@ -154,12 +176,26 @@ export async function updateDoctorVerification(data: {
   if (!db) throw new Error('Firebase not configured');
 
   const now = Timestamp.now();
-  await updateDoc(doc(db, 'doctors', data.doctorId), {
+  const updatePayload = {
     verificationStatus: data.status,
     verifiedAt: now,
     verifiedBy: data.adminId,
-    verificationNotes: data.reason,
-  });
+    adminNotes: data.reason || '',
+  };
+
+  // Try updating in experts collection first, then doctors
+  try {
+    const expertRef = doc(db, 'experts', data.doctorId);
+    const expertSnap = await getDoc(expertRef);
+    if (expertSnap.exists()) {
+      await updateDoc(expertRef, updatePayload);
+    } else {
+      await updateDoc(doc(db, 'doctors', data.doctorId), updatePayload);
+    }
+  } catch {
+    // If not found in experts, update in doctors
+    await updateDoc(doc(db, 'doctors', data.doctorId), updatePayload);
+  }
 
   await logAuditEvent({
     actorId: data.adminId,
@@ -167,7 +203,7 @@ export async function updateDoctorVerification(data: {
     action: data.status === 'verified' ? 'admin_verified_doctor' : 'admin_rejected_doctor',
     resourceType: 'doctor_profile',
     resourceId: data.doctorId,
-    details: `${data.status.toUpperCase()} doctor credentials for ${data.doctorName}. Reason: ${data.reason || 'Verification criteria met'}`,
+    details: `${data.status.toUpperCase()} credentials for ${data.doctorName}. Reason: ${data.reason || 'Verification criteria met'}`,
     result: 'SUCCESS',
   });
 }

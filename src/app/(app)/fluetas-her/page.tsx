@@ -1,16 +1,39 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { mockCycleData } from '@/lib/mock/dashboardData';
+import { useAuth } from '@/context/AuthContext';
+import { getRecentCycleEntries, CycleEntry } from '@/lib/services/cycleService';
 import {
   Calendar,
   Sparkles,
   ChevronRight,
+  Plus,
 } from 'lucide-react';
+import { Skeleton } from '@/components/motion/MotionUtils';
 
 export default function FluetasHerPage() {
-  const { currentDay, phase, daysToOvulation } = mockCycleData;
+  const { user } = useAuth();
+  const [entries, setEntries] = useState<CycleEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+    getRecentCycleEntries(user.uid, 30)
+      .then(res => {
+        setEntries(res);
+        setLoading(false);
+      })
+      .catch(() => {
+        setLoading(false);
+      });
+  }, [user]);
+
+  const latestEntry = entries[0];
+  const hasLoggedCycle = entries.length > 0;
 
   return (
     <div className="flex flex-col gap-5 max-w-5xl mx-auto w-full">
@@ -37,94 +60,85 @@ export default function FluetasHerPage() {
             className="btn-primary bg-[#C23B6B] hover:bg-[#A32A55] text-white text-xs px-4 py-2.5 flex items-center gap-2 shrink-0 self-stretch sm:self-auto justify-center no-underline shadow-sm"
           >
             <Calendar size={14} />
-            Open Full Cycle Calendar
+            Open Cycle Calendar
           </Link>
         </div>
       </div>
 
-      {/* Cycle Phase Snapshot */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Phase Card */}
-        <div className="fluetas-card p-5 flex flex-col justify-between gap-3 bg-[#FDF2F8] border-[#C23B6B]/30">
-          <div>
-            <span className="text-[0.68rem] font-bold text-[#C23B6B] uppercase tracking-wider block mb-1">
-              Current Cycle Phase
-            </span>
-            <h2 className="font-['Outfit'] text-xl font-bold text-[#12160F] m-0">
-              Day {currentDay} · {phase}
-            </h2>
-            <p className="text-xs text-[#2E6DA4] font-semibold mt-1">
-              {daysToOvulation} days to Estimated Ovulation
-            </p>
-          </div>
-
-          <div className="p-3 bg-white rounded-lg border border-[rgba(18,22,15,0.08)] text-xs text-[#586151]">
-            <strong className="text-[#12160F] block mb-0.5">Estrogen &amp; Energy Rising</strong>
-            Optimal phase for high-intensity lifting, endurance pacing, and complex carbohydrate absorption.
-          </div>
-        </div>
-
-        {/* Phase Recommendations */}
-        <div className="fluetas-card p-5 md:col-span-2 flex flex-col justify-between gap-3">
-          <span className="section-title">TODAY&apos;S PHASE NUTRITION &amp; TRAINING SYNC</span>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-            <div className="p-3 bg-[#F2F4EE] border border-[rgba(18,22,15,0.06)] rounded-xl">
-              <span className="text-[0.65rem] font-bold text-[#2E7D32] uppercase block mb-1">Exercise Focus</span>
-              <p className="font-bold text-[#12160F] m-0 text-sm">Strength &amp; Heavy Lifts</p>
-              <p className="text-[#586151] m-0 mt-1">Higher pain tolerance &amp; insulin sensitivity during follicular surge.</p>
-            </div>
-
-            <div className="p-3 bg-[#F2F4EE] border border-[rgba(18,22,15,0.06)] rounded-xl">
-              <span className="text-[0.65rem] font-bold text-[#D97706] uppercase block mb-1">Dietary Focus</span>
-              <p className="font-bold text-[#12160F] m-0 text-sm">Cruciferous Veggies &amp; Clean Protein</p>
-              <p className="text-[#586151] m-0 mt-1">Supports liver estrogen clearance; pair with healthy omega-3 fats.</p>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between text-xs pt-2 border-t border-[rgba(18,22,15,0.08)]">
-            <span className="text-[#586151]">Need expert medical advice for cycle health?</span>
-            <Link href="/experts" className="text-[#C23B6B] font-semibold flex items-center gap-1 hover:underline no-underline">
-              Consult Gynecologist <ChevronRight size={13} />
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* HER+ Product Tie-In Banner */}
-      <div className="fluetas-card p-5 bg-[#FDF2F8] border-[#C23B6B]/20 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-[#C23B6B]/10 border border-[#C23B6B]/20 flex items-center justify-center text-3xl shrink-0">
-            ♀️
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="font-['Outfit'] text-base sm:text-lg font-bold text-[#12160F] m-0">
-                FLUETAS HER+ SUPERFRUIT ELIXIR
-              </h3>
-              <span className="px-2 py-0.5 rounded text-[0.62rem] font-bold bg-[#C23B6B]/10 text-[#C23B6B]">
-                Formulation
+      {/* Cycle Phase Snapshot / Empty State */}
+      {loading ? (
+        <Skeleton className="h-44 w-full rounded-2xl" />
+      ) : hasLoggedCycle ? (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="fluetas-card p-5 flex flex-col justify-between gap-3 bg-[#FDF2F8] border-[#C23B6B]/30">
+            <div>
+              <span className="text-[0.68rem] font-bold text-[#C23B6B] uppercase tracking-wider block mb-1">
+                Latest Logged Telemetry
               </span>
+              <h2 className="font-['Outfit'] text-xl font-bold text-[#12160F] m-0">
+                {latestEntry.date} · Flow: {latestEntry.flow || 'None'}
+              </h2>
+              <p className="text-xs text-[#2E6DA4] font-semibold mt-1">
+                Mood: {latestEntry.mood || 'Tracked'} · Energy: {latestEntry.energy || 'Normal'}
+              </p>
             </div>
-            <p className="text-xs text-[#586151] m-0 mt-1 max-w-xl">
-              Myo-Inositol, Shatavari, Organic Tart Cherry &amp; Chasteberry extract to support ovulatory regularity and menstrual ease.
-            </p>
+
+            <div className="p-3 bg-white rounded-lg border border-[rgba(18,22,15,0.08)] text-xs text-[#586151]">
+              <strong className="text-[#12160F] block mb-0.5">Phase Guidance</strong>
+              Adjust intensity based on recorded biomarkers and energy levels.
+            </div>
+          </div>
+
+          <div className="fluetas-card p-5 md:col-span-2 flex flex-col justify-between gap-3 bg-white">
+            <span className="section-title">PHASE NUTRITION &amp; TRAINING SYNC</span>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div className="p-3 bg-[#F2F4EE] border border-[rgba(18,22,15,0.06)] rounded-xl">
+                <span className="text-[0.65rem] font-bold text-[#2E7D32] uppercase block mb-1">Exercise Focus</span>
+                <p className="font-bold text-[#12160F] m-0 text-sm">Targeted Conditioning &amp; Strength</p>
+                <p className="text-[#586151] m-0 mt-1">Match volume to subjective energy ratings recorded in your logs.</p>
+              </div>
+
+              <div className="p-3 bg-[#F2F4EE] border border-[rgba(18,22,15,0.06)] rounded-xl">
+                <span className="text-[0.65rem] font-bold text-[#D97706] uppercase block mb-1">Dietary Focus</span>
+                <p className="font-bold text-[#12160F] m-0 text-sm">Electrolytes &amp; Micronutrients</p>
+                <p className="text-[#586151] m-0 mt-1">Emphasize magnesium, zinc, clean protein, and adequate hydration.</p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between text-xs pt-2 border-t border-[rgba(18,22,15,0.08)]">
+              <span className="text-[#586151]">Need expert clinical advice for cycle health?</span>
+              <Link href="/experts" className="text-[#C23B6B] font-semibold flex items-center gap-1 hover:underline no-underline">
+                Consult Gynecologist <ChevronRight size={13} />
+              </Link>
+            </div>
           </div>
         </div>
-
-        <Link
-          href="/products?product=her"
-          className="btn-primary bg-[#C23B6B] hover:bg-[#A32A55] text-white text-xs px-4 py-2 rounded-lg no-underline shrink-0 self-stretch sm:self-auto text-center font-bold"
-        >
-          Explore HER+ Formula
-        </Link>
-      </div>
+      ) : (
+        <div className="fluetas-card p-8 flex flex-col items-center justify-center text-center bg-white border border-[rgba(18,22,15,0.10)] rounded-2xl">
+          <div className="w-12 h-12 rounded-2xl bg-[#C23B6B]/10 text-[#C23B6B] flex items-center justify-center mb-3">
+            <Calendar size={24} />
+          </div>
+          <h3 className="font-['Outfit'] text-base font-bold text-[#12160F] m-0">
+            No cycle records logged yet
+          </h3>
+          <p className="text-xs text-[#586151] max-w-md mt-1.5 mb-5 leading-relaxed">
+            Record menstrual dates, flow, and symptoms on your private calendar to receive personalized training and nutrition phase recommendations.
+          </p>
+          <Link
+            href="/cycle-tracker"
+            className="btn-primary bg-[#C23B6B] hover:bg-[#A32A55] text-white text-xs px-4 py-2 rounded-xl inline-flex items-center gap-2 no-underline font-bold shadow-xs"
+          >
+            <Plus size={14} /> Log First Cycle Day
+          </Link>
+        </div>
+      )}
 
       {/* Quick Navigation into Specialized Hubs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Link
           href="/cycle-tracker"
-          className="fluetas-card p-4 flex items-center justify-between hover:shadow-md transition-shadow no-underline group"
+          className="fluetas-card p-4 flex items-center justify-between hover:shadow-md transition-shadow no-underline group bg-white"
         >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-[#C23B6B]/10 text-[#C23B6B] flex items-center justify-center text-lg">
@@ -142,7 +156,7 @@ export default function FluetasHerPage() {
 
         <Link
           href="/symptoms"
-          className="fluetas-card p-4 flex items-center justify-between hover:shadow-md transition-shadow no-underline group"
+          className="fluetas-card p-4 flex items-center justify-between hover:shadow-md transition-shadow no-underline group bg-white"
         >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-[#2E6DA4]/10 text-[#2E6DA4] flex items-center justify-center text-lg">
