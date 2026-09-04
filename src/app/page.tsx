@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState, useRef } from "react";
+import Link from "next/link";
 import dynamic from "next/dynamic";
 
 const NutritionProduct3D = dynamic(() => import("../components/NutritionProduct3D"), { ssr: false });
@@ -787,9 +788,9 @@ export default function Home() {
             <a href="#nutrition" className="hover:text-ink transition-colors uppercase tracking-[0.05em]">Nutrition</a>
           </nav>
 
-          <a href="#closing" className="shrink-0 rounded-sm bg-ink px-6 py-3 text-[13px] font-semibold text-surface transition-colors hover:bg-ink/80 uppercase tracking-[0.04em]">
+          <Link href="/login" className="shrink-0 rounded-sm bg-ink px-6 py-3 text-[13px] font-semibold text-surface transition-colors hover:bg-ink/80 uppercase tracking-[0.04em]">
             Join FLUETAS
-          </a>
+          </Link>
         </div>
       </header>
 
@@ -819,9 +820,9 @@ export default function Home() {
               </p>
 
               <div className="flex flex-wrap items-center gap-4">
-                <a href="#closing" className="rounded-sm bg-ink px-8 py-4 text-[14px] font-bold text-surface uppercase tracking-[0.05em] hover:-translate-y-px transition-transform">
-                  Join the waitlist
-                </a>
+                <Link href="/login" className="rounded-sm bg-ink px-8 py-4 text-[14px] font-bold text-surface uppercase tracking-[0.05em] hover:-translate-y-px transition-transform">
+                  Join FLUETAS
+                </Link>
                 <a href="#platform" className="rounded-sm border-2 border-rule px-8 py-4 text-[14px] font-bold text-ink hover:border-ink-soft transition-colors uppercase tracking-[0.05em]">
                   See how it works
                 </a>
