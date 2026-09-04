@@ -195,6 +195,14 @@ export default function CycleTrackerPage() {
         </div>
 
         <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+          <Link
+            href="/experts"
+            className="px-3 py-2 rounded-xl border border-[#0F766E]/30 bg-[#0F766E]/10 text-xs font-bold text-[#0F766E] hover:bg-[#0F766E]/20 flex items-center gap-1.5 cursor-pointer shadow-2xs no-underline"
+          >
+            <ShieldCheck size={14} />
+            <span>Consult Dr. Swati Dixit</span>
+          </Link>
+
           <button
             onClick={() => setSetupModalOpen(true)}
             className="px-3 py-2 rounded-xl border border-[rgba(18,22,15,0.12)] bg-white text-xs font-bold text-[#586151] hover:text-[#12160F] flex items-center gap-1.5 cursor-pointer shadow-2xs"

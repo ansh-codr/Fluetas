@@ -51,10 +51,12 @@ export default function ExpertsDirectoryPage() {
 
   const specializations = [
     'All',
+    "Women's Health",
     'Physician',
-    'Physio',
     'Nutrition',
     'Endocrinology',
+    'Biochemistry',
+    'Physio',
     'Conditioning',
   ];
 
@@ -78,7 +80,8 @@ export default function ExpertsDirectoryPage() {
     ? experts
     : experts.filter(d =>
         d.specialization.toLowerCase().includes(filter.toLowerCase()) ||
-        d.professionalRole.toLowerCase().includes(filter.toLowerCase())
+        d.professionalRole.toLowerCase().includes(filter.toLowerCase()) ||
+        d.focusAreas?.some(f => f.toLowerCase().includes(filter.toLowerCase()))
       );
 
   const handleOpenBooking = (doctor: VerifiedExpert) => {
@@ -221,6 +224,11 @@ export default function ExpertsDirectoryPage() {
                     <p className="text-[#8A9482] text-[0.6875rem] m-0 mt-0.5">
                       {doc.qualification} · {doc.experience} Experience
                     </p>
+                    {doc.affiliation && (
+                      <p className="text-[#586151] text-[0.6875rem] font-medium m-0 mt-0.5">
+                        {doc.affiliation}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -229,6 +237,20 @@ export default function ExpertsDirectoryPage() {
                   <p className="text-xs text-[#586151] m-0 leading-relaxed line-clamp-2 mb-3">
                     {doc.bio}
                   </p>
+                )}
+
+                {/* Focus Areas Chips */}
+                {doc.focusAreas && doc.focusAreas.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mb-3">
+                    {doc.focusAreas.map((tag, idx) => (
+                      <span
+                        key={idx}
+                        className="px-2 py-0.5 rounded-md bg-[#0F766E]/10 text-[#0F766E] text-[0.6875rem] font-semibold border border-[#0F766E]/20"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
                 )}
 
                 {/* Languages & Schedule */}
@@ -333,25 +355,41 @@ export default function ExpertsDirectoryPage() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-[#12160F] mb-1">
-                      Reason for Consultation / Health Goal <span className="text-[#DC2626]">*</span>
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-xs font-bold text-[#12160F]">
+                        Reason for Consultation / Health Concern <span className="text-[#DC2626]">*</span>
+                      </label>
+                      <span className="text-[0.65rem] text-[#2E7D32] font-semibold flex items-center gap-1">
+                        <ShieldCheck size={11} /> 100% Confidential
+                      </span>
+                    </div>
                     <textarea
                       rows={3}
-                      placeholder="Describe your primary concern (e.g. chronic lower back discomfort during squats, blood sugar optimization, rehabilitation plan)..."
+                      placeholder={
+                        selectedDoctor.id === 'dr_swati_dixit'
+                          ? "Share your concern freely (e.g., irregular periods, hormonal imbalance, PCOS/PCOD issues, metabolic fatigue, thyroid, or lab report review)..."
+                          : "Describe your primary concern (e.g., hormonal optimization, rehabilitation, clinical lab review, metabolic health)..."
+                      }
                       value={reason}
                       onChange={e => setReason(e.target.value)}
                       className="w-full px-3 py-2 rounded-xl border border-[rgba(18,22,15,0.15)] text-xs text-[#12160F] focus:outline-[#2E7D32]"
                     />
+                    <p className="text-[0.6875rem] text-[#586151] mt-1 m-0">
+                      Your discussion notes are fully encrypted and only visible to your assigned specialist.
+                    </p>
                   </div>
 
                   <div>
                     <label className="block text-xs font-bold text-[#12160F] mb-1">
-                      Current Symptoms (comma-separated, optional)
+                      Reported Symptoms (comma-separated, optional)
                     </label>
                     <input
                       type="text"
-                      placeholder="e.g. Mild knee stiffness, lower back fatigue"
+                      placeholder={
+                        selectedDoctor.id === 'dr_swati_dixit'
+                          ? "e.g. Irregular cycles, cramps, fatigue, hormonal acne, mood changes"
+                          : "e.g. Joint stiffness, fatigue, sleep disturbances"
+                      }
                       value={symptomsInput}
                       onChange={e => setSymptomsInput(e.target.value)}
                       className="w-full px-3 py-2 rounded-xl border border-[rgba(18,22,15,0.15)] text-xs text-[#12160F] focus:outline-[#2E7D32]"

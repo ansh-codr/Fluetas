@@ -142,6 +142,16 @@ export default function CycleTracker() {
       >
         <Plus size={14} /> Log Today&apos;s Cycle &amp; Symptoms
       </Link>
+
+      <div className="mt-2.5 pt-2 border-t border-[rgba(18,22,15,0.06)] flex items-center justify-between text-[0.68rem]">
+        <span className="text-[#586151]">Hormonal concerns?</span>
+        <Link
+          href="/experts"
+          className="font-bold text-[#0F766E] hover:underline no-underline"
+        >
+          Consult Dr. Swati Dixit →
+        </Link>
+      </div>
     </div>
   );
 }

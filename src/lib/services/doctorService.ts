@@ -488,16 +488,46 @@ export interface VerifiedExpert {
   avatarInitials: string;
   avatarColor: string;
   verificationStatus: string;
+  focusAreas?: string[];
+  department?: string;
+  affiliation?: string;
 }
 
-const AVATAR_COLORS = ['#2E7D32', '#2E6DA4', '#7A4E9E', '#D97706', '#0F766E', '#C23B6B'];
+export const DR_SWATI_DIXIT: VerifiedExpert = {
+  id: 'dr_swati_dixit',
+  name: 'Dr. Swati Dixit',
+  professionalRole: 'HOD & Senior Clinical Biochemist',
+  specialization: "Women's Health & Biochemistry",
+  qualification: 'PhD Biochemistry (AMU Rank 1), Post-Doc (Lanzhou Univ), ICMR SRF',
+  experience: '9+ yrs',
+  bio: 'Head of Department, Medical Lab Technology at Sanskriti University. Specialist in Women’s Hormonal & Endocrine Health, Metabolic Pathways, Cellular Diagnostics, and Clinical Biochemistry. Former Post-Doctoral Researcher at Lanzhou University and ICMR Senior Research Fellow. Dedicated to providing a safe, confidential space for women to discuss hormonal balance, menstrual/cycle health, metabolism, and diagnostic test reports.',
+  languages: ['English', 'Hindi', 'Chinese', 'Spanish'],
+  consultationType: '1-on-1 Confidential Telehealth & Review',
+  durationMinutes: 30,
+  workingDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+  workingHours: { start: '10:00', end: '19:00' },
+  avatarInitials: 'SD',
+  avatarColor: '#0F766E',
+  verificationStatus: 'verified',
+  focusAreas: [
+    "Women's Hormonal Health",
+    'PCOS / PCOD & Cycle Regularity',
+    'Thyroid & Metabolic Wellness',
+    'Clinical Lab & Blood Reports',
+    'Cellular Health & Toxicology',
+  ],
+  department: 'Medical Lab Technology, School of Medical & Allied Sciences',
+  affiliation: 'Sanskriti University, Mathura',
+};
+
+const AVATAR_COLORS = ['#0F766E', '#2E7D32', '#2E6DA4', '#7A4E9E', '#D97706', '#C23B6B'];
 
 /**
  * Retrieves all verified practitioners and specialists from the database.
- * Never returns mock data.
+ * Always includes verified clinical staff such as Dr. Swati Dixit.
  */
 export async function getVerifiedExperts(): Promise<VerifiedExpert[]> {
-  if (!db) return [];
+  if (!db) return [DR_SWATI_DIXIT];
 
   try {
     const [expertsSnap, docsSnap] = await Promise.all([
@@ -508,7 +538,12 @@ export async function getVerifiedExperts(): Promise<VerifiedExpert[]> {
     const results: VerifiedExpert[] = [];
     const seenIds = new Set<string>();
 
+    // Always include Dr. Swati Dixit for Women's Health & Biochemistry consultations
+    results.push(DR_SWATI_DIXIT);
+    seenIds.add(DR_SWATI_DIXIT.id);
+
     expertsSnap.docs.forEach((d, idx) => {
+      if (seenIds.has(d.id)) return;
       seenIds.add(d.id);
       const data = d.data();
       const initials = (data.name || 'Dr')
@@ -535,6 +570,7 @@ export async function getVerifiedExperts(): Promise<VerifiedExpert[]> {
         avatarInitials: initials || 'EX',
         avatarColor: AVATAR_COLORS[idx % AVATAR_COLORS.length],
         verificationStatus: 'verified',
+        focusAreas: Array.isArray(data.focusAreas) ? data.focusAreas : undefined,
       });
     });
 
@@ -566,6 +602,7 @@ export async function getVerifiedExperts(): Promise<VerifiedExpert[]> {
           avatarInitials: initials || 'DR',
           avatarColor: AVATAR_COLORS[(idx + 3) % AVATAR_COLORS.length],
           verificationStatus: 'verified',
+          focusAreas: Array.isArray(data.focusAreas) ? data.focusAreas : undefined,
         });
       }
     });
@@ -573,7 +610,7 @@ export async function getVerifiedExperts(): Promise<VerifiedExpert[]> {
     return results;
   } catch (err) {
     console.warn('[DoctorService] getVerifiedExperts error:', err);
-    return [];
+    return [DR_SWATI_DIXIT];
   }
 }
 
