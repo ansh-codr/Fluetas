@@ -350,9 +350,15 @@ export default function OnboardingPage() {
       <div className="max-w-2xl w-full flex flex-col gap-5 animate-fade-in">
         {/* Header Branding */}
         <div className="text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#2E7D32]/10 text-[#2E7D32] border border-[#2E7D32]/20 text-xs font-bold mb-2">
-            <Sparkles size={13} />
-            <span>FLUETAS SENSOR &amp; HEALTH ONBOARDING</span>
+          <div className="inline-flex items-center gap-2 mb-3">
+            <img src="/assets/image.png" alt="FLUETAS" className="w-9 h-9 object-contain" />
+            <span className="font-['Outfit'] text-2xl font-black text-[#12160F]">FLUETAS</span>
+          </div>
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#2E7D32]/10 text-[#2E7D32] border border-[#2E7D32]/20 text-xs font-bold mb-2">
+              <Sparkles size={13} />
+              <span>SENSOR &amp; HEALTH ONBOARDING</span>
+            </div>
           </div>
           <h1 className="font-['Outfit'] text-2xl sm:text-3xl font-black text-[#12160F] m-0">
             {STEPS[step - 1].title}

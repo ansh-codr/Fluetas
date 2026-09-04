@@ -22,6 +22,10 @@ export const metadata: Metadata = {
   description:
     'FLUETAS is a personal health & wellness platform that tracks workouts, nutrition, hydration, sleep, and connects you with expert consultations — all in one place.',
   keywords: ['health', 'wellness', 'fitness', 'nutrition', 'sleep', 'consultation'],
+  icons: {
+    icon: '/assets/image.png',
+    apple: '/assets/image.png',
+  },
 };
 
 export default function RootLayout({

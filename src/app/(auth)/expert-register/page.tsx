@@ -215,8 +215,14 @@ export default function ExpertRegisterPage() {
       <div className="max-w-3xl w-full">
         {/* Header Branding */}
         <div className="text-center mb-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#2E7D32]/10 border border-[#2E7D32]/20 text-[#2E7D32] text-xs font-bold mb-2">
-            <Stethoscope size={13} /> FLUETAS EXPERT &amp; CLINICAL NETWORK
+          <Link href="/" className="inline-flex items-center gap-2 mb-3 no-underline">
+            <img src="/assets/image.png" alt="FLUETAS" className="w-9 h-9 object-contain" />
+            <span className="font-['Outfit'] text-2xl font-black text-[#12160F]">FLUETAS</span>
+          </Link>
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#2E7D32]/10 border border-[#2E7D32]/20 text-[#2E7D32] text-xs font-bold mb-2">
+              <Stethoscope size={13} /> EXPERT &amp; CLINICAL NETWORK
+            </div>
           </div>
           <h1 className="font-['Outfit'] text-2xl sm:text-3xl font-black text-[#12160F] m-0">
             Practitioner Registration

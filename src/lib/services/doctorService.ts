@@ -491,6 +491,7 @@ export interface VerifiedExpert {
   focusAreas?: string[];
   department?: string;
   affiliation?: string;
+  imageUrl?: string;
 }
 
 export const DR_SWATI_DIXIT: VerifiedExpert = {
@@ -508,6 +509,7 @@ export const DR_SWATI_DIXIT: VerifiedExpert = {
   workingHours: { start: '10:00', end: '19:00' },
   avatarInitials: 'SD',
   avatarColor: '#0F766E',
+  imageUrl: '/assets/dr-swati-dixit-square.jpg',
   verificationStatus: 'verified',
   focusAreas: [
     "Women's Hormonal Health",

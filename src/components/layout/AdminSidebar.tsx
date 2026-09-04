@@ -50,8 +50,8 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
         {/* Logo Section */}
         <div className="p-4 border-b border-[rgba(18,22,15,0.08)] shrink-0 flex items-center justify-between">
           <Link href="/admin/dashboard" onClick={onClose} className="flex items-center gap-2.5 no-underline">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#D9622B] to-[#B84E1E] flex items-center justify-center font-extrabold text-[#FAFAF6] text-base shrink-0 shadow-[0_2px_8px_rgba(217,98,43,0.25)]">
-              ⚡
+            <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center shrink-0 bg-[#12160F]/5">
+              <img src="/assets/image.png" alt="FLUETAS" className="w-full h-full object-contain p-0.5" />
             </div>
             <div className="flex flex-col md:hidden lg:flex">
               <span className="font-['Outfit'] text-lg font-extrabold text-[#12160F] tracking-tight leading-tight">

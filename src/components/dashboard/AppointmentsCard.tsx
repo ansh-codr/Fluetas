@@ -67,9 +67,17 @@ export default function AppointmentsCard() {
                 id={`appointment-${apt.id}`}
                 className="flex items-center gap-3 p-2.5 bg-[#FAFAF6] rounded-xl border border-[rgba(18,22,15,0.06)] hover:border-[#2E6DA4]/30 transition-colors"
               >
-                <div className="w-9 h-9 rounded-xl bg-[#2E6DA4] flex items-center justify-center text-xs font-bold text-white shrink-0 shadow-2xs">
-                  {apt.expertName ? apt.expertName.split(' ')[1]?.[0] || apt.expertName[0] : 'Dr'}
-                </div>
+                {apt.expertName?.toLowerCase().includes('swati') ? (
+                  <img
+                    src="/assets/dr-swati-dixit-square.jpg"
+                    alt={apt.expertName}
+                    className="w-9 h-9 rounded-xl object-cover object-top shrink-0 border border-[rgba(18,22,15,0.10)]"
+                  />
+                ) : (
+                  <div className="w-9 h-9 rounded-xl bg-[#2E6DA4] flex items-center justify-center text-xs font-bold text-white shrink-0 shadow-2xs">
+                    {apt.expertName ? apt.expertName.split(' ')[1]?.[0] || apt.expertName[0] : 'Dr'}
+                  </div>
+                )}
 
                 <div className="flex-1 min-w-0">
                   <p className="text-[#12160F] text-xs font-bold m-0 truncate">

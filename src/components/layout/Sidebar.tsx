@@ -142,8 +142,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             href="/dashboard"
             className="flex items-center gap-2.5 text-decoration-none no-underline group"
           >
-            <div className="w-8 h-8 rounded-lg bg-[#2E7D32] flex items-center justify-center text-[#FAFAF6] font-bold text-base shadow-xs group-hover:scale-105 transition-transform">
-              F
+            <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform bg-[#12160F]/5">
+              <img src="/assets/image.png" alt="FLUETAS" className="w-full h-full object-contain p-0.5" />
             </div>
             <div className="flex flex-col md:hidden lg:flex">
               <span className="font-['Outfit'] font-black text-sm tracking-widest text-[#12160F] uppercase">

@@ -200,12 +200,20 @@ export default function ExpertsDirectoryPage() {
               <div>
                 {/* Doctor Header */}
                 <div className="flex items-start gap-3.5 mb-3">
-                  <div
-                    className="w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-bold text-white shadow-xs shrink-0"
-                    style={{ backgroundColor: doc.avatarColor || '#2E7D32' }}
-                  >
-                    {doc.avatarInitials}
-                  </div>
+                  {doc.imageUrl ? (
+                    <img
+                      src={doc.imageUrl}
+                      alt={doc.name}
+                      className="w-14 h-14 rounded-2xl object-cover object-top shadow-xs shrink-0 border border-[rgba(18,22,15,0.12)]"
+                    />
+                  ) : (
+                    <div
+                      className="w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-bold text-white shadow-xs shrink-0"
+                      style={{ backgroundColor: doc.avatarColor || '#2E7D32' }}
+                    >
+                      {doc.avatarInitials}
+                    </div>
+                  )}
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
@@ -290,12 +298,20 @@ export default function ExpertsDirectoryPage() {
             {/* Modal Header */}
             <div className="flex items-center justify-between p-4 sm:p-5 border-b border-[rgba(18,22,15,0.08)] bg-[#FAFAF6]">
               <div className="flex items-center gap-3">
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold text-white shadow-xs"
-                  style={{ backgroundColor: selectedDoctor.avatarColor || '#2E7D32' }}
-                >
-                  {selectedDoctor.avatarInitials}
-                </div>
+                {selectedDoctor.imageUrl ? (
+                  <img
+                    src={selectedDoctor.imageUrl}
+                    alt={selectedDoctor.name}
+                    className="w-10 h-10 rounded-xl object-cover object-top shadow-xs shrink-0 border border-[rgba(18,22,15,0.12)]"
+                  />
+                ) : (
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold text-white shadow-xs"
+                    style={{ backgroundColor: selectedDoctor.avatarColor || '#2E7D32' }}
+                  >
+                    {selectedDoctor.avatarInitials}
+                  </div>
+                )}
                 <div>
                   <h3 className="font-['Outfit'] text-sm sm:text-base font-bold text-[#12160F] m-0">
                     Book with {selectedDoctor.name}

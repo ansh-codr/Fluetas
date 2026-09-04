@@ -56,14 +56,17 @@ export default function TopBar({ onMenuToggle }: TopBarProps) {
 
   return (
     <header className="h-16 fixed top-0 left-0 md:left-[68px] lg:left-[220px] right-0 bg-[#FAFAF6]/90 backdrop-blur-md border-b border-[rgba(18,22,15,0.10)] flex items-center px-3 sm:px-6 gap-3 sm:gap-4 z-40 transition-all duration-300">
-      {/* Mobile Hamburger */}
-      <button
-        onClick={onMenuToggle}
-        className="p-2 rounded-lg bg-[#FFFFFF] border border-[rgba(18,22,15,0.12)] text-[#586151] hover:text-[#12160F] md:hidden shrink-0 cursor-pointer shadow-xs"
-        aria-label="Toggle menu"
-      >
-        <Menu size={18} />
-      </button>
+      {/* Mobile Hamburger & Logo */}
+      <div className="flex items-center gap-2 md:hidden shrink-0">
+        <button
+          onClick={onMenuToggle}
+          className="p-2 rounded-lg bg-[#FFFFFF] border border-[rgba(18,22,15,0.12)] text-[#586151] hover:text-[#12160F] shrink-0 cursor-pointer shadow-xs"
+          aria-label="Toggle menu"
+        >
+          <Menu size={18} />
+        </button>
+        <img src="/assets/image.png" alt="FLUETAS" className="w-6 h-6 object-contain" />
+      </div>
 
       {/* Greeting */}
       <div className="flex-1 min-w-0">

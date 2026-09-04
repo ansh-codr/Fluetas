@@ -137,9 +137,17 @@ export default function ConsultationsPage() {
                   className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer bg-white"
                 >
                   <div className="flex items-center gap-3.5">
-                    <div className="w-11 h-11 rounded-xl bg-[#2E7D32]/10 text-[#2E7D32] flex items-center justify-center text-xl shrink-0">
-                      <Stethoscope size={22} />
-                    </div>
+                    {cons.expertName?.toLowerCase().includes('swati') ? (
+                      <img
+                        src="/assets/dr-swati-dixit-square.jpg"
+                        alt={cons.expertName}
+                        className="w-11 h-11 rounded-xl object-cover object-top shrink-0 border border-[rgba(18,22,15,0.12)] shadow-xs"
+                      />
+                    ) : (
+                      <div className="w-11 h-11 rounded-xl bg-[#2E7D32]/10 text-[#2E7D32] flex items-center justify-center text-xl shrink-0">
+                        <Stethoscope size={22} />
+                      </div>
+                    )}
                     <div>
                       <div className="flex items-center gap-2">
                         <h3 className="font-['Outfit'] text-base font-bold text-[#12160F] m-0">

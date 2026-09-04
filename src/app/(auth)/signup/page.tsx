@@ -61,19 +61,12 @@ export default function SignupPage() {
       <div className="w-full max-w-md animate-slide-up">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <div
-              style={{
-                width: 40, height: 40, borderRadius: 10,
-                background: 'linear-gradient(135deg, #2E7D32, #1B5E20)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 20, fontWeight: 800, color: '#FAFAF6',
-                fontFamily: 'Outfit, sans-serif',
-                boxShadow: '0 2px 8px rgba(46,125,50,0.25)',
-              }}
-            >
-              F
-            </div>
+          <div className="flex items-center justify-center gap-2.5 mb-2">
+            <img
+              src="/assets/image.png"
+              alt="FLUETAS"
+              className="w-10 h-10 object-contain"
+            />
             <span style={{ fontFamily: 'Outfit, sans-serif', fontSize: 28, fontWeight: 800, color: '#12160F' }}>
               FLUETAS
             </span>
