@@ -328,5 +328,19 @@ service cloud.firestore {
       allow write: if isAuthenticated() && isAdmin();
     }
 
+    // ──────────────────────────────────────────────────────────────────────
+    // /feedbacks/{feedbackId} (User & Public Feedback)
+    // ──────────────────────────────────────────────────────────────────────
+    match /feedbacks/{feedbackId} {
+      // Public reviews can be read by anyone; private feedbacks can be read by owner or admin
+      allow read: if resource.data.isPublic == true ||
+                     (isAuthenticated() && (isOwner(resource.data.userId) || isAdmin()));
+      // Anyone (authenticated or visitor) can create a feedback entry
+      allow create: if true;
+      // Only admins can update status or delete
+      allow update, delete: if isAuthenticated() && isAdmin();
+    }
+
   }
 }
+

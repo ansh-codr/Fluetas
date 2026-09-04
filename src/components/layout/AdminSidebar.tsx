@@ -15,6 +15,7 @@ const adminNavItems = [
   { href: '/admin/exercises',     label: 'Exercise Content',      emoji: '🏋️' },
   { href: '/admin/nutrition',     label: 'Nutrition Catalog',     emoji: '🥗' },
   { href: '/admin/audit-logs',    label: 'Audit & Access Logs',   emoji: '📜' },
+  { href: '/feedback',            label: 'Feedback & Ideas',      emoji: '💬' },
   { href: '/admin/settings',      label: 'System Settings',       emoji: '⚙️' },
 ];
 

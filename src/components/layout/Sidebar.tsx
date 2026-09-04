@@ -26,6 +26,7 @@ import {
   Settings,
   ShoppingBag,
   QrCode,
+  MessageSquareHeart,
   LogOut,
   X,
   LucideIcon
@@ -101,6 +102,7 @@ const navSections: NavSection[] = [
     title: 'EXTRAS',
     items: [
       { href: '/products', label: 'Products', icon: ShoppingBag },
+      { href: '/feedback', label: 'Feedback & Ideas', icon: MessageSquareHeart },
     ],
   },
 ];

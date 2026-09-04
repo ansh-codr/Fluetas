@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Bell, Calendar, Search, Menu, X, CheckCheck } from 'lucide-react';
+import { Bell, Calendar, Search, Menu, X, CheckCheck, MessageSquareHeart } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useUserProfile } from '@/context/UserProfileContext';
 import { useNotifications } from '@/hooks/useNotifications';
+import { openFeedbackDialog } from '@/components/ui/FeedbackWidget';
 import Link from 'next/link';
 
 function getGreeting(): string {
@@ -161,6 +162,17 @@ export default function TopBar({ onMenuToggle }: TopBarProps) {
             </div>
           )}
         </div>
+
+        {/* Quick Feedback Trigger */}
+        <button
+          onClick={() => openFeedbackDialog()}
+          id="topbar-feedback-btn"
+          className="w-9 h-9 rounded-xl bg-[#FFFFFF] border border-[rgba(18,22,15,0.12)] flex items-center justify-center text-[#586151] hover:text-[#2E7D32] hover:border-[#2E7D32]/40 transition-colors cursor-pointer shrink-0 shadow-xs"
+          aria-label="Send Feedback"
+          title="Share Feedback & Suggestions"
+        >
+          <MessageSquareHeart size={16} />
+        </button>
 
         {/* Calendar */}
         <Link

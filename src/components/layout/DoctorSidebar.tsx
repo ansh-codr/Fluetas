@@ -14,6 +14,7 @@ const doctorNavItems = [
   { href: '/doctor/reports',       label: 'Reports to Review',     emoji: '📑' },
   { href: '/doctor/follow-ups',    label: 'Pending Follow-ups',    emoji: '⏰' },
   { href: '/doctor/profile',       label: 'Clinical Profile',      emoji: '👨‍⚕️' },
+  { href: '/feedback',             label: 'Feedback & Ideas',      emoji: '💬' },
 ];
 
 interface DoctorSidebarProps {

@@ -3,6 +3,7 @@ import { Inter, Outfit } from 'next/font/google';
 import { AuthProvider } from '@/context/AuthContext';
 import { UserProfileProvider } from '@/context/UserProfileContext';
 import { ToastProvider } from '@/context/ToastContext';
+import FeedbackWidget from '@/components/ui/FeedbackWidget';
 import './globals.css';
 
 const inter = Inter({
@@ -38,7 +39,10 @@ export default function RootLayout({
       <body className="min-h-full antialiased" style={{ fontFamily: 'var(--font-inter, Inter, sans-serif)' }}>
         <AuthProvider>
           <UserProfileProvider>
-            <ToastProvider>{children}</ToastProvider>
+            <ToastProvider>
+              {children}
+              <FeedbackWidget />
+            </ToastProvider>
           </UserProfileProvider>
         </AuthProvider>
       </body>

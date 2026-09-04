@@ -19,11 +19,16 @@ import {
   Smartphone,
   ChevronRight,
   Sparkles,
+  MessageSquareHeart,
+  PlusCircle,
+  ThumbsUp,
 } from 'lucide-react';
+import { openFeedbackDialog } from '@/components/ui/FeedbackWidget';
+import Link from 'next/link';
 
 export default function SettingsPage() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'privacy' | 'notifications' | 'devices' | 'account'>('privacy');
+  const [activeTab, setActiveTab] = useState<'privacy' | 'notifications' | 'devices' | 'account' | 'feedback'>('privacy');
   const [consents, setConsents] = useState<ConsentRecord[]>([]);
   const [revokeToast, setRevokeToast] = useState<string | null>(null);
   const [notifSettings, setNotifSettings] = useState([
@@ -68,7 +73,7 @@ export default function SettingsPage() {
           ACCOUNT &amp; PRIVACY SETTINGS
         </h1>
         <p className="text-[#586151] text-xs sm:text-sm m-0">
-          Manage clinical access permissions, device integrations, and notifications.
+          Manage clinical access permissions, device integrations, notifications, and feedback.
         </p>
       </div>
 
@@ -79,6 +84,7 @@ export default function SettingsPage() {
           { id: 'notifications', label: 'Notifications', icon: Bell },
           { id: 'devices', label: 'Connect Devices', icon: Cpu },
           { id: 'account', label: 'Account Security', icon: Lock },
+          { id: 'feedback', label: 'Feedback & Suggestions', icon: MessageSquareHeart },
         ].map(tab => {
           const Icon = tab.icon;
           return (
@@ -279,6 +285,69 @@ export default function SettingsPage() {
             <span className="px-3 py-1 rounded-full bg-[#2E7D32]/10 border border-[#2E7D32]/20 text-[#2E7D32] text-xs font-bold">
               Enforced
             </span>
+          </div>
+        </div>
+      )}
+
+      {/* ─── TAB 5: FEEDBACK & SUGGESTIONS ──────────────────────────────── */}
+      {activeTab === 'feedback' && (
+        <div className="space-y-4">
+          <div className="fluetas-card p-6 bg-gradient-to-r from-white to-[#F2F4EE] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-[#2E7D32]/10 text-[#2E7D32] flex items-center justify-center shrink-0">
+                <MessageSquareHeart size={22} />
+              </div>
+              <div>
+                <h3 className="font-['Outfit'] text-sm sm:text-base font-bold text-[#12160F] m-0">
+                  Help Shape the Fluetas Platform
+                </h3>
+                <p className="text-xs text-[#586151] m-0 mt-1 leading-relaxed max-w-xl">
+                  Whether you have an idea for a new training metric, a suggested nutrition formula, or experienced an issue during clinical consultations, your feedback directly guides our engineering team.
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => openFeedbackDialog()}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#2E7D32] text-white text-xs font-bold hover:bg-[#256328] transition-all cursor-pointer shadow-sm shrink-0 hover:scale-105"
+            >
+              <PlusCircle size={14} />
+              <span>Submit Feedback</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="fluetas-card p-5 space-y-3">
+              <div className="flex items-center gap-2 text-xs font-bold text-[#12160F] font-['Outfit']">
+                <span>💡</span>
+                <span>FEATURE SUGGESTIONS &amp; IDEAS</span>
+              </div>
+              <p className="text-xs text-[#586151] m-0 leading-relaxed">
+                Propose wearable integrations, custom meal planning algorithms, or exercise variation requests.
+              </p>
+              <button
+                onClick={() => openFeedbackDialog({ category: 'feature' })}
+                className="text-xs font-bold text-[#2E7D32] hover:underline cursor-pointer flex items-center gap-1 pt-1"
+              >
+                <span>Suggest a Feature →</span>
+              </button>
+            </div>
+
+            <div className="fluetas-card p-5 space-y-3">
+              <div className="flex items-center gap-2 text-xs font-bold text-[#12160F] font-['Outfit']">
+                <span>⭐</span>
+                <span>PUBLIC REVIEWS &amp; ROADMAP</span>
+              </div>
+              <p className="text-xs text-[#586151] m-0 leading-relaxed">
+                Explore community reviews, live ratings, and see which community-suggested features have shipped.
+              </p>
+              <Link
+                href="/feedback"
+                className="text-xs font-bold text-[#2E7D32] hover:underline flex items-center gap-1 pt-1 no-underline"
+              >
+                <span>View Public Feedback Hub →</span>
+              </Link>
+            </div>
           </div>
         </div>
       )}

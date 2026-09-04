@@ -786,6 +786,7 @@ export default function Home() {
             <a href="#experts"   className="hover:text-ink transition-colors uppercase tracking-[0.05em]">Experts</a>
             <a href="#record"    className="hover:text-ink transition-colors uppercase tracking-[0.05em]">Record</a>
             <a href="#nutrition" className="hover:text-ink transition-colors uppercase tracking-[0.05em]">Nutrition</a>
+            <Link href="/feedback" className="hover:text-ink transition-colors uppercase tracking-[0.05em] text-leaf font-bold">Feedback</Link>
           </nav>
 
           <Link href="/login" className="shrink-0 rounded-sm bg-ink px-6 py-3 text-[13px] font-semibold text-surface transition-colors hover:bg-ink/80 uppercase tracking-[0.04em]">
@@ -1039,6 +1040,86 @@ export default function Home() {
       </section>
 
       {/* ══════════════════════════════════
+          09.5 — COMMUNITY VOICES & REVIEWS
+      ══════════════════════════════════ */}
+      <section className="py-32 border-b border-rule bg-surface-2" id="feedback">
+        <div className="wrap">
+          <div className="mb-16 text-center max-w-[720px] mx-auto">
+            <p className="eyebrow mb-4 !text-leaf">Community Voices</p>
+            <h2 className="section-heading text-[clamp(2.5rem,4vw,3.5rem)] text-ink mb-5">
+              Built with our athletes &amp; practitioners.
+            </h2>
+            <p className="text-[18px] text-ink-soft leading-relaxed">
+              Real perspectives from individuals transforming how they track human health, training, and holistic recovery.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3 mb-12">
+            {[
+              {
+                name: "Aarav Sharma",
+                role: "Marathon Runner & Athlete",
+                rating: 5,
+                title: "The continuous health record is a game-changer",
+                quote: "Having my workout metrics, recovery sleep, and clinical notes in one single unified timeline has completely changed how I train with my physio.",
+                tag: "Workout Tracking",
+              },
+              {
+                name: "Dr. Priya Desai",
+                role: "Functional Medicine Specialist",
+                rating: 5,
+                title: "Seamless patient-consent clinical architecture",
+                quote: "The granular consent controls give patients complete confidence. Reviewing real-time biomarkers before our telehealth sessions saves 20 minutes per consultation.",
+                tag: "Clinical Care",
+              },
+              {
+                name: "Meera Nambiar",
+                role: "Triathlete & Product Lead",
+                rating: 5,
+                title: "Fluetas Her cycle pacing is incredible",
+                quote: "Training phase adjustments tailored to hormonal rhythm have eliminated overtraining fatigue during peak training blocks.",
+                tag: "Fluetas Her",
+              },
+            ].map((rev) => (
+              <div key={rev.name} className="rounded-[24px] border border-rule bg-surface p-8 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow">
+                <div>
+                  <div className="flex items-center gap-1 mb-4">
+                    {[...Array(rev.rating)].map((_, i) => (
+                      <span key={i} className="text-[#D9622B] text-base">★</span>
+                    ))}
+                  </div>
+                  <h3 className="section-heading text-[18px] text-ink mb-3 leading-snug">
+                    &ldquo;{rev.title}&rdquo;
+                  </h3>
+                  <p className="text-[15px] text-ink-soft leading-relaxed mb-6">
+                    {rev.quote}
+                  </p>
+                </div>
+                <div className="pt-4 border-t border-rule flex items-center justify-between">
+                  <div>
+                    <p className="text-[14px] font-bold text-ink">{rev.name}</p>
+                    <p className="text-[12px] text-ink-soft">{rev.role}</p>
+                  </div>
+                  <span className="rounded-full bg-leaf/10 text-leaf text-[11px] font-bold px-2.5 py-1">
+                    {rev.tag}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="text-center">
+            <Link
+              href="/feedback"
+              className="inline-flex items-center gap-2 rounded-sm bg-ink px-8 py-4 text-[14px] font-bold text-surface uppercase tracking-[0.05em] hover:bg-leaf transition-colors"
+            >
+              <span>Explore Community Feedback &amp; Suggestions →</span>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════
           10 — FINAL CTA
       ══════════════════════════════════ */}
       <section className="py-40 text-center relative overflow-hidden" id="closing">
@@ -1090,6 +1171,7 @@ export default function Home() {
                 {["How it works", "Privacy", "Launch"].map((l) => (
                   <a key={l} href="#" className="text-[15px] font-medium text-ink-soft hover:text-ink transition-colors">{l}</a>
                 ))}
+                <Link href="/feedback" className="text-[15px] font-medium text-leaf hover:text-ink transition-colors">Feedback &amp; Roadmap</Link>
               </div>
               <div className="flex flex-col gap-3">
                 <p className="eyebrow mb-2 !text-[11px]">Social</p>
