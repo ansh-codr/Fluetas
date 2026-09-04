@@ -48,7 +48,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
-  const isDoctorRoute = pathname.startsWith('/doctor') || pathname.startsWith('/expert');
+  const isDoctorRoute = pathname.startsWith('/doctor');
   const isAdminRoute = pathname.startsWith('/admin');
   const isCustomerRoute = !isDoctorRoute && !isAdminRoute;
 

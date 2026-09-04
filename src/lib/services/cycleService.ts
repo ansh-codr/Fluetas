@@ -49,6 +49,19 @@ export interface CycleEntry {
 }
 
 /**
+ * Sanitizes object by removing any undefined keys before passing to Firestore setDoc/updateDoc
+ */
+function cleanFirestorePayload<T extends Record<string, any>>(obj: T): Partial<T> {
+  const cleaned: any = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (value !== undefined) {
+      cleaned[key] = value;
+    }
+  }
+  return cleaned;
+}
+
+/**
  * Saves or updates cycle configuration settings (setup flow).
  */
 export async function saveCycleSettings(
@@ -59,15 +72,13 @@ export async function saveCycleSettings(
   if (!userId) throw new Error('User ID required');
 
   const ref = doc(db, 'users', userId, 'cycleSettings', 'profile');
-  await setDoc(
-    ref,
-    {
-      ...settings,
-      configured: true,
-      updatedAt: Date.now(),
-    },
-    { merge: true }
-  );
+  const payload = cleanFirestorePayload({
+    ...settings,
+    configured: true,
+    updatedAt: Date.now(),
+  });
+
+  await setDoc(ref, payload, { merge: true });
 }
 
 /**
@@ -109,7 +120,7 @@ export async function saveDailyCycleLog(
 
   const ref = doc(db, 'cycleLogs', userId, 'entries', logData.date);
 
-  const payload: DailyCycleLog = {
+  const payload = cleanFirestorePayload({
     userId,
     date: logData.date,
     flow: logData.flow || 'none',
@@ -122,7 +133,7 @@ export async function saveDailyCycleLog(
     notes: logData.notes?.trim() || '',
     source: 'MANUAL',
     updatedAt: Timestamp.now(),
-  };
+  });
 
   await setDoc(ref, payload, { merge: true });
 

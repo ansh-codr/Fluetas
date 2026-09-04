@@ -69,14 +69,23 @@ export default function CycleSetupModal({
     setError(null);
 
     try {
-      await onSave({
-        lastPeriodStartDate: lastPeriodDate || undefined,
-        typicalPeriodDurationDays: periodDurationUnknown ? undefined : (periodDuration || undefined),
-        typicalCycleLengthDays: cycleLengthUnknown ? undefined : (cycleLength || undefined),
+      const payload: Partial<CycleSettings> = {
         isRegular: regularity,
         activeFactors,
         configured: true,
-      });
+      };
+
+      if (lastPeriodDate && lastPeriodDate.trim() !== '') {
+        payload.lastPeriodStartDate = lastPeriodDate.trim();
+      }
+      if (!periodDurationUnknown && periodDuration) {
+        payload.typicalPeriodDurationDays = Number(periodDuration);
+      }
+      if (!cycleLengthUnknown && cycleLength) {
+        payload.typicalCycleLengthDays = Number(cycleLength);
+      }
+
+      await onSave(payload);
       onClose();
     } catch (err: any) {
       setError(err?.message || 'Failed to save cycle settings.');
