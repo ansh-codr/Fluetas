@@ -16,6 +16,8 @@ FLUETAS is a next-generation clinical, wellness, and human performance health pl
   Custom periodized workout splits, interactive 3D exercise video guidance, volume and intensity progression tracking.
 - **Metabolic & Personalized Nutrition:**
   Macro/micro nutrient breakdown, custom food cataloging, hydration tracking, and 3D nutritional showcase.
+- **Continuous Feedback & Quality Telemetry:**
+  In-app feedback modal widget and dedicated feedback submission portal (`/feedback`) for bug reports, clinical experience ratings, and community feature requests.
 
 ---
 
@@ -66,6 +68,11 @@ Open [http://localhost:3000](http://localhost:3000) to view the application.
 ```bash
 npm run build
 npm start
+```
+
+### 6. Run Test Suite
+```bash
+npm test
 ```
 
 ---
