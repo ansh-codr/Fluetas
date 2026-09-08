@@ -12,12 +12,12 @@ import { adminDb } from '@/lib/firebase-admin';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
-  const authCheck = await requireServerRole(request, ['admin']);
-  if (!authCheck.authorized) {
-    return authCheck.response;
-  }
-
   try {
+    const authCheck = await requireServerRole(request, ['admin']);
+    if (!authCheck.authorized) {
+      return authCheck.response;
+    }
+
     if (!adminDb) {
       return apiError('SERVER_ERROR', 'Firebase Admin not configured', 500);
     }
@@ -32,18 +32,19 @@ export async function GET(request: NextRequest) {
     }));
     return apiSuccess({ administrators: admins });
   } catch (err: any) {
+    console.error('[API /api/admin/roles GET] Unhandled error:', err);
     return apiError('FETCH_FAILED', err?.message || 'Failed to list administrators', 500);
   }
 }
 
 export async function POST(request: NextRequest) {
-  // 1. Authorize: Only authentic Admins can call this route
-  const authCheck = await requireServerRole(request, ['admin']);
-  if (!authCheck.authorized) {
-    return authCheck.response;
-  }
-
   try {
+    // 1. Authorize: Only authentic Admins can call this route
+    const authCheck = await requireServerRole(request, ['admin']);
+    if (!authCheck.authorized) {
+      return authCheck.response;
+    }
+
     const body = await request.json();
     const { action, email, targetUid, role, reason } = body;
 
@@ -94,7 +95,7 @@ export async function POST(request: NextRequest) {
 
     return apiSuccess(result, 200);
   } catch (err: any) {
-    console.error('[API /api/admin/roles] Error:', err);
+    console.error('[API /api/admin/roles POST] Unhandled error:', err);
     return apiError('ROLE_ASSIGNMENT_FAILED', err?.message || 'Failed to update user role', 500);
   }
 }
