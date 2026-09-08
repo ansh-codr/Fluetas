@@ -278,16 +278,14 @@ export default function DoctorConsultationsPage() {
                     )}
 
                     {/* Cancel */}
-                    {c.status !== 'Completed' && (
-                      <button
-                        onClick={() => handleCancel(c)}
-                        disabled={isProcessing}
-                        className="ml-auto px-3.5 py-2 rounded-xl bg-red-900/20 hover:bg-red-900/30 text-red-400 border border-red-900/30 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors"
-                      >
-                        <X size={12} />
-                        Cancel
-                      </button>
-                    )}
+                    <button
+                      onClick={() => handleCancel(c)}
+                      disabled={isProcessing}
+                      className="ml-auto px-3.5 py-2 rounded-xl bg-red-900/20 hover:bg-red-900/30 text-red-400 border border-red-900/30 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors"
+                    >
+                      <X size={12} />
+                      Cancel
+                    </button>
                   </div>
                 )}
               </div>
