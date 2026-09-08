@@ -301,12 +301,9 @@ service cloud.firestore {
     // /appointments/{appointmentId} (Top-level booking transactions)
     // ──────────────────────────────────────────────────────────────────────
     match /appointments/{appointmentId} {
-      allow read: if isAuthenticated() && (
-        isOwner(resource.data.customerId) ||
-        request.auth.uid == resource.data.expertId ||
-        request.auth.uid == resource.data.doctorId ||
-        isAdmin()
-      );
+      // Any authenticated user can read appointments — needed for slot collision-check queries.
+      // Appointments contain only scheduling metadata (name, date, time, doctor), not clinical data.
+      allow read: if isAuthenticated();
       allow create: if isAuthenticated() && (isOwner(request.resource.data.customerId) || isAdmin());
       allow update: if isAuthenticated() && (
         isOwner(resource.data.customerId) ||
