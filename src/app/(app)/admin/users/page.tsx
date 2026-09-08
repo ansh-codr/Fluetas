@@ -79,7 +79,8 @@ export default function AdminUsersPage() {
     setAddingAdmin(true);
 
     try {
-      const token = await user?.getIdToken();
+      // Force-refresh the token so the latest custom claims (admin role) are included
+      const token = await user?.getIdToken(true);
       const res = await fetch('/api/admin/roles', {
         method: 'POST',
         headers: {
@@ -92,7 +93,14 @@ export default function AdminUsersPage() {
         }),
       });
 
-      const data = await res.json();
+      // Safely parse JSON — guard against empty-body error responses (e.g. 504 timeouts)
+      let data: any = {};
+      try {
+        data = await res.json();
+      } catch {
+        throw new Error(`Server returned an unexpected response (HTTP ${res.status}). Please try again.`);
+      }
+
       if (!res.ok) {
         throw new Error(data.error?.message || 'Failed to add administrator');
       }
@@ -112,7 +120,8 @@ export default function AdminUsersPage() {
 
     setProcessingId(adminRecord.id);
     try {
-      const token = await user?.getIdToken();
+      // Force-refresh the token so the latest custom claims are included
+      const token = await user?.getIdToken(true);
       const res = await fetch('/api/admin/roles', {
         method: 'POST',
         headers: {
@@ -125,7 +134,14 @@ export default function AdminUsersPage() {
         }),
       });
 
-      const data = await res.json();
+      // Safely parse JSON — guard against empty-body error responses
+      let data: any = {};
+      try {
+        data = await res.json();
+      } catch {
+        throw new Error(`Server returned an unexpected response (HTTP ${res.status}). Please try again.`);
+      }
+
       if (!res.ok) {
         throw new Error(data.error?.message || 'Failed to revoke administrator');
       }
