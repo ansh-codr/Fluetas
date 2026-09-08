@@ -6,17 +6,17 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
   Dumbbell,
+  UtensilsCrossed,
   HeartPulse,
   Stethoscope,
-  User,
 } from 'lucide-react';
 
 const mobileNavItems = [
   { href: '/dashboard', label: 'Home', icon: LayoutDashboard },
-  { href: '/workouts', label: 'Train', icon: Dumbbell },
+  { href: '/workouts', label: 'Work', icon: Dumbbell },
+  { href: '/nutrition', label: 'Food', icon: UtensilsCrossed },
   { href: '/health-record', label: 'Health', icon: HeartPulse },
-  { href: '/consultations', label: 'Care', icon: Stethoscope },
-  { href: '/profile', label: 'Profile', icon: User },
+  { href: '/consultations', label: 'Docs', icon: Stethoscope },
 ];
 
 export default function MobileBottomNav() {
@@ -34,7 +34,7 @@ export default function MobileBottomNav() {
               key={item.href}
               href={item.href}
               className={`
-                flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl text-decoration-none no-underline transition-all duration-150 active:scale-95
+                flex flex-col items-center gap-0.5 px-2 py-1 rounded-xl text-decoration-none no-underline transition-all duration-150 active:scale-95
                 ${isActive
                   ? 'text-[#2E7D32] font-bold'
                   : 'text-[#586151] hover:text-[#12160F]'
@@ -44,7 +44,7 @@ export default function MobileBottomNav() {
               <div className={`p-1 rounded-lg ${isActive ? 'bg-[#2E7D32]/10' : ''}`}>
                 <Icon size={18} strokeWidth={isActive ? 2.4 : 1.8} />
               </div>
-              <span className="text-[0.65rem] tracking-tight">
+              <span className="text-[0.6rem] tracking-tight">
                 {item.label}
               </span>
             </Link>
