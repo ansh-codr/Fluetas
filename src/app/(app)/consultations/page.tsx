@@ -1,9 +1,14 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
-import { getUserConsultations, ConsultationData } from '@/lib/services/consultationService';
+import {
+  getUserConsultations,
+  cancelConsultation,
+  rescheduleConsultation,
+  ConsultationData,
+} from '@/lib/services/consultationService';
 import {
   Stethoscope,
   Clock,
@@ -18,7 +23,22 @@ import {
   CalendarClock,
   ExternalLink,
   RefreshCw,
+  Calendar,
+  X,
+  FileEdit,
+  Trash2,
 } from 'lucide-react';
+
+const TIME_SLOTS = [
+  '09:00 AM',
+  '10:00 AM',
+  '11:30 AM',
+  '02:00 PM',
+  '03:30 PM',
+  '04:30 PM',
+  '05:30 PM',
+  '06:30 PM',
+];
 
 function getJitsiRoom(consultationId: string) {
   return `https://meet.jit.si/fluetas-consult-${consultationId}`;
@@ -119,6 +139,24 @@ export default function ConsultationsPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [tab, setTab] = useState<'upcoming' | 'past'>('upcoming');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Reschedule / Edit Modal State
+  const [editingCons, setEditingCons] = useState<ConsultationData | null>(null);
+  const [editDate, setEditDate] = useState('');
+  const [editTime, setEditTime] = useState('');
+  const [editReason, setEditReason] = useState('');
+  const [editSymptoms, setEditSymptoms] = useState<string[]>([]);
+  const [customSymptom, setCustomSymptom] = useState('');
+  const [submittingEdit, setSubmittingEdit] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+
+  // Cancel Modal State
+  const [cancellingCons, setCancellingCons] = useState<ConsultationData | null>(null);
+  const [cancelReason, setCancelReason] = useState('Schedule conflict');
+  const [customCancelReason, setCustomCancelReason] = useState('');
+  const [submittingCancel, setSubmittingCancel] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
 
   const load = async (quiet = false) => {
     if (!user) { setLoading(false); return; }
@@ -148,8 +186,89 @@ export default function ConsultationsPage() {
 
   const toggleExpand = (id: string) => setExpandedId(expandedId === id ? null : id);
 
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  const openRescheduleModal = (cons: ConsultationData) => {
+    setEditingCons(cons);
+    setEditDate(cons.preferredDate || new Date().toISOString().split('T')[0]);
+    setEditTime(cons.preferredTime || '10:00 AM');
+    setEditReason(cons.reason || '');
+    setEditSymptoms(cons.symptomsReported || []);
+    setEditError(null);
+  };
+
+  const handleSaveReschedule = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !editingCons?.id) return;
+    if (!editDate) {
+      setEditError('Please select an appointment date.');
+      return;
+    }
+    if (!editReason.trim()) {
+      setEditError('Please provide a reason for the consultation.');
+      return;
+    }
+
+    setSubmittingEdit(true);
+    setEditError(null);
+
+    try {
+      await rescheduleConsultation(user.uid, editingCons.id, {
+        expertId: editingCons.expertId,
+        preferredDate: editDate,
+        preferredTime: editTime,
+        reason: editReason,
+        symptomsReported: editSymptoms,
+      });
+      showToast('Consultation details and timing updated successfully!');
+      setEditingCons(null);
+      await load();
+    } catch (err: any) {
+      setEditError(err.message || 'Failed to update consultation.');
+    } finally {
+      setSubmittingEdit(false);
+    }
+  };
+
+  const openCancelModal = (cons: ConsultationData) => {
+    setCancellingCons(cons);
+    setCancelReason('Schedule conflict');
+    setCustomCancelReason('');
+    setCancelError(null);
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!user || !cancellingCons?.id) return;
+    setSubmittingCancel(true);
+    setCancelError(null);
+
+    const finalReason = cancelReason === 'Other' ? customCancelReason.trim() : cancelReason;
+
+    try {
+      await cancelConsultation(user.uid, cancellingCons.id, finalReason);
+      showToast('Consultation cancelled.');
+      setCancellingCons(null);
+      await load();
+    } catch (err: any) {
+      setCancelError(err.message || 'Failed to cancel consultation.');
+    } finally {
+      setSubmittingCancel(false);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-5 max-w-5xl mx-auto w-full">
+      {/* Toast */}
+      {toastMessage && (
+        <div className="fixed top-20 right-6 z-50 bg-[#2E7D32] text-white font-bold text-xs py-2.5 px-4 rounded-xl shadow-2xl flex items-center gap-2 animate-slide-up">
+          <CheckCircle2 size={16} />
+          {toastMessage}
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
@@ -212,9 +331,13 @@ export default function ConsultationsPage() {
           <div className="w-14 h-14 rounded-2xl bg-[#2E7D32]/10 text-[#2E7D32] flex items-center justify-center mb-3">
             <Stethoscope size={26} />
           </div>
-          <h3 className="font-['Outfit'] text-base font-bold text-[#12160F] m-0">No consultations yet.</h3>
+          <h3 className="font-['Outfit'] text-base font-bold text-[#12160F] m-0">
+            {tab === 'upcoming' ? 'No upcoming consultations.' : 'No past consultation records.'}
+          </h3>
           <p className="text-xs text-[#586151] m-0 mt-1 max-w-sm">
-            Your upcoming and completed consultations will appear here.
+            {tab === 'upcoming'
+              ? 'Book an encrypted 1-on-1 session with our certified sports doctors and nutritionists.'
+              : 'Completed consultations and clinical reports will appear here.'}
           </p>
           <Link href="/experts" className="btn-primary mt-4 flex items-center gap-2 px-5 py-2.5 text-xs font-bold no-underline shadow-xs">
             <Plus size={14} /> Find an Expert
@@ -224,6 +347,8 @@ export default function ConsultationsPage() {
         <div className="flex flex-col gap-3.5">
           {filtered.map(cons => {
             const isExpanded = expandedId === cons.id;
+            const isUpcoming = ['Requested', 'Booked', 'Scheduled', 'In Progress'].includes(cons.status);
+
             return (
               <div
                 key={cons.id}
@@ -253,7 +378,7 @@ export default function ConsultationsPage() {
                       </div>
                       <p className="text-xs text-[#2E7D32] font-semibold m-0 mt-0.5 flex items-center gap-1.5">
                         <Clock size={12} />
-                        {cons.preferredDate || 'Date TBC'} {cons.preferredTime ? `at ${cons.preferredTime}` : ''}
+                        {cons.preferredDate || 'Date to be confirmed'} {cons.preferredTime ? `at ${cons.preferredTime}` : ''}
                       </p>
                     </div>
                   </div>
@@ -272,6 +397,40 @@ export default function ConsultationsPage() {
 
                     {/* Action panel (join/status) */}
                     <ConsultationActionPanel cons={cons} />
+
+                    {/* Action Controls for Upcoming Appointments */}
+                    {isUpcoming && (
+                      <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-white rounded-xl border border-[rgba(18,22,15,0.08)]">
+                        <span className="text-[0.68rem] font-bold text-[#586151] uppercase">
+                          Appointment Management
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={e => {
+                              e.stopPropagation();
+                              openRescheduleModal(cons);
+                            }}
+                            className="px-3 py-1.5 rounded-lg bg-[#2E6DA4]/10 border border-[#2E6DA4]/30 text-[#2E6DA4] hover:bg-[#2E6DA4]/20 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+                          >
+                            <FileEdit size={13} />
+                            <span>Reschedule / Edit</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={e => {
+                              e.stopPropagation();
+                              openCancelModal(cons);
+                            }}
+                            className="px-3 py-1.5 rounded-lg bg-red-50 border border-red-200 text-red-600 hover:bg-red-100 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+                          >
+                            <Trash2 size={13} />
+                            <span>Cancel Appointment</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Reason */}
                     <div>
@@ -306,7 +465,7 @@ export default function ConsultationsPage() {
                     </div>
 
                     {/* Clinical notes (if completed) */}
-                    {cons.clinicalNotes && (
+                    {cons.clinicalNotes ? (
                       <div className="space-y-3 bg-white p-4 rounded-xl border border-[rgba(18,22,15,0.08)]">
                         <div className="flex items-center gap-1.5 mb-1">
                           <FileText size={14} className="text-[#2E6DA4]" />
@@ -353,12 +512,243 @@ export default function ConsultationsPage() {
                           </div>
                         )}
                       </div>
+                    ) : (
+                      <div className="p-3 bg-[#2E6DA4]/10 border border-[#2E6DA4]/20 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-[#2E6DA4]">
+                        <span>Encrypted telehealth room link will activate when appointment time is confirmed.</span>
+                        <button
+                          onClick={() => alert(`Your appointment with ${cons.expertName} is scheduled for ${cons.preferredDate || 'date pending'} at ${cons.preferredTime || '10:00 AM'}.`)}
+                          className="px-3 py-1.5 rounded-lg bg-[#2E6DA4] text-white font-bold text-xs shrink-0 cursor-pointer"
+                        >
+                          Check Status
+                        </button>
+                      </div>
                     )}
                   </div>
                 )}
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* ── Reschedule / Edit Modal ── */}
+      {editingCons && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-5 sm:p-6 border border-[rgba(18,22,15,0.15)] shadow-2xl space-y-4 animate-scale-up">
+            <div className="flex items-start justify-between">
+              <div>
+                <span className="text-[0.68rem] font-bold text-[#2E7D32] uppercase tracking-wider">
+                  Update Appointment
+                </span>
+                <h3 className="font-['Outfit'] text-lg font-bold text-[#12160F] m-0">
+                  {editingCons.expertName}
+                </h3>
+                <p className="text-xs text-[#586151] m-0">{editingCons.specialization}</p>
+              </div>
+              <button
+                onClick={() => setEditingCons(null)}
+                className="text-[#8A9482] hover:text-[#12160F] p-1 cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {editError && (
+              <div className="p-3 bg-red-50 border border-red-200 text-red-600 text-xs rounded-xl flex items-center gap-2">
+                <AlertCircle size={15} className="shrink-0" />
+                <span>{editError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSaveReschedule} className="space-y-3.5 text-xs">
+              {/* Date & Time */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-[#12160F] block mb-1">Appointment Date</label>
+                  <div className="flex items-center gap-2 bg-[#FAFAF6] border border-[rgba(18,22,15,0.12)] rounded-xl px-3 py-2">
+                    <Calendar size={14} className="text-[#586151]" />
+                    <input
+                      type="date"
+                      value={editDate}
+                      min={new Date().toISOString().split('T')[0]}
+                      onChange={e => setEditDate(e.target.value)}
+                      className="w-full bg-transparent outline-none text-xs text-[#12160F]"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="font-bold text-[#12160F] block mb-1">Preferred Time Slot</label>
+                  <select
+                    value={editTime}
+                    onChange={e => setEditTime(e.target.value)}
+                    className="w-full bg-[#FAFAF6] border border-[rgba(18,22,15,0.12)] rounded-xl px-3 py-2.5 text-xs text-[#12160F] outline-none focus:border-[#2E7D32]"
+                  >
+                    {TIME_SLOTS.map(slot => (
+                      <option key={slot} value={slot}>
+                        {slot}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Reason */}
+              <div>
+                <label className="font-bold text-[#12160F] block mb-1">
+                  Reason for Consultation / Primary Concern
+                </label>
+                <textarea
+                  value={editReason}
+                  onChange={e => setEditReason(e.target.value)}
+                  rows={3}
+                  className="w-full p-3 bg-[#FAFAF6] border border-[rgba(18,22,15,0.12)] rounded-xl outline-none text-xs text-[#12160F] focus:border-[#2E7D32]"
+                  placeholder="Describe your current symptoms or purpose for this clinical session..."
+                  required
+                />
+              </div>
+
+              {/* Symptoms reported */}
+              <div>
+                <label className="font-bold text-[#12160F] block mb-1">Reported Symptoms</label>
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                  {editSymptoms.map((s, i) => (
+                    <span
+                      key={i}
+                      className="px-2.5 py-1 rounded-lg bg-[#2E6DA4]/10 text-[#2E6DA4] text-[0.68rem] font-bold border border-[#2E6DA4]/20 flex items-center gap-1.5"
+                    >
+                      {s}
+                      <button
+                        type="button"
+                        onClick={() => setEditSymptoms(editSymptoms.filter((_, idx) => idx !== i))}
+                        className="hover:text-red-600"
+                      >
+                        <X size={11} />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={customSymptom}
+                    onChange={e => setCustomSymptom(e.target.value)}
+                    placeholder="Add symptom (e.g. Knee Ache, Fatigue)..."
+                    className="flex-1 px-3 py-1.5 bg-[#FAFAF6] border border-[rgba(18,22,15,0.12)] rounded-xl text-xs outline-none focus:border-[#2E7D32]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (customSymptom.trim() && !editSymptoms.includes(customSymptom.trim())) {
+                        setEditSymptoms([...editSymptoms, customSymptom.trim()]);
+                        setCustomSymptom('');
+                      }
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-[#2E7D32]/10 border border-[#2E7D32]/30 text-[#2E7D32] font-bold text-xs hover:bg-[#2E7D32]/20"
+                  >
+                    Add
+                  </button>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-[rgba(18,22,15,0.08)]">
+                <button
+                  type="button"
+                  onClick={() => setEditingCons(null)}
+                  className="px-4 py-2 rounded-xl border border-[rgba(18,22,15,0.15)] font-bold text-[#586151] hover:bg-[#FAFAF6] cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingEdit}
+                  className="btn-primary px-5 py-2 font-bold cursor-pointer disabled:opacity-50"
+                >
+                  {submittingEdit ? 'Saving Changes...' : 'Save & Confirm Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── Cancel Appointment Confirmation Modal ── */}
+      {cancellingCons && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-5 sm:p-6 border border-red-200 shadow-2xl space-y-4 animate-scale-up">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-2 text-red-600">
+                <AlertCircle size={20} />
+                <h3 className="font-['Outfit'] text-base font-bold text-[#12160F] m-0">
+                  Cancel Appointment?
+                </h3>
+              </div>
+              <button
+                onClick={() => setCancellingCons(null)}
+                className="text-[#8A9482] hover:text-[#12160F] p-1 cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <p className="text-xs text-[#586151] m-0 leading-relaxed">
+              Are you sure you want to cancel your consultation with{' '}
+              <strong>{cancellingCons.expertName}</strong> scheduled for{' '}
+              <strong>{cancellingCons.preferredDate}</strong> at{' '}
+              <strong>{cancellingCons.preferredTime || '10:00 AM'}</strong>?
+            </p>
+
+            {cancelError && (
+              <div className="p-3 bg-red-50 border border-red-200 text-red-600 text-xs rounded-xl">
+                {cancelError}
+              </div>
+            )}
+
+            <div className="space-y-2 text-xs">
+              <label className="font-bold text-[#12160F] block">Reason for Cancellation</label>
+              <select
+                value={cancelReason}
+                onChange={e => setCancelReason(e.target.value)}
+                className="w-full p-2.5 bg-[#FAFAF6] border border-[rgba(18,22,15,0.12)] rounded-xl outline-none"
+              >
+                <option value="Schedule conflict">Schedule conflict</option>
+                <option value="Symptoms improved">Symptoms improved</option>
+                <option value="Seeking alternate specialist">Seeking alternate specialist</option>
+                <option value="Other">Other reason</option>
+              </select>
+
+              {cancelReason === 'Other' && (
+                <input
+                  type="text"
+                  value={customCancelReason}
+                  onChange={e => setCustomCancelReason(e.target.value)}
+                  placeholder="Please specify reason..."
+                  className="w-full p-2.5 bg-[#FAFAF6] border border-[rgba(18,22,15,0.12)] rounded-xl outline-none mt-2"
+                />
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setCancellingCons(null)}
+                className="px-4 py-2 rounded-xl border border-[rgba(18,22,15,0.15)] font-bold text-xs text-[#586151] hover:bg-[#FAFAF6] cursor-pointer"
+              >
+                Keep Appointment
+              </button>
+              <button
+                type="button"
+                disabled={submittingCancel}
+                onClick={handleConfirmCancel}
+                className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs cursor-pointer disabled:opacity-50 shadow-sm"
+              >
+                {submittingCancel ? 'Cancelling...' : 'Yes, Cancel Appointment'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

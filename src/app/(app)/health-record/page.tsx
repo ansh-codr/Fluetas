@@ -5,6 +5,8 @@ import { useAuth } from '@/context/AuthContext';
 import { useUserProfile } from '@/context/UserProfileContext';
 import { getUserConsultations, ConsultationData } from '@/lib/services/consultationService';
 import { getPatientConsents, revokeConsent, ConsentRecord } from '@/lib/services/consentService';
+import { updateUserProfile, updateHealthProfile } from '@/lib/services/userService';
+import { exportHealthRecordPdf } from '@/lib/services/healthRecordPdf';
 import {
   FileText,
   Heart,
@@ -17,17 +19,39 @@ import {
   Lock,
   Trash2,
   CheckCircle2,
+  Pencil,
+  X,
+  User,
+  Activity,
+  Plus,
 } from 'lucide-react';
 import { AnimatedNumber } from '@/components/motion/MotionUtils';
 
+const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+const GENDERS = ['Male', 'Female', 'Non-Binary', 'Prefer not to say'];
+
 export default function HealthRecordPage() {
   const { user } = useAuth();
-  const { profile, healthProfile } = useUserProfile();
+  const { profile, healthProfile, refresh } = useUserProfile();
   const [activeSection, setActiveSection] = useState<'all' | 'consults' | 'consent' | 'reports' | 'meds' | 'history'>('all');
   const [consultations, setConsultations] = useState<ConsultationData[]>([]);
   const [consents, setConsents] = useState<ConsentRecord[]>([]);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Edit Patient Identification Modal State
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editDob, setEditDob] = useState('');
+  const [editGender, setEditGender] = useState('');
+  const [editBloodGroup, setEditBloodGroup] = useState('O+');
+  const [editGoal, setEditGoal] = useState('');
+  const [editAllergies, setEditAllergies] = useState<string[]>([]);
+  const [editChronic, setEditChronic] = useState<string[]>([]);
+  const [newAllergy, setNewAllergy] = useState('');
+  const [newChronic, setNewChronic] = useState('');
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
 
   const loadData = async () => {
     if (!user) return;
@@ -47,25 +71,87 @@ export default function HealthRecordPage() {
     loadData();
   }, [user]);
 
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
+
   const handleRevoke = async (consent: ConsentRecord) => {
     if (!user || !consent.consentId) return;
     try {
       await revokeConsent(user.uid, consent.consentId, consent.doctorName);
-      setToastMessage(`Revoked health data access for ${consent.doctorName}`);
-      setTimeout(() => setToastMessage(null), 3500);
+      showToast(`Revoked health data access for ${consent.doctorName}`);
       await loadData();
     } catch {
       alert('Failed to revoke consent');
     }
   };
 
-  const handleExportPdf = () => {
+  const handleExportPdf = async () => {
     setDownloadingPdf(true);
-    setTimeout(() => {
+    try {
+      await exportHealthRecordPdf({
+        profile,
+        healthProfile,
+        consultations,
+        consents,
+        userEmail: user?.email || undefined,
+      });
+      showToast('Encrypted health record PDF downloaded successfully!');
+    } catch (err: any) {
+      console.error('[PDF Export Error]:', err);
+      alert('Failed to generate PDF. Please try again.');
+    } finally {
       setDownloadingPdf(false);
-      setToastMessage('Encrypted health record PDF compiled and ready.');
-      setTimeout(() => setToastMessage(null), 3000);
-    }, 1500);
+    }
+  };
+
+  const openEditModal = () => {
+    setEditName(profile?.name || user?.displayName || '');
+    setEditDob(profile?.dob || '');
+    setEditGender(profile?.gender || 'Prefer not to say');
+    setEditBloodGroup(profile?.bloodGroup || 'O+');
+    setEditGoal(healthProfile?.primaryGoal || 'Longevity & Performance');
+    setEditAllergies(healthProfile?.allergies || []);
+    setEditChronic(healthProfile?.chronicConditions || []);
+    setEditError(null);
+    setIsEditModalOpen(true);
+  };
+
+  const handleSavePatientIdentification = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    if (!editName.trim()) {
+      setEditError('Patient name cannot be empty.');
+      return;
+    }
+
+    setSavingProfile(true);
+    setEditError(null);
+
+    try {
+      await Promise.all([
+        updateUserProfile(user.uid, {
+          name: editName.trim(),
+          dob: editDob,
+          gender: editGender,
+          bloodGroup: editBloodGroup,
+        }),
+        updateHealthProfile(user.uid, {
+          primaryGoal: editGoal,
+          allergies: editAllergies,
+          chronicConditions: editChronic,
+        }),
+      ]);
+
+      await refresh();
+      showToast('Patient identification & health details updated successfully!');
+      setIsEditModalOpen(false);
+    } catch (err: any) {
+      setEditError(err.message || 'Failed to save patient details.');
+    } finally {
+      setSavingProfile(false);
+    }
   };
 
   return (
@@ -204,25 +290,45 @@ export default function HealthRecordPage() {
       {/* Vital Snapshot & Allergies Callout */}
       {(activeSection === 'all' || activeSection === 'history') && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="fluetas-card p-4">
-            <span className="text-[0.68rem] font-bold text-[#586151] uppercase tracking-wider block mb-2">
-              Patient Identification
-            </span>
+          {/* Patient Identification Card with EDIT OPTION */}
+          <div className="fluetas-card p-4 relative group">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[0.68rem] font-bold text-[#586151] uppercase tracking-wider block">
+                Patient Identification
+              </span>
+              <button
+                type="button"
+                onClick={openEditModal}
+                className="px-2 py-1 rounded-lg bg-[#2E7D32]/10 border border-[#2E7D32]/20 text-[#2E7D32] text-[0.68rem] font-bold flex items-center gap-1 hover:bg-[#2E7D32]/20 transition-colors cursor-pointer"
+              >
+                <Pencil size={11} />
+                <span>Edit</span>
+              </button>
+            </div>
             <p className="text-base font-bold text-[#12160F] m-0">{profile?.name || user?.displayName || 'User'}</p>
             <p className="text-xs text-[#586151] m-0 mt-0.5">
               DOB: {profile?.dob || 'Not set'} · Gender: {profile?.gender || 'Not set'}
             </p>
             <div className="mt-3 pt-2.5 border-t border-[rgba(18,22,15,0.08)] flex justify-between text-xs">
               <span className="text-[#586151]">Blood Group:</span>
-              <strong className="text-[#2E7D32]">{profile?.bloodGroup || 'O+'}</strong>
+              <strong className="text-[#2E7D32] font-bold">{profile?.bloodGroup || 'O+'}</strong>
             </div>
           </div>
 
           <div className="fluetas-card p-4 border-[#C23B6B]/20">
-            <span className="text-[0.68rem] font-bold text-[#C23B6B] uppercase tracking-wider block mb-2 flex items-center gap-1">
-              <AlertCircle size={12} />
-              Documented Allergies
-            </span>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[0.68rem] font-bold text-[#C23B6B] uppercase tracking-wider flex items-center gap-1">
+                <AlertCircle size={12} />
+                Documented Allergies
+              </span>
+              <button
+                type="button"
+                onClick={openEditModal}
+                className="text-[0.68rem] font-bold text-[#C23B6B] hover:underline cursor-pointer"
+              >
+                Edit
+              </button>
+            </div>
             <div className="flex flex-wrap gap-1.5">
               {healthProfile?.allergies && healthProfile.allergies.length > 0 ? (
                 healthProfile.allergies.map((a, i) => (
@@ -240,14 +346,23 @@ export default function HealthRecordPage() {
           </div>
 
           <div className="fluetas-card p-4">
-            <span className="text-[0.68rem] font-bold text-[#2E6DA4] uppercase tracking-wider block mb-2">
-              Chronic Conditions &amp; Goals
-            </span>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[0.68rem] font-bold text-[#2E6DA4] uppercase tracking-wider">
+                Chronic Conditions &amp; Goals
+              </span>
+              <button
+                type="button"
+                onClick={openEditModal}
+                className="text-[0.68rem] font-bold text-[#2E6DA4] hover:underline cursor-pointer"
+              >
+                Edit
+              </button>
+            </div>
             <div className="flex flex-col gap-1 text-xs">
               <p className="font-semibold text-[#12160F] m-0">{healthProfile?.primaryGoal || 'Longevity & Performance'}</p>
               {healthProfile?.chronicConditions && healthProfile.chronicConditions.length > 0 ? (
                 healthProfile.chronicConditions.map((c, i) => (
-                  <p key={i} className="text-[0.7rem] text-[#2E6DA4] m-0 font-medium">{c}</p>
+                  <p key={i} className="text-[0.7rem] text-[#2E6DA4] m-0 font-medium">• {c}</p>
                 ))
               ) : (
                 <p className="text-[0.7rem] text-[#586151] m-0">No chronic conditions recorded.</p>
@@ -333,6 +448,216 @@ export default function HealthRecordPage() {
             ) : (
               <p className="text-xs text-[#586151] m-0">No active medications recorded.</p>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Edit Patient Identification Modal ── */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-5 sm:p-6 border border-[rgba(18,22,15,0.15)] shadow-2xl space-y-4 animate-scale-up">
+            <div className="flex items-start justify-between">
+              <div>
+                <span className="text-[0.68rem] font-bold text-[#2E7D32] uppercase tracking-wider">
+                  Patient Profile
+                </span>
+                <h3 className="font-['Outfit'] text-lg font-bold text-[#12160F] m-0">
+                  Edit Patient Identification
+                </h3>
+                <p className="text-xs text-[#586151] m-0">
+                  Keep your permanent clinical records and emergency identification accurate.
+                </p>
+              </div>
+              <button
+                onClick={() => setIsEditModalOpen(false)}
+                className="text-[#8A9482] hover:text-[#12160F] p-1 cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {editError && (
+              <div className="p-3 bg-red-50 border border-red-200 text-red-600 text-xs rounded-xl flex items-center gap-2">
+                <AlertCircle size={15} className="shrink-0" />
+                <span>{editError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSavePatientIdentification} className="space-y-3.5 text-xs">
+              {/* Name */}
+              <div>
+                <label className="font-bold text-[#12160F] block mb-1">Full Legal Name</label>
+                <input
+                  type="text"
+                  value={editName}
+                  onChange={e => setEditName(e.target.value)}
+                  placeholder="Enter full legal name..."
+                  className="w-full px-3 py-2.5 bg-[#FAFAF6] border border-[rgba(18,22,15,0.12)] rounded-xl outline-none text-xs text-[#12160F] focus:border-[#2E7D32]"
+                  required
+                />
+              </div>
+
+              {/* DOB & Gender */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-[#12160F] block mb-1">Date of Birth</label>
+                  <input
+                    type="date"
+                    value={editDob}
+                    onChange={e => setEditDob(e.target.value)}
+                    className="w-full px-3 py-2 bg-[#FAFAF6] border border-[rgba(18,22,15,0.12)] rounded-xl outline-none text-xs text-[#12160F]"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-[#12160F] block mb-1">Gender</label>
+                  <select
+                    value={editGender}
+                    onChange={e => setEditGender(e.target.value)}
+                    className="w-full px-3 py-2.5 bg-[#FAFAF6] border border-[rgba(18,22,15,0.12)] rounded-xl text-xs text-[#12160F] outline-none focus:border-[#2E7D32]"
+                  >
+                    {GENDERS.map(g => (
+                      <option key={g} value={g}>
+                        {g}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Blood Group & Primary Goal */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-[#12160F] block mb-1">Blood Group</label>
+                  <select
+                    value={editBloodGroup}
+                    onChange={e => setEditBloodGroup(e.target.value)}
+                    className="w-full px-3 py-2.5 bg-[#FAFAF6] border border-[rgba(18,22,15,0.12)] rounded-xl text-xs text-[#12160F] outline-none focus:border-[#2E7D32]"
+                  >
+                    {BLOOD_GROUPS.map(bg => (
+                      <option key={bg} value={bg}>
+                        {bg}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="font-bold text-[#12160F] block mb-1">Primary Health Target</label>
+                  <input
+                    type="text"
+                    value={editGoal}
+                    onChange={e => setEditGoal(e.target.value)}
+                    placeholder="e.g. Build Muscle, Longevity"
+                    className="w-full px-3 py-2.5 bg-[#FAFAF6] border border-[rgba(18,22,15,0.12)] rounded-xl text-xs text-[#12160F] outline-none focus:border-[#2E7D32]"
+                  />
+                </div>
+              </div>
+
+              {/* Allergies */}
+              <div>
+                <label className="font-bold text-[#12160F] block mb-1">Documented Allergies</label>
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                  {editAllergies.map((a, i) => (
+                    <span
+                      key={i}
+                      className="px-2.5 py-1 rounded-lg bg-[#C23B6B]/10 text-[#C23B6B] text-[0.68rem] font-bold border border-[#C23B6B]/20 flex items-center gap-1.5"
+                    >
+                      {a}
+                      <button
+                        type="button"
+                        onClick={() => setEditAllergies(editAllergies.filter((_, idx) => idx !== i))}
+                        className="hover:text-red-700"
+                      >
+                        <X size={11} />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newAllergy}
+                    onChange={e => setNewAllergy(e.target.value)}
+                    placeholder="Add allergy (e.g. Penicillin, Peanuts)..."
+                    className="flex-1 px-3 py-1.5 bg-[#FAFAF6] border border-[rgba(18,22,15,0.12)] rounded-xl text-xs outline-none focus:border-[#2E7D32]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (newAllergy.trim() && !editAllergies.includes(newAllergy.trim())) {
+                        setEditAllergies([...editAllergies, newAllergy.trim()]);
+                        setNewAllergy('');
+                      }
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-[#2E7D32]/10 border border-[#2E7D32]/30 text-[#2E7D32] font-bold text-xs hover:bg-[#2E7D32]/20 cursor-pointer"
+                  >
+                    Add
+                  </button>
+                </div>
+              </div>
+
+              {/* Chronic Conditions */}
+              <div>
+                <label className="font-bold text-[#12160F] block mb-1">Chronic Conditions</label>
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                  {editChronic.map((c, i) => (
+                    <span
+                      key={i}
+                      className="px-2.5 py-1 rounded-lg bg-[#2E6DA4]/10 text-[#2E6DA4] text-[0.68rem] font-bold border border-[#2E6DA4]/20 flex items-center gap-1.5"
+                    >
+                      {c}
+                      <button
+                        type="button"
+                        onClick={() => setEditChronic(editChronic.filter((_, idx) => idx !== i))}
+                        className="hover:text-red-700"
+                      >
+                        <X size={11} />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newChronic}
+                    onChange={e => setNewChronic(e.target.value)}
+                    placeholder="Add condition (e.g. Asthma, Hypertension)..."
+                    className="flex-1 px-3 py-1.5 bg-[#FAFAF6] border border-[rgba(18,22,15,0.12)] rounded-xl text-xs outline-none focus:border-[#2E7D32]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (newChronic.trim() && !editChronic.includes(newChronic.trim())) {
+                        setEditChronic([...editChronic, newChronic.trim()]);
+                        setNewChronic('');
+                      }
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-[#2E7D32]/10 border border-[#2E7D32]/30 text-[#2E7D32] font-bold text-xs hover:bg-[#2E7D32]/20 cursor-pointer"
+                  >
+                    Add
+                  </button>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-[rgba(18,22,15,0.08)]">
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="px-4 py-2 rounded-xl border border-[rgba(18,22,15,0.15)] font-bold text-[#586151] hover:bg-[#FAFAF6] cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingProfile}
+                  className="btn-primary px-5 py-2 font-bold cursor-pointer disabled:opacity-50"
+                >
+                  {savingProfile ? 'Saving Identification...' : 'Save Identification'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

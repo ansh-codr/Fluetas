@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -40,9 +40,33 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
+  const [savedEmail, setSavedEmail] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+
+  // Load saved credentials for 1-time / 1-click login on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const storedEmail = localStorage.getItem('fluetas_saved_email');
+        const storedIntent = localStorage.getItem('fluetas_saved_intent') as LoginIntent | null;
+        const storedRemember = localStorage.getItem('fluetas_remember_me');
+
+        if (storedEmail) {
+          setEmail(storedEmail);
+          setSavedEmail(storedEmail);
+        }
+        if (storedIntent && ['customer', 'practitioner'].includes(storedIntent)) {
+          setLoginIntent(storedIntent);
+        }
+        if (storedRemember !== null) {
+          setRememberMe(storedRemember === 'true');
+        }
+      } catch {}
+    }
+  }, []);
 
   /**
    * Authoritatively validates the authenticated user's role against their selected login intent.
@@ -52,6 +76,21 @@ export default function LoginPage() {
     if (!db) {
       router.replace(intent === 'practitioner' ? '/doctor/dashboard' : '/dashboard');
       return;
+    }
+
+    // Persist or clear sign-in details according to rememberMe preference
+    if (typeof window !== 'undefined') {
+      try {
+        if (rememberMe && email.trim()) {
+          localStorage.setItem('fluetas_saved_email', email.trim());
+          localStorage.setItem('fluetas_saved_intent', intent);
+          localStorage.setItem('fluetas_remember_me', 'true');
+        } else if (!rememberMe) {
+          localStorage.removeItem('fluetas_saved_email');
+          localStorage.removeItem('fluetas_saved_intent');
+          localStorage.setItem('fluetas_remember_me', 'false');
+        }
+      } catch {}
     }
 
     try {
@@ -389,6 +428,25 @@ export default function LoginPage() {
               <div className="flex-1 h-px bg-[rgba(18,22,15,0.08)]" />
             </div>
 
+            {/* Saved Account Chip for 1-Click Login */}
+            {savedEmail && (
+              <div className="mb-4 p-2.5 bg-[#2E7D32]/5 border border-[#2E7D32]/20 rounded-xl flex items-center justify-between gap-2 text-xs">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="w-2 h-2 rounded-full bg-[#2E7D32]" />
+                  <span className="text-[#586151] truncate">Saved account: <strong className="text-[#12160F]">{savedEmail}</strong></span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmail(savedEmail);
+                  }}
+                  className="text-[0.68rem] font-bold text-[#2E7D32] hover:underline shrink-0 cursor-pointer"
+                >
+                  Autofill
+                </button>
+              </div>
+            )}
+
             {/* Email / Password Form */}
             <form onSubmit={handleEmailLogin} className="space-y-4">
               <div>
@@ -444,6 +502,21 @@ export default function LoginPage() {
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
+              </div>
+
+              {/* Remember Me / 1-Time Login Option */}
+              <div className="flex items-center justify-between text-xs pt-0.5">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={e => setRememberMe(e.target.checked)}
+                    className="w-4 h-4 rounded text-[#2E7D32] focus:ring-[#2E7D32] accent-[#2E7D32] cursor-pointer"
+                  />
+                  <span className="text-[#586151] font-medium text-[0.75rem]">
+                    Save sign-in details for 1-time login
+                  </span>
+                </label>
               </div>
 
               <button

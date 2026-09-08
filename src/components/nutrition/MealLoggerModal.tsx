@@ -52,6 +52,7 @@ interface MealLoggerModalProps {
     items: MealItem[];
     notes?: string;
   }) => Promise<void>;
+  onDeleteMeal?: (mealId: string) => Promise<void>;
   initialMeal?: MealEntry | null;
 }
 
@@ -81,6 +82,7 @@ export default function MealLoggerModal({
   onClose,
   userId,
   onSaveMeal,
+  onDeleteMeal,
   initialMeal,
 }: MealLoggerModalProps) {
   // Meal Level State
@@ -563,7 +565,7 @@ export default function MealLoggerModal({
                   return (
                     <div
                       key={food.id}
-                      onClick={() => handleSelectFood(food)}
+                      onClick={() => isSelected ? setSelectedFood(null) : handleSelectFood(food)}
                       className={`p-3 sm:p-3.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
                         isSelected
                           ? 'border-[#2E7D32] bg-[#2E7D32]/5 shadow-xs'
@@ -602,15 +604,19 @@ export default function MealLoggerModal({
                         type="button"
                         onClick={e => {
                           e.stopPropagation();
-                          handleSelectFood(food);
+                          if (isSelected) {
+                            setSelectedFood(null);
+                          } else {
+                            handleSelectFood(food);
+                          }
                         }}
                         className={`px-3 py-1.5 rounded-lg text-xs font-bold shrink-0 transition-colors ${
                           isSelected
-                            ? 'bg-[#2E7D32] text-white'
+                            ? 'bg-red-50 text-red-700 border border-red-200 hover:bg-red-100'
                             : 'bg-[#FAFAF6] text-[#12160F] border border-[rgba(18,22,15,0.12)] hover:bg-[#2E7D32] hover:text-white hover:border-[#2E7D32]'
                         }`}
                       >
-                        {isSelected ? 'Selected' : 'Select'}
+                        {isSelected ? 'Deselect' : 'Select'}
                       </button>
                     </div>
                   );
@@ -751,14 +757,23 @@ export default function MealLoggerModal({
                   )}
                 </div>
 
-                <button
-                  type="button"
-                  onClick={handleAddItemToMeal}
-                  className="btn-primary w-full py-2.5 text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs"
-                >
-                  <Plus size={14} />
-                  <span>Add to {mealType}</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedFood(null)}
+                    className="px-3 py-2.5 rounded-xl border border-[rgba(18,22,15,0.15)] text-xs font-bold text-[#586151] hover:bg-black/5 cursor-pointer"
+                  >
+                    Cancel Selection
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleAddItemToMeal}
+                    className="btn-primary flex-1 py-2.5 text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs"
+                  >
+                    <Plus size={14} />
+                    <span>Add to {mealType}</span>
+                  </button>
+                </div>
               </div>
             )}
 
@@ -870,29 +885,49 @@ export default function MealLoggerModal({
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="px-4 py-2 rounded-xl border border-[rgba(18,22,15,0.15)] text-xs font-bold text-[#586151] hover:text-[#12160F] hover:bg-[#FAFAF6] cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  disabled={submittingMeal || mealItems.length === 0}
-                  onClick={handleSaveMeal}
-                  className="btn-primary px-6 py-2 text-xs font-bold flex items-center gap-2 cursor-pointer disabled:opacity-50 shadow-xs"
-                >
-                  {submittingMeal ? (
-                    <span>Saving {mealType}...</span>
-                  ) : (
-                    <>
-                      <CheckCircle2 size={14} />
-                      <span>Save {mealType}</span>
-                    </>
-                  )}
-                </button>
+              <div className="flex items-center justify-between gap-2">
+                {initialMeal && initialMeal.id && onDeleteMeal ? (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (confirm('Are you sure you want to delete this meal record?')) {
+                        await onDeleteMeal(initialMeal.id);
+                        onClose();
+                      }
+                    }}
+                    className="px-3 py-2 rounded-xl text-xs font-bold text-red-600 bg-red-50 border border-red-200 hover:bg-red-100 flex items-center gap-1 cursor-pointer transition-colors"
+                  >
+                    <Trash2 size={13} />
+                    <span>Delete Meal</span>
+                  </button>
+                ) : (
+                  <div />
+                )}
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="px-4 py-2 rounded-xl border border-[rgba(18,22,15,0.15)] text-xs font-bold text-[#586151] hover:text-[#12160F] hover:bg-[#FAFAF6] cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    disabled={submittingMeal || mealItems.length === 0}
+                    onClick={handleSaveMeal}
+                    className="btn-primary px-6 py-2 text-xs font-bold flex items-center gap-2 cursor-pointer disabled:opacity-50 shadow-xs"
+                  >
+                    {submittingMeal ? (
+                      <span>Saving {mealType}...</span>
+                    ) : (
+                      <>
+                        <CheckCircle2 size={14} />
+                        <span>Save {mealType}</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

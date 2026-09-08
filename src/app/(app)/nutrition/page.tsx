@@ -445,6 +445,7 @@ export default function NutritionPage() {
           onClose={() => setModalOpen(false)}
           userId={user.uid}
           onSaveMeal={handleSaveMealData}
+          onDeleteMeal={handleDeleteMeal}
           initialMeal={editingMeal}
         />
       )}

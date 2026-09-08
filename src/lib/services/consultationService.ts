@@ -255,6 +255,139 @@ export async function getDoctorAppointments(doctorId: string): Promise<Appointme
 }
 
 /**
+ * Cancels an existing consultation and updates global appointment status.
+ */
+export async function cancelConsultation(
+  userId: string,
+  consultationId: string,
+  reason?: string
+): Promise<void> {
+  if (!db) throw new Error('Firebase not configured');
+  if (!userId || !consultationId) throw new Error('User ID and Consultation ID required');
+
+  const now = Timestamp.now();
+
+  // 1. Update sovereign consultation record
+  const consRef = doc(db, 'users', userId, 'consultations', consultationId);
+  await updateDoc(consRef, {
+    status: 'Cancelled',
+    cancelReason: reason || 'Cancelled by patient',
+    cancelledAt: now,
+    updatedAt: now,
+  });
+
+  // 2. Update global appointment record
+  try {
+    const apptRef = doc(db, 'appointments', consultationId);
+    await updateDoc(apptRef, {
+      status: 'Cancelled',
+      cancelReason: reason || 'Cancelled by patient',
+      updatedAt: now,
+    });
+  } catch (err) {
+    console.warn('[ConsultationService] update appointment status error:', err);
+  }
+
+  // 3. Log timeline event & notification
+  await addTimelineEvent(userId, {
+    type: 'consultation_cancelled' as any,
+    title: 'Consultation Cancelled',
+    description: `Appointment was cancelled${reason ? `: ${reason}` : '.'}`,
+    category: 'Clinical',
+    badge: 'Cancelled',
+    relatedId: consultationId,
+  });
+
+  await createNotification(userId, {
+    type: 'consultation_cancelled' as any,
+    title: 'Consultation Cancelled',
+    message: `Your appointment has been cancelled successfully.`,
+    relatedResourceType: 'consultation',
+    relatedResourceId: consultationId,
+  });
+}
+
+/**
+ * Reschedules or updates date, time, and reason for an existing consultation.
+ */
+export async function rescheduleConsultation(
+  userId: string,
+  consultationId: string,
+  data: {
+    expertId?: string;
+    preferredDate: string;
+    preferredTime: string;
+    reason?: string;
+    symptomsReported?: string[];
+  }
+): Promise<void> {
+  if (!db) throw new Error('Firebase not configured');
+  if (!userId || !consultationId) throw new Error('User ID and Consultation ID required');
+
+  const now = Timestamp.now();
+
+  // 1. Check double-booking collision if expertId is known
+  if (data.expertId) {
+    const collisionQuery = query(
+      collection(db, 'appointments'),
+      where('expertId', '==', data.expertId),
+      where('date', '==', data.preferredDate),
+      where('time', '==', data.preferredTime),
+      where('status', 'in', ['Booked', 'Scheduled', 'In Progress'])
+    );
+    const collisionSnap = await getDocs(collisionQuery);
+    const hasOtherCollision = collisionSnap.docs.some(d => d.id !== consultationId);
+    if (hasOtherCollision) {
+      throw new Error('This time slot is already booked. Please choose an alternate time.');
+    }
+  }
+
+  // 2. Update sovereign consultation record
+  const consRef = doc(db, 'users', userId, 'consultations', consultationId);
+  const updateData: Record<string, any> = {
+    preferredDate: data.preferredDate,
+    preferredTime: data.preferredTime,
+    updatedAt: now,
+  };
+  if (data.reason !== undefined) updateData.reason = data.reason.trim();
+  if (data.symptomsReported !== undefined) updateData.symptomsReported = data.symptomsReported;
+
+  await updateDoc(consRef, updateData);
+
+  // 3. Update global appointment record
+  try {
+    const apptRef = doc(db, 'appointments', consultationId);
+    const apptUpdate: Record<string, any> = {
+      date: data.preferredDate,
+      time: data.preferredTime,
+      updatedAt: now,
+    };
+    if (data.reason !== undefined) apptUpdate.reason = data.reason.trim();
+    await updateDoc(apptRef, apptUpdate);
+  } catch (err) {
+    console.warn('[ConsultationService] update appointment error:', err);
+  }
+
+  // 4. Log timeline event & notification
+  await addTimelineEvent(userId, {
+    type: 'consultation_rescheduled' as any,
+    title: 'Consultation Rescheduled',
+    description: `Rescheduled to ${data.preferredDate} at ${data.preferredTime}`,
+    category: 'Clinical',
+    badge: 'Updated',
+    relatedId: consultationId,
+  });
+
+  await createNotification(userId, {
+    type: 'consultation_rescheduled' as any,
+    title: 'Consultation Rescheduled',
+    message: `Your appointment has been updated to ${data.preferredDate} at ${data.preferredTime}.`,
+    relatedResourceType: 'consultation',
+    relatedResourceId: consultationId,
+  });
+}
+
+/**
  * Retrieves all follow-up reminders created by a practitioner.
  */
 export async function getDoctorFollowUpsList(doctorId: string): Promise<FollowUpRecord[]> {
