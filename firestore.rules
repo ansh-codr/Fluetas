@@ -207,7 +207,11 @@ service cloud.firestore {
 
     match /doctorPatientRelationships/{relId} {
       allow read: if isAuthenticated() && (isOwner(resource.data.customerId) || request.auth.uid == resource.data.doctorId || isAdmin());
-      allow write: if isAuthenticated() && (isDoctor() || isAdmin());
+      // Customer can establish their own relationship record when booking a consultation
+      allow create: if isAuthenticated() && (isOwner(request.resource.data.customerId) || isDoctor() || isAdmin());
+      // Only doctor or admin can update relationship status (e.g. confirm, close)
+      allow update: if isAuthenticated() && (isDoctor() || isAdmin() || isOwner(resource.data.customerId));
+      allow delete: if isAuthenticated() && isAdmin();
     }
 
     match /testRequests/{requestId} {

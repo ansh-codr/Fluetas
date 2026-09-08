@@ -271,3 +271,104 @@ export async function getDoctorFollowUpsList(doctorId: string): Promise<FollowUp
     return [];
   }
 }
+
+/**
+ * Doctor confirms/reschedules/cancels an appointment.
+ * Updates both the global /appointments doc and the patient's /users/{uid}/consultations doc.
+ */
+export async function updateAppointmentStatus(
+  appointmentId: string,
+  customerId: string,
+  status: ConsultationStatus,
+  extraFields?: { scheduledDate?: string; scheduledTime?: string }
+): Promise<void> {
+  if (!db) throw new Error('Firebase not configured');
+  const now = Timestamp.now();
+
+  // Update global appointment record
+  await updateDoc(doc(db, 'appointments', appointmentId), {
+    status,
+    updatedAt: now,
+    ...(extraFields?.scheduledDate ? { date: extraFields.scheduledDate } : {}),
+    ...(extraFields?.scheduledTime ? { time: extraFields.scheduledTime } : {}),
+  });
+
+  // Mirror status into the patient's sovereign consultation record
+  await updateDoc(doc(db, 'users', customerId, 'consultations', appointmentId), {
+    status,
+    updatedAt: now,
+    ...(status === 'Scheduled' ? { scheduledAt: now } : {}),
+  });
+}
+
+export interface ClinicalNotesPayload {
+  clinicalNotes: string;
+  assessment?: string;
+  advice?: string;
+  suggestedTests?: string[];
+}
+
+/**
+ * Doctor submits post-session clinical notes.
+ * Sets status to Completed on both the global appointment and patient record.
+ */
+export async function addClinicalNotes(
+  appointmentId: string,
+  customerId: string,
+  payload: ClinicalNotesPayload
+): Promise<void> {
+  if (!db) throw new Error('Firebase not configured');
+  const now = Timestamp.now();
+
+  const fields = {
+    clinicalNotes: payload.clinicalNotes,
+    assessment: payload.assessment || '',
+    advice: payload.advice || '',
+    suggestedTests: payload.suggestedTests || [],
+    status: 'Completed' as ConsultationStatus,
+    completedAt: now,
+    updatedAt: now,
+  };
+
+  // Update the patient's consultation document (primary clinical record)
+  await updateDoc(doc(db, 'users', customerId, 'consultations', appointmentId), fields);
+
+  // Update global appointment status
+  await updateDoc(doc(db, 'appointments', appointmentId), {
+    status: 'Completed',
+    updatedAt: now,
+  });
+}
+
+/**
+ * Fetch a single consultation document by ID from the patient's subcollection.
+ */
+export async function getConsultationById(
+  userId: string,
+  consultationId: string
+): Promise<ConsultationData | null> {
+  if (!db) return null;
+  try {
+    const snap = await getDoc(doc(db, 'users', userId, 'consultations', consultationId));
+    if (!snap.exists()) return null;
+    return { id: snap.id, ...snap.data() } as ConsultationData;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Fetch all appointments from the global /appointments collection (admin view).
+ */
+export async function getAllAppointments(): Promise<AppointmentRecord[]> {
+  if (!db) return [];
+  try {
+    const q = query(collection(db, 'appointments'), orderBy('createdAt', 'desc'));
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ id: d.id, ...d.data() } as AppointmentRecord));
+  } catch (err) {
+    console.warn('[ConsultationService] getAllAppointments failed:', err);
+    return [];
+  }
+}
+
