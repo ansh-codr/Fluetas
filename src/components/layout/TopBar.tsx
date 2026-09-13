@@ -47,110 +47,106 @@ export default function TopBar({ onMenuToggle }: TopBarProps) {
 
   function formatNotifTime(ts: { seconds: number }): string {
     const d = new Date(ts.seconds * 1000);
-    const diffMins = Math.floor((Date.now() - d.getTime()) / 60000);
-    if (diffMins < 2) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    const diffHrs = Math.floor(diffMins / 60);
-    if (diffHrs < 24) return `${diffHrs}h ago`;
     return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
   }
 
   return (
-    <header className="h-16 fixed top-0 left-0 md:left-[68px] lg:left-[220px] right-0 bg-[#FAFAF6]/90 backdrop-blur-md border-b border-[rgba(18,22,15,0.10)] flex items-center px-3 sm:px-6 gap-3 sm:gap-4 z-40 transition-all duration-300">
+    <header className="h-[60px] fixed top-0 left-0 md:left-[68px] lg:left-[220px] right-0 bg-surface/80 backdrop-blur-xl border-b border-rule flex items-center px-3 sm:px-5 gap-3 z-40 transition-all duration-300">
       {/* Mobile Hamburger & Logo */}
       <div className="flex items-center gap-2 md:hidden shrink-0">
         <button
           onClick={onMenuToggle}
-          className="p-2 rounded-lg bg-[#FFFFFF] border border-[rgba(18,22,15,0.12)] text-[#586151] hover:text-[#12160F] shrink-0 cursor-pointer shadow-xs"
+          className="p-2 rounded-lg bg-card border border-rule text-ink-soft hover:text-ink shrink-0 cursor-pointer transition-colors"
           aria-label="Toggle menu"
         >
-          <Menu size={18} />
+          <Menu size={17} />
         </button>
-        <img src="/assets/image.png" alt="FLUETAS" className="w-6 h-6 object-contain" />
+        <img src="/assets/image.png" alt="FLUETAS" className="w-5 h-5 object-contain" />
       </div>
 
       {/* Greeting */}
       <div className="flex-1 min-w-0">
-        <h2 className="font-['Outfit'] text-sm sm:text-base lg:text-lg font-bold text-[#12160F] m-0 truncate">
+        <h2 className="font-heading text-[13px] sm:text-sm font-bold text-ink m-0 truncate">
           {getGreeting()}, {firstName}! 👋
         </h2>
-        <p className="text-[#586151] text-[0.65rem] sm:text-xs m-0 truncate hidden sm:block">
+        <p className="text-ink-subtle text-[10px] sm:text-[11px] m-0 truncate hidden sm:block">
           Here&apos;s your FLUETAS health &amp; wellness overview for today.
         </p>
       </div>
 
       {/* Desktop Search */}
-      <div className="hidden sm:flex items-center gap-2 bg-[#FFFFFF] border border-[rgba(18,22,15,0.12)] focus-within:border-[#2E7D32] rounded-xl px-3 py-1.5 min-w-[180px] lg:min-w-[260px] shadow-xs transition-colors">
-        <Search size={14} className="text-[#8A9482] shrink-0" />
+      <div className="hidden sm:flex items-center gap-2 bg-card border border-rule focus-within:border-leaf focus-within:ring-2 focus-within:ring-leaf-dim rounded-xl px-3 py-2 min-w-[170px] lg:min-w-[240px] transition-all">
+        <Search size={14} className="text-ink-subtle shrink-0" />
         <input
           id="topbar-search"
           placeholder="Search logs, vitals, experts..."
-          className="bg-transparent border-none outline-none text-[#12160F] placeholder-[#8A9482] text-xs flex-1 min-w-0"
+          className="bg-transparent border-none outline-none text-ink placeholder-ink-muted text-[12px] flex-1 min-w-0"
         />
       </div>
 
       {/* Mobile Search Trigger */}
       <button
         onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
-        className="sm:hidden p-2 rounded-lg bg-[#FFFFFF] border border-[rgba(18,22,15,0.12)] text-[#586151] hover:text-[#12160F] shrink-0 cursor-pointer shadow-xs"
+        className="sm:hidden p-2 rounded-lg bg-card border border-rule text-ink-soft hover:text-ink shrink-0 cursor-pointer transition-colors"
         aria-label="Search"
       >
-        <Search size={16} />
+        <Search size={15} />
       </button>
 
       {/* Right Actions */}
-      <div className="flex items-center gap-2 sm:gap-2.5">
+      <div className="flex items-center gap-1.5 sm:gap-2">
         {/* Notifications */}
         <div className="relative" ref={notifRef}>
           <button
             id="topbar-notifications-btn"
             onClick={handleNotifOpen}
-            className="relative w-9 h-9 rounded-xl bg-[#FFFFFF] border border-[rgba(18,22,15,0.12)] flex items-center justify-center text-[#586151] hover:text-[#12160F] hover:border-[rgba(18,22,15,0.22)] transition-colors cursor-pointer shrink-0 shadow-xs"
+            className="relative w-8 h-8 rounded-xl bg-card border border-rule flex items-center justify-center text-ink-soft hover:text-ink hover:border-leaf/30 transition-colors cursor-pointer shrink-0"
             aria-label="Notifications"
           >
-            <Bell size={16} />
+            <Bell size={15} />
             {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-[16px] h-4 rounded-full bg-[#2E7D32] text-white text-[0.55rem] font-black flex items-center justify-center px-0.5 border border-[#FAFAF6]">
+              <span className="absolute -top-1 -right-1 min-w-[15px] h-[15px] rounded-full bg-leaf text-white text-[9px] font-bold flex items-center justify-center px-0.5 border border-card">
                 {unreadCount > 9 ? '9+' : unreadCount}
               </span>
             )}
           </button>
 
-          {/* Notification Panel */}
           {notifOpen && (
-            <div className="absolute right-0 top-11 w-80 bg-[#FFFFFF] border border-[rgba(18,22,15,0.12)] rounded-2xl shadow-xl z-50 overflow-hidden animate-slide-up">
-              <div className="flex items-center justify-between p-3.5 border-b border-[rgba(18,22,15,0.08)] bg-[#F2F4EE]/50">
-                <span className="font-['Outfit'] text-sm font-bold text-[#12160F]">Notifications</span>
+            <div className="absolute right-0 top-10 w-[300px] bg-card border border-rule rounded-2xl shadow-xl z-50 overflow-hidden animate-slide-up">
+              <div className="flex items-center justify-between p-3 border-b border-rule bg-surface-2/50">
+                <span className="font-heading text-[13px] font-bold text-ink">Notifications</span>
                 {unreadCount > 0 && (
                   <button
                     onClick={() => markAllRead()}
-                    className="flex items-center gap-1 text-[0.65rem] text-[#2E7D32] font-semibold hover:underline cursor-pointer"
+                    className="flex items-center gap-1 text-[10px] text-leaf font-semibold hover:underline cursor-pointer"
                   >
-                    <CheckCheck size={12} /> Mark all read
+                    <CheckCheck size={11} /> Mark all read
                   </button>
                 )}
               </div>
 
-              <div className="max-h-72 overflow-y-auto">
+              <div className="max-h-64 overflow-y-auto">
                 {notifications.length === 0 ? (
-                  <div className="p-6 text-center">
-                    <p className="text-2xl mb-1.5">🔔</p>
-                    <p className="text-xs font-semibold text-[#12160F] m-0">No notifications</p>
-                    <p className="text-[0.65rem] text-[#586151] m-0 mt-1">You&apos;re all caught up!</p>
+                  <div className="p-5 text-center">
+                    <div className="w-10 h-10 rounded-full bg-surface-2 flex items-center justify-center mx-auto mb-2">
+                      <Bell size={18} className="text-ink-subtle" />
+                    </div>
+                    <p className="text-[12px] font-semibold text-ink m-0">No notifications</p>
+                    <p className="text-[10px] text-ink-subtle m-0 mt-0.5">You&apos;re all caught up!</p>
                   </div>
                 ) : (
                   notifications.map(n => (
                     <button
                       key={n.id}
                       onClick={() => markRead(n.id)}
-                      className={`w-full text-left p-3.5 border-b border-[rgba(18,22,15,0.06)] last:border-0 hover:bg-[#F2F4EE] transition-colors cursor-pointer ${!n.read ? 'bg-[#2E7D32]/5' : ''}`}
+                      className={`w-full text-left p-3 border-b border-rule/50 last:border-0 hover:bg-surface-2 transition-colors cursor-pointer ${!n.read ? 'bg-leaf/5' : ''}`}
                     >
-                      <div className="flex items-start gap-2.5">
-                        {!n.read && <span className="w-1.5 h-1.5 rounded-full bg-[#2E7D32] mt-1.5 shrink-0" />}
-                        <div className="flex-1 min-w-0" style={{ paddingLeft: n.read ? '10px' : '' }}>
-                          <p className="text-xs font-semibold text-[#12160F] m-0 leading-tight">{n.title}</p>
-                          <p className="text-[0.65rem] text-[#586151] m-0 mt-0.5 leading-snug">{n.message}</p>
-                          <p className="text-[0.6rem] text-[#8A9482] m-0 mt-1 font-mono">
+                      <div className="flex items-start gap-2">
+                        {!n.read && <span className="w-1.5 h-1.5 rounded-full bg-leaf mt-1.5 shrink-0" />}
+                        <div className="flex-1 min-w-0" style={{ paddingLeft: n.read ? '8px' : '' }}>
+                          <p className="text-[11px] font-semibold text-ink m-0 leading-tight">{n.title}</p>
+                          <p className="text-[10px] text-ink-subtle m-0 mt-0.5 leading-snug">{n.message}</p>
+                          <p className="text-[9px] text-ink-muted m-0 mt-1 font-mono">
                             {formatNotifTime(n.createdAt)}
                           </p>
                         </div>
@@ -167,38 +163,38 @@ export default function TopBar({ onMenuToggle }: TopBarProps) {
         <button
           onClick={() => openFeedbackDialog()}
           id="topbar-feedback-btn"
-          className="w-9 h-9 rounded-xl bg-[#FFFFFF] border border-[rgba(18,22,15,0.12)] flex items-center justify-center text-[#586151] hover:text-[#2E7D32] hover:border-[#2E7D32]/40 transition-colors cursor-pointer shrink-0 shadow-xs"
+          className="w-8 h-8 rounded-xl bg-card border border-rule flex items-center justify-center text-ink-soft hover:text-leaf hover:border-leaf/30 transition-colors cursor-pointer shrink-0"
           aria-label="Send Feedback"
           title="Share Feedback & Suggestions"
         >
-          <MessageSquareHeart size={16} />
+          <MessageSquareHeart size={15} />
         </button>
 
         {/* Calendar */}
         <Link
           href="/consultations"
           id="topbar-calendar-btn"
-          className="w-9 h-9 rounded-xl bg-[#FFFFFF] border border-[rgba(18,22,15,0.12)] flex items-center justify-center text-[#586151] hover:text-[#12160F] hover:border-[rgba(18,22,15,0.22)] transition-colors cursor-pointer shrink-0 hidden xs:flex shadow-xs no-underline"
+          className="w-8 h-8 rounded-xl bg-card border border-rule flex items-center justify-center text-ink-soft hover:text-ink hover:border-leaf/30 transition-colors shrink-0 hidden sm:flex no-underline"
           aria-label="View appointments"
           title="View appointments"
         >
-          <Calendar size={16} />
+          <Calendar size={15} />
         </Link>
 
         {/* Profile Card */}
         <Link
           href="/profile"
-          className="flex items-center gap-2 sm:gap-2.5 bg-[#FFFFFF] border border-[rgba(18,22,15,0.12)] rounded-xl px-2.5 py-1.5 shrink-0 hover:border-[rgba(18,22,15,0.25)] shadow-xs transition-colors no-underline"
+          className="flex items-center gap-2 bg-card border border-rule rounded-xl px-2.5 py-1.5 shrink-0 hover:border-leaf/30 transition-colors no-underline"
         >
-          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#2E7D32] to-[#1B5E20] flex items-center justify-center text-xs font-bold text-[#FAFAF6] shrink-0 shadow-[0_2px_6px_rgba(46,125,50,0.25)]">
+          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-leaf to-leaf/80 flex items-center justify-center text-[11px] font-bold text-white shrink-0 shadow-sm">
             {firstName[0]?.toUpperCase() ?? 'U'}
           </div>
           <div className="hidden md:block text-left">
-            <p className="text-[#12160F] text-xs font-semibold m-0 leading-tight truncate max-w-[100px] lg:max-w-[130px]">
+            <p className="text-ink text-[11px] font-semibold m-0 leading-tight truncate max-w-[90px] lg:max-w-[120px]">
               {displayName}
             </p>
-            <p className={`text-[0.62rem] font-medium m-0 flex items-center gap-1 ${isPremium ? 'text-[#D9622B]' : 'text-[#586151]'}`}>
-              {isPremium ? <>Premium ⭐</> : 'Free Plan'}
+            <p className={`text-[9px] font-medium m-0 flex items-center gap-1 ${isPremium ? 'text-ember' : 'text-ink-subtle'}`}>
+              {isPremium ? 'Premium ⭐' : 'Free Plan'}
             </p>
           </div>
         </Link>
@@ -206,20 +202,20 @@ export default function TopBar({ onMenuToggle }: TopBarProps) {
 
       {/* Mobile Search Drawer */}
       {mobileSearchOpen && (
-        <div className="absolute top-16 left-0 right-0 p-3 bg-[#FAFAF6] border-b border-[rgba(18,22,15,0.12)] shadow-xl flex items-center gap-2 sm:hidden animate-slide-up">
-          <div className="flex-1 flex items-center gap-2 bg-[#FFFFFF] border border-[rgba(18,22,15,0.12)] rounded-xl px-3 py-2">
-            <Search size={14} className="text-[#8A9482]" />
+        <div className="absolute top-[60px] left-0 right-0 p-3 bg-card border-b border-rule shadow-lg flex items-center gap-2 sm:hidden animate-slide-up z-50">
+          <div className="flex-1 flex items-center gap-2 bg-surface border border-rule rounded-xl px-3 py-2">
+            <Search size={14} className="text-ink-subtle" />
             <input
               autoFocus
               placeholder="Search anything..."
-              className="bg-transparent border-none outline-none text-[#12160F] placeholder-[#8A9482] text-xs flex-1"
+              className="bg-transparent border-none outline-none text-ink placeholder-ink-muted text-[12px] flex-1"
             />
           </div>
           <button
             onClick={() => setMobileSearchOpen(false)}
-            className="p-2 text-[#586151] hover:text-[#12160F]"
+            className="p-2 text-ink-soft hover:text-ink rounded-lg hover:bg-surface-2 transition-colors"
           >
-            <X size={18} />
+            <X size={16} />
           </button>
         </div>
       )}

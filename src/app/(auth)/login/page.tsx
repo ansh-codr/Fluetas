@@ -225,7 +225,7 @@ export default function LoginPage() {
         };
 
   return (
-    <div className="relative min-h-screen w-full flex items-center justify-center bg-[#FAFAF6] overflow-x-hidden p-4 sm:p-6 md:p-8 lg:p-12 xl:p-16">
+    <div className="relative min-h-screen w-full flex items-center justify-center bg-surface overflow-x-hidden p-4 sm:p-6 md:p-8 lg:p-12 xl:p-16">
       {/* ── Background Organic Atmosphere ──────────────────────────────── */}
       <div
         className="pointer-events-none fixed inset-0 overflow-hidden"
@@ -234,20 +234,20 @@ export default function LoginPage() {
         <div
           className="absolute -top-[15%] -left-[10%] w-[55vw] h-[55vw] max-w-[700px] max-h-[700px] rounded-full opacity-40 blur-3xl animate-pulse"
           style={{
-            background: 'radial-gradient(circle, rgba(46,125,50,0.14) 0%, rgba(46,125,50,0.02) 65%, transparent 100%)',
+            background: 'radial-gradient(circle, rgba(42,125,48,0.12) 0%, rgba(42,125,48,0.02) 65%, transparent 100%)',
             animationDuration: '9s',
           }}
         />
         <div
           className="absolute -bottom-[15%] -right-[10%] w-[60vw] h-[60vw] max-w-[750px] max-h-[750px] rounded-full opacity-35 blur-3xl"
           style={{
-            background: 'radial-gradient(circle, rgba(122,78,158,0.09) 0%, rgba(46,109,164,0.03) 70%, transparent 100%)',
+            background: 'radial-gradient(circle, rgba(112,72,160,0.07) 0%, rgba(37,101,160,0.02) 70%, transparent 100%)',
           }}
         />
         <div
           className="absolute inset-0 opacity-[0.015]"
           style={{
-            backgroundImage: 'radial-gradient(#12160F 1px, transparent 1px)',
+            backgroundImage: 'radial-gradient(var(--ink) 1px, transparent 1px)',
             backgroundSize: '24px 24px',
           }}
         />
@@ -261,7 +261,7 @@ export default function LoginPage() {
           <motion.div {...anim(0.05)} className="flex items-center gap-3.5 mb-6 sm:mb-8">
             <Link
               href="/"
-              className="flex items-center gap-3.5 no-underline group focus-visible:outline-2 focus-visible:outline-[#2E7D32] rounded-xl"
+              className="flex items-center gap-3.5 no-underline group focus-visible:outline-2 focus-visible:outline-leaf rounded-xl"
               aria-label="FLUETAS Homepage"
             >
               <div className="w-11 h-11 sm:w-13 sm:h-13 relative rounded-2xl overflow-hidden shadow-xs group-hover:scale-105 transition-transform duration-200">
@@ -275,10 +275,10 @@ export default function LoginPage() {
                 />
               </div>
               <div className="flex flex-col">
-                <span className="font-['Outfit'] text-2xl sm:text-3xl lg:text-3xl font-black text-[#12160F] tracking-wider leading-none">
+                <span className="font-heading text-2xl sm:text-3xl lg:text-3xl font-bold text-ink tracking-wider leading-none">
                   FLUETAS
                 </span>
-                <span className="text-[0.65rem] sm:text-xs tracking-[0.2em] text-[#586151] uppercase font-bold mt-1">
+                <span className="text-[0.65rem] sm:text-xs tracking-[0.2em] text-ink-subtle uppercase font-semibold mt-1">
                   Health &amp; Performance
                 </span>
               </div>
@@ -287,21 +287,21 @@ export default function LoginPage() {
 
           {/* Primary Statement */}
           <motion.div {...anim(0.12)} className="space-y-1.5">
-            <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold bg-[#2E7D32]/10 text-[#2E7D32] border border-[#2E7D32]/20 mb-3">
+            <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold bg-leaf-dim text-leaf border border-leaf/15 mb-3">
               <Sparkles size={12} />
               <span>CONNECTED HEALTH ARCHITECTURE</span>
             </div>
-            <h1 className="font-['Outfit'] text-3xl sm:text-5xl lg:text-5xl xl:text-6xl font-black text-[#12160F] tracking-tight leading-[1.05] m-0">
+            <h1 className="font-heading text-3xl sm:text-5xl lg:text-5xl xl:text-6xl font-bold text-ink tracking-tight leading-[1.05] m-0">
               YOUR BODY.<br />
               YOUR DATA.<br />
-              <span className="text-[#2E7D32]">YOUR FORMULA.</span>
+              <span className="text-leaf">YOUR FORMULA.</span>
             </h1>
           </motion.div>
 
           {/* Supporting Message */}
           <motion.p
             {...anim(0.2)}
-            className="text-sm sm:text-base lg:text-lg text-[#586151] leading-relaxed max-w-xl mt-4 mb-6 sm:mb-8"
+            className="text-sm sm:text-base lg:text-lg text-ink-soft leading-relaxed max-w-xl mt-4 mb-6 sm:mb-8"
           >
             A connected platform for your health, fitness and wellness journey.
             Zero manufactured statistics. Absolute biometric sovereignty.
@@ -314,15 +314,15 @@ export default function LoginPage() {
               return (
                 <div
                   key={cap.label}
-                  className="bg-white/85 backdrop-blur-xs border border-[rgba(18,22,15,0.08)] rounded-2xl p-3.5 sm:p-4 flex flex-col gap-1.5 shadow-2xs hover:border-[#2E7D32]/30 transition-colors"
+                  className="bg-card/85 backdrop-blur-sm border border-rule rounded-2xl p-3.5 sm:p-4 flex flex-col gap-1.5 shadow-xs hover:border-leaf/25 transition-colors"
                 >
-                  <div className="w-7 h-7 rounded-xl bg-[#2E7D32]/10 text-[#2E7D32] flex items-center justify-center">
+                  <div className="w-7 h-7 rounded-xl bg-leaf-dim text-leaf flex items-center justify-center">
                     <Icon size={15} />
                   </div>
-                  <span className="font-['Outfit'] font-black text-xs sm:text-sm text-[#12160F] tracking-wider">
+                  <span className="font-heading font-bold text-xs sm:text-sm text-ink tracking-wider">
                     {cap.label}
                   </span>
-                  <span className="text-[0.6875rem] text-[#586151] leading-tight">
+                  <span className="text-[0.6875rem] text-ink-soft leading-tight">
                     {cap.desc}
                   </span>
                 </div>
@@ -336,31 +336,31 @@ export default function LoginPage() {
           {...anim(0.18)}
           className="lg:col-span-5 w-full max-w-md lg:max-w-[460px] xl:max-w-[480px] mx-auto lg:ml-auto"
         >
-          <div className="bg-white border border-[rgba(18,22,15,0.10)] rounded-2xl sm:rounded-3xl p-6 sm:p-8 lg:p-9 shadow-sm relative">
+          <div className="bg-card border border-rule rounded-2xl sm:rounded-3xl p-6 sm:p-8 lg:p-9 shadow-sm relative">
             {/* Header */}
             <div className="mb-5">
-              <h2 className="font-['Outfit'] text-2xl sm:text-[1.85rem] font-bold text-[#12160F] tracking-tight m-0">
+              <h2 className="font-heading text-2xl sm:text-[1.85rem] font-bold text-ink tracking-tight m-0">
                 Welcome back
               </h2>
-              <p className="text-xs sm:text-sm text-[#586151] mt-1 m-0">
+              <p className="text-xs sm:text-sm text-ink-soft mt-1 m-0">
                 Sign in to your FLUETAS account
               </p>
             </div>
 
             {/* Account Type Selector (Intent) */}
             <div className="mb-5">
-              <label className="block text-[0.6875rem] font-bold text-[#586151] uppercase tracking-wider mb-1.5">
+              <label className="block text-[0.6875rem] font-bold text-ink-subtle uppercase tracking-wider mb-1.5">
                 Who are you?
               </label>
-              <div className="grid grid-cols-2 p-1 bg-[#F2F4EE] rounded-xl border border-[rgba(18,22,15,0.08)]">
+              <div className="grid grid-cols-2 p-1 bg-surface-2 rounded-xl border border-rule">
                 <button
                   type="button"
                   id="intent-customer-btn"
                   onClick={() => { setLoginIntent('customer'); setError(''); }}
                   className={`py-2 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                     loginIntent === 'customer'
-                      ? 'bg-white text-[#12160F] shadow-xs'
-                      : 'text-[#586151] hover:text-[#12160F]'
+                      ? 'bg-card text-ink shadow-xs'
+                      : 'text-ink-soft hover:text-ink'
                   }`}
                 >
                   <User size={13} />
@@ -372,8 +372,8 @@ export default function LoginPage() {
                   onClick={() => { setLoginIntent('practitioner'); setError(''); }}
                   className={`py-2 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                     loginIntent === 'practitioner'
-                      ? 'bg-white text-[#12160F] shadow-xs'
-                      : 'text-[#586151] hover:text-[#12160F]'
+                      ? 'bg-card text-ink shadow-xs'
+                      : 'text-ink-soft hover:text-ink'
                   }`}
                 >
                   <Stethoscope size={13} />
@@ -386,7 +386,7 @@ export default function LoginPage() {
             {error && (
               <div
                 role="alert"
-                className="p-3.5 mb-5 rounded-xl bg-[#DC2626]/10 border border-[#DC2626]/20 text-[#DC2626] text-xs font-semibold flex items-start gap-2.5 animate-slide-up"
+                className="p-3.5 mb-5 rounded-xl bg-red-50 border border-red-200 text-red-600 text-xs font-semibold flex items-start gap-2.5 animate-slide-up"
               >
                 <AlertCircle size={16} className="shrink-0 mt-0.5" />
                 <span className="leading-relaxed">{error}</span>
@@ -399,11 +399,11 @@ export default function LoginPage() {
               type="button"
               onClick={handleGoogleLogin}
               disabled={googleLoading || loading}
-              className="w-full min-h-[46px] py-2.5 px-4 rounded-xl bg-white border border-[rgba(18,22,15,0.15)] hover:border-[rgba(18,22,15,0.30)] hover:bg-[#FAFAF6] text-[#12160F] text-xs sm:text-sm font-semibold flex items-center justify-center gap-3 transition-all shadow-2xs cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-[#2E7D32]"
+              className="w-full min-h-[46px] py-2.5 px-4 rounded-xl bg-card border border-rule hover:border-ink-muted hover:bg-surface text-ink text-xs sm:text-sm font-semibold flex items-center justify-center gap-3 transition-all shadow-xs cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-leaf"
             >
               {googleLoading ? (
                 <>
-                  <Loader2 size={16} className="animate-spin text-[#2E7D32]" />
+                  <Loader2 size={16} className="animate-spin text-leaf" />
                   <span>Verifying authorization...</span>
                 </>
               ) : (
@@ -421,26 +421,26 @@ export default function LoginPage() {
 
             {/* Divider */}
             <div className="flex items-center gap-3 my-5">
-              <div className="flex-1 h-px bg-[rgba(18,22,15,0.08)]" />
-              <span className="text-[0.6875rem] font-bold text-[#8A9482] uppercase tracking-wider">
+              <div className="flex-1 h-px bg-rule" />
+              <span className="text-[0.6875rem] font-bold text-ink-muted uppercase tracking-wider">
                 or
               </span>
-              <div className="flex-1 h-px bg-[rgba(18,22,15,0.08)]" />
+              <div className="flex-1 h-px bg-rule" />
             </div>
 
             {/* Saved Account Chip for 1-Click Login */}
             {savedEmail && (
-              <div className="mb-4 p-2.5 bg-[#2E7D32]/5 border border-[#2E7D32]/20 rounded-xl flex items-center justify-between gap-2 text-xs">
+              <div className="mb-4 p-2.5 bg-leaf/5 border border-leaf/15 rounded-xl flex items-center justify-between gap-2 text-xs">
                 <div className="flex items-center gap-2 min-w-0">
-                  <span className="w-2 h-2 rounded-full bg-[#2E7D32]" />
-                  <span className="text-[#586151] truncate">Saved account: <strong className="text-[#12160F]">{savedEmail}</strong></span>
+                  <span className="w-2 h-2 rounded-full bg-leaf" />
+                  <span className="text-ink-soft truncate">Saved account: <strong className="text-ink">{savedEmail}</strong></span>
                 </div>
                 <button
                   type="button"
                   onClick={() => {
                     setEmail(savedEmail);
                   }}
-                  className="text-[0.68rem] font-bold text-[#2E7D32] hover:underline shrink-0 cursor-pointer"
+                  className="text-[0.68rem] font-bold text-leaf hover:underline shrink-0 cursor-pointer"
                 >
                   Autofill
                 </button>
@@ -452,7 +452,7 @@ export default function LoginPage() {
               <div>
                 <label
                   htmlFor="login-email"
-                  className="block text-xs font-bold text-[#12160F] mb-1.5"
+                  className="block text-xs font-bold text-ink mb-1.5"
                 >
                   Email address
                 </label>
@@ -466,7 +466,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   disabled={loading || googleLoading}
-                  className="w-full min-h-[46px] px-3.5 py-2.5 rounded-xl border border-[rgba(18,22,15,0.15)] focus:border-[#2E7D32] focus:ring-1 focus:ring-[#2E7D32] text-xs sm:text-sm text-[#12160F] bg-white transition-all outline-none disabled:opacity-60"
+                  className="input-field"
                 />
               </div>
 
@@ -474,7 +474,7 @@ export default function LoginPage() {
                 <div className="flex items-center justify-between mb-1.5">
                   <label
                     htmlFor="login-password"
-                    className="block text-xs font-bold text-[#12160F]"
+                    className="block text-xs font-bold text-ink"
                   >
                     Password
                   </label>
@@ -490,14 +490,14 @@ export default function LoginPage() {
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                     disabled={loading || googleLoading}
-                    className="w-full min-h-[46px] pl-3.5 pr-11 py-2.5 rounded-xl border border-[rgba(18,22,15,0.15)] focus:border-[#2E7D32] focus:ring-1 focus:ring-[#2E7D32] text-xs sm:text-sm text-[#12160F] bg-white transition-all outline-none disabled:opacity-60"
+                    className="input-field pr-11"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     tabIndex={0}
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg flex items-center justify-center text-[#8A9482] hover:text-[#12160F] transition-colors cursor-pointer"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg flex items-center justify-center text-ink-subtle hover:text-ink transition-colors cursor-pointer"
                   >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
@@ -511,9 +511,9 @@ export default function LoginPage() {
                     type="checkbox"
                     checked={rememberMe}
                     onChange={e => setRememberMe(e.target.checked)}
-                    className="w-4 h-4 rounded text-[#2E7D32] focus:ring-[#2E7D32] accent-[#2E7D32] cursor-pointer"
+                    className="w-4 h-4 rounded text-leaf focus:ring-leaf accent-leaf cursor-pointer"
                   />
-                  <span className="text-[#586151] font-medium text-[0.75rem]">
+                  <span className="text-ink-soft font-medium text-[0.75rem]">
                     Save sign-in details for 1-time login
                   </span>
                 </label>
@@ -523,7 +523,7 @@ export default function LoginPage() {
                 id="login-submit-btn"
                 type="submit"
                 disabled={loading || googleLoading}
-                className="w-full min-h-[46px] py-3 px-4 rounded-xl bg-[#2E7D32] hover:bg-[#256628] text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-colors shadow-xs cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-[#2E7D32]"
+                className="w-full min-h-[46px] py-3 px-4 rounded-xl bg-leaf hover:bg-leaf-hi text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-colors shadow-xs cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-leaf"
               >
                 {loading ? (
                   <>
@@ -537,30 +537,30 @@ export default function LoginPage() {
             </form>
 
             {/* Footer Navigation */}
-            <div className="mt-6 pt-5 border-t border-[rgba(18,22,15,0.08)] flex flex-col gap-3">
-              <p className="text-xs text-[#586151] m-0 text-center">
+            <div className="mt-6 pt-5 border-t border-rule flex flex-col gap-3">
+              <p className="text-xs text-ink-soft m-0 text-center">
                 Don&apos;t have an account?{' '}
                 <Link
                   href="/signup"
-                  className="font-bold text-[#2E7D32] hover:text-[#256628] transition-colors no-underline hover:underline"
+                  className="font-bold text-leaf hover:text-leaf-hi transition-colors no-underline hover:underline"
                 >
                   Sign Up
                 </Link>
               </p>
 
               {/* Expert Registration Link */}
-              <div className="p-3 rounded-xl bg-[#FAFAF6] border border-[rgba(18,22,15,0.08)] flex items-center justify-between text-left gap-2">
+              <div className="p-3 rounded-xl bg-surface border border-rule flex items-center justify-between text-left gap-2">
                 <div>
-                  <p className="text-xs font-bold text-[#12160F] m-0">
+                  <p className="text-xs font-bold text-ink m-0">
                     Practitioner or Trainer?
                   </p>
-                  <p className="text-[0.6875rem] text-[#586151] m-0">
+                  <p className="text-[0.6875rem] text-ink-subtle m-0">
                     Apply for verified clinical &amp; coaching access
                   </p>
                 </div>
                 <Link
                   href="/expert-register"
-                  className="text-xs font-bold text-[#2E7D32] hover:text-[#256628] flex items-center gap-1 shrink-0 no-underline hover:underline"
+                  className="text-xs font-bold text-leaf hover:text-leaf-hi flex items-center gap-1 shrink-0 no-underline hover:underline"
                 >
                   <span>Join as Expert</span>
                   <ArrowRight size={12} />
@@ -571,7 +571,7 @@ export default function LoginPage() {
               <div className="text-center pt-1">
                 <Link
                   href="/admin/login"
-                  className="text-[0.6875rem] font-semibold text-[#8A9482] hover:text-[#12160F] transition-colors inline-flex items-center gap-1 no-underline"
+                  className="text-[0.6875rem] font-semibold text-ink-muted hover:text-ink transition-colors inline-flex items-center gap-1 no-underline"
                 >
                   <Shield size={12} /> Platform Administrator? Access Admin Portal →
                 </Link>

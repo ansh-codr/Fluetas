@@ -23,7 +23,7 @@ export default function MobileBottomNav() {
   const pathname = usePathname();
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#FFFFFF]/95 backdrop-blur-md border-t border-[rgba(18,22,15,0.08)] py-1.5 px-3 shadow-[0_-4px_16px_rgba(18,22,15,0.03)]">
+    <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-card/90 backdrop-blur-xl border-t border-rule py-1 px-3 shadow-[0_-2px_12px_rgba(18,22,15,0.04)]">
       <nav className="flex items-center justify-around max-w-md mx-auto">
         {mobileNavItems.map((item) => {
           const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
@@ -34,17 +34,17 @@ export default function MobileBottomNav() {
               key={item.href}
               href={item.href}
               className={`
-                flex flex-col items-center gap-0.5 px-2 py-1 rounded-xl text-decoration-none no-underline transition-all duration-150 active:scale-95
+                flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl no-underline transition-all duration-150 active:scale-95
                 ${isActive
-                  ? 'text-[#2E7D32] font-bold'
-                  : 'text-[#586151] hover:text-[#12160F]'
+                  ? 'text-leaf font-bold'
+                  : 'text-ink-subtle hover:text-ink'
                 }
               `}
             >
-              <div className={`p-1 rounded-lg ${isActive ? 'bg-[#2E7D32]/10' : ''}`}>
-                <Icon size={18} strokeWidth={isActive ? 2.4 : 1.8} />
+              <div className={`p-1 rounded-lg transition-colors ${isActive ? 'bg-leaf-dim' : ''}`}>
+                <Icon size={18} strokeWidth={isActive ? 2.3 : 1.7} />
               </div>
-              <span className="text-[0.6rem] tracking-tight">
+              <span className="text-[9px] tracking-tight font-medium">
                 {item.label}
               </span>
             </Link>
